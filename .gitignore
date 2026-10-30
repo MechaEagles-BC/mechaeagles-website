@@ -2,3 +2,4 @@ node_modules/
 dist/
 .astro/
 cad/parts/
+reference/gasson/*.jpg
