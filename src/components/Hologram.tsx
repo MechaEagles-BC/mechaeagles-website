@@ -9,7 +9,7 @@ import * as THREE from "three";
 import { usePartGeometry, type SharedLight } from "./Scene";
 import type { Fx } from "./teams";
 
-const SCALE = 0.078; // the 65 m building slightly overhangs the 4.5 m projection surface, so it reads as the centrepiece
+const SCALE = 0.068; // keeps the whole footprint, about 36 m from centre to corner, inside the 2.47 m collar
 const SURFACE_Y = 0.505;
 const BUILDING_Y_CENTRE = 9.5; // middle of the footprint, in model metres
 const HEIGHT = 61 * SCALE;
@@ -173,7 +173,7 @@ export default function Hologram({ fx, shared, onRiseEnd }: { fx: RefObject<Fx>;
       <group position={[0, SURFACE_Y, BUILDING_Y_CENTRE * SCALE]} scale={SCALE}>
         <Piece name="tower" faceGain={1} edgeGain={1} crease={30} shared={shared} />
         <Piece name="bay" faceGain={1} edgeGain={0.9} crease={30} shared={shared} />
-        <Piece name="massing_rest" faceGain={0.8} edgeGain={0.55} crease={30} shared={shared} />
+        <Piece name="facade" faceGain={0.85} edgeGain={0.72} crease={30} shared={shared} />
       </group>
     </group>
   );

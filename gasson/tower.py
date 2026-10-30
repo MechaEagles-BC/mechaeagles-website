@@ -222,11 +222,11 @@ def tower_body():
 def gable_bay_body():
     """The gabled bay in front of the tower, with its tall traceried window."""
     b = P["bay"]
-    hw, y0, y1 = b["half_w"], b["y0"], b["y0"] + 6.5
+    hw, y0, y1 = 3.95, b["y0"], b["y0"] + 6.5  # narrower than the massing estimate, as the quad photo and postcard show
     wall, peak = b["wall"], b["peak"]
     wire = bd.Wire.make_polygon([v(-hw, y0, 0), v(hw, y0, 0), v(hw, y0, wall), v(0, y0, peak), v(-hw, y0, wall)], close=True)
     body = bd.extrude(bd.Face(wire), y1 - y0, dir=(0, 1, 0))
-    sill, apex, w = 14.4, min(peak - 3.4, 22.2), 4.6
+    sill, apex, w = 16.4, min(peak - 2.6, 23.2), 3.5
     body = body - arch(0, w + 0.5, sill - 0.1, apex + 0.3, y0 - 0.01, 0.34) - arch(0, w, sill, apex, y0 + 0.28, 0.9)
     parts = [body]
     t0, t1 = y0 + 0.3, y0 + 0.52
@@ -245,6 +245,15 @@ def gable_bay_body():
     parts.append(arch(0, w, sill, apex, t0, t1 - t0) - arch(0, w - 0.22, sill - 0.05, apex - 0.16, t0 - 0.01, t1 - t0 + 0.02))
     parts.append(arch(0, w + 0.9, sill - 0.1, apex + 0.62, y0 - 0.1, 0.13) - arch(0, w + 0.5, sill - 0.3, apex + 0.3, y0 - 0.12, 0.17))
     parts.append(box(-w / 2 - 0.45, w / 2 + 0.45, y0 - 0.2, y0 + 0.3, sill - 0.3, sill - 0.08))
+    # low stepped shoulders either side of the gable, and the small row of windows beneath its window
+    for s in (-1, 1):
+        parts.append(box(*sorted((s * hw, s * (hw + 1.35))), y0 + 0.4, y0 + 1.1, wall - 1.6, wall + 0.5))
+        parts.append(box(s * (hw + 0.45) - 0.42, s * (hw + 0.45) + 0.42, y0 + 0.4, y0 + 1.1, wall + 0.5, wall + 1.3))
+    parts = [parts[0] - box(-2.0, 2.0, y0 - 0.01, y0 + 0.24, 14.1, 15.9), *parts[1:]]
+    for x in (-1.0, 0.0, 1.0):
+        parts.append(box(x - 0.05, x + 0.05, y0 + 0.1, y0 + 0.24, 14.1, 15.9))
+    parts.append(box(-2.14, 2.14, y0 - 0.1, y0 + 0.03, 15.9, 16.05))
+    parts.append(box(-2.2, 2.2, y0 - 0.14, y0 + 0.03, 13.86, 14.1))
     # coping up each side of the gable
     for s in (-1, 1):
         run, fall = hw, peak - wall

@@ -34,7 +34,7 @@ def material(name, rgb, rough=0.8):
 
 
 stone = material("stone", (0.52, 0.5, 0.46))
-for name in ("massing_rest", "tower", "bay"):
+for name in ("facade", "tower", "bay"):
     before = set(bpy.data.objects)
     bpy.ops.wm.obj_import(filepath=os.path.join(HERE, "parts", name + ".obj"), forward_axis="Y", up_axis="Z")
     for o in set(bpy.data.objects) - before:
