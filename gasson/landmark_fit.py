@@ -24,25 +24,29 @@ PHOTOS = {
         "tipL": (697, 468), "tipR": (814, 462), "cross": (755, 558), "corniceL": (675, 628), "corniceR": (850, 625),
         "bay": (752, 880), "gableL": (405, 858), "gableR": (1060, 838), "wallL": (335, 938), "wallR": (1147, 925),
         "groundL": (325, 1240), "groundR": (1158, 1240),
+        "clock": (758, 848), "apexL": (733, 678), "apexR": (782, 672), "sillL": (733, 795), "sillR": (782, 795),
     }),
     "tower-postcard.jpg": (1, {
         "tipL": (609, 52), "tipR": (728, 58), "cross": (672, 125), "corniceL": (583, 200), "corniceR": (763, 205),
         "bay": (688, 455), "gableL": (374, 388), "gableR": (1063, 396), "wallL": (277, 515), "wallR": (1152, 520),
         "groundL": (262, 820), "groundR": (1178, 790),
     }),
-    "modern-2011.jpg": (FROM_DISPLAY, {
+    "modern-2011.jpg": (1, {
         "tipL": (548, 150), "tipR": (760, 95), "cross": (637, 255), "corniceL": (480, 395), "corniceR": (795, 345),
         "bay": (585, 825), "gableR": (1190, 445),
+        "clock": (625, 785), "apexL": (590, 452), "apexR": (690, 435), "sillL": (590, 695), "sillR": (690, 680),
     }),
     "from-fulton.jpg": (FROM_DISPLAY, {
         "tipL": (597, 335), "tipR": (745, 335), "cross": (670, 435), "corniceL": (565, 515), "corniceR": (775, 515),
         "bay": (665, 835),
+        "clock": (670, 797), "apexL": (640, 582), "apexR": (702, 582), "sillL": (640, 730), "sillR": (702, 730),
     }),
 }
 # Shape values the solve may move: (group, key), and how strongly each is held near its first estimate.
 SHAPE = [
     (("tower", "half_w"), 0.3), (("tower", "top"), 0.1), (("cross", "z1"), 0.1), (("bay", "peak"), 0.1), (("bay", "y0"), 1.0),
     (("wing", "x1"), 0.1), (("wing", "x0"), 0.1), (("wing", "y0"), 1.0), (("wing", "wall"), 0.1), (("wing", "peak"), 0.1), (("turret", "inset"), 1.0),
+    (("belfry", "x"), 0.1), (("belfry", "apex"), 0.1), (("belfry", "sill"), 0.1), (("clock", "z"), 0.1),
 ]
 
 
@@ -55,6 +59,7 @@ def params_from(shape):
 
 def world(p):
     t, u, b, w, c = p["tower"], p["turret"], p["bay"], p["wing"], p["cross"]
+    bf, clock = p["belfry"], p["clock"]
     ix = t["half_w"] - u["inset"]
     iy = t["y0"] + u["inset"]
     gx = (w["x0"] + w["x1"]) / 2
@@ -64,6 +69,9 @@ def world(p):
         "bay": (0, b["y0"], b["peak"]), "gableL": (-gx, w["y0"], w["peak"]), "gableR": (gx, w["y0"], w["peak"]),
         "wallL": (-w["x1"], w["y0"], w["wall"]), "wallR": (w["x1"], w["y0"], w["wall"]),
         "groundL": (-w["x1"], w["y0"], 0), "groundR": (w["x1"], w["y0"], 0),
+        "clock": (0, t["y0"], clock["z"]),
+        "apexL": (-bf["x"], t["y0"], bf["apex"]), "apexR": (bf["x"], t["y0"], bf["apex"]),
+        "sillL": (-bf["x"], t["y0"], bf["sill"]), "sillR": (bf["x"], t["y0"], bf["sill"]),
     }
 
 
@@ -165,3 +173,4 @@ for n in names:
 
 print("fitted", json.dumps({f"{g}.{k}": round(float(v), 2) for ((g, k), _), v in zip(SHAPE, shape)}))
 (HERE / "fitted.json").write_text(json.dumps(final, indent=1))
+(HERE / "cameras.json").write_text(json.dumps({n: {"cam": [float(v) for v in cams[n]], "size": sizes[n]} for n in names}, indent=1))

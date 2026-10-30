@@ -18,6 +18,8 @@ P = {
     "tower": {"half_w": 7.0, "y0": 4.0, "y1": 18.0, "top": 47.5, "battlement": 50.2, "merlon_w": 1.4},
     "turret": {"r": 2.05, "inset": 1.0, "base": 39.0, "shoulder": 54.0},
     "cross": {"z0": 50.2, "z1": 55.4, "w": 0.45, "arm": 1.5},
+    "belfry": {"x": 2.2, "apex": 42.9, "sill": 32.6},
+    "clock": {"z": 28.1},
 }
 
 
@@ -70,7 +72,7 @@ class Mesh:
             self.face((a, b, z1), (c, d, z1), (x, y, tip))
 
 
-def build(p=P):
+def build(p=P, tower=True, bay=True):
     m = Mesh()
     r, w, f, b, t, u, c = p["range"], p["wing"], p["front"], p["bay"], p["tower"], p["turret"], p["cross"]
     m.gable_x(-r["half_w"], r["half_w"], r["y0"], r["y1"], r["eave"], r["ridge"])
@@ -78,7 +80,10 @@ def build(p=P):
         x0, x1 = sorted((s * w["x0"], s * w["x1"]))
         m.gable_y(x0, x1, w["y0"], w["y1"], w["wall"], w["peak"])
     m.box(-f["half_w"], f["half_w"], f["y0"], f["y1"], 0, f["top"])
-    m.gable_y(-b["half_w"], b["half_w"], b["y0"], b["y1"], b["wall"], b["peak"])
+    if bay:
+        m.gable_y(-b["half_w"], b["half_w"], b["y0"], b["y1"], b["wall"], b["peak"])
+    if not tower:
+        return m
     m.box(-t["half_w"], t["half_w"], t["y0"], t["y1"], 0, t["top"])
     # battlements between the corner turrets, on all four sides
     span = 2 * (t["half_w"] - u["inset"] - u["r"])

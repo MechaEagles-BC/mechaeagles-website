@@ -3,3 +3,4 @@ dist/
 .astro/
 cad/parts/
 reference/gasson/*.jpg
+gasson/parts/
