@@ -11,6 +11,7 @@ SRC = os.path.join(os.path.dirname(os.path.abspath(__file__)), "parts")
 TEAM_ANGLES = [-135, 135, 45, -45]
 PINIONS = [0, 90, 180, 270]
 CENTRE = 3.72667
+EDGE_RADIUS = 0.012
 RES = {"plinth": 2048, "ring_gear": 2048, "collar": 1024, "deck_plate": 1024, "bearing_panel": 1024, "fin_ring": 1024, "spar": 1024, "coupler": 1024, "pinion": 512, "post": 256, "shaft": 256, "cap_screw": 128}
 
 
@@ -88,7 +89,8 @@ for name, placements in PLACEMENTS.items():
     print("PART", name, "tris", sum(len(p.vertices) - 2 for p in obj.data.polygons), "instances", len(placements))
 bpy.context.view_layer.update()
 
-for name, obj in primary.items():
+# REUSE_BAKE=1 keeps existing maps. Only valid when triangles are unchanged, such as a normals-only edit.
+for name, obj in ({} if os.environ.get("REUSE_BAKE") else primary).items():
     size = RES[name]
     img = bpy.data.images.new(name + "_ao", size, size, alpha=False)
     mat = bpy.data.materials.new(name + "_bake")
@@ -105,6 +107,33 @@ for name, obj in primary.items():
     img.filepath_raw = os.path.join(SRC, name + ".ao.png")
     img.file_format = "PNG"
     img.save()
+    # Convex edges, where coatings wear first: how far a rounded-edge normal leans from the true normal.
+    edge = bpy.data.images.new(name + "_edge", size, size, alpha=False)
+    node.image = edge
+    nt = mat.node_tree
+    bevel = nt.nodes.new("ShaderNodeBevel")
+    bevel.samples = 8
+    bevel.inputs["Radius"].default_value = EDGE_RADIUS
+    geo = nt.nodes.new("ShaderNodeNewGeometry")
+    dist = nt.nodes.new("ShaderNodeVectorMath")
+    dist.operation = "DISTANCE"
+    gain = nt.nodes.new("ShaderNodeMath")
+    gain.operation = "MULTIPLY"
+    gain.inputs[1].default_value = 1.6
+    emit = nt.nodes.new("ShaderNodeEmission")
+    out = next(n for n in nt.nodes if n.type == "OUTPUT_MATERIAL")
+    nt.links.new(bevel.outputs["Normal"], dist.inputs[0])
+    nt.links.new(geo.outputs["Normal"], dist.inputs[1])
+    nt.links.new(dist.outputs["Value"], gain.inputs[0])
+    nt.links.new(gain.outputs[0], emit.inputs["Strength"])
+    nt.links.new(emit.outputs[0], out.inputs["Surface"])
+    scene.cycles.samples = 16
+    nt.nodes.active = node
+    bpy.ops.object.bake(type="EMIT", margin=6)
+    scene.cycles.samples = 64
+    edge.filepath_raw = os.path.join(SRC, name + ".edge.png")
+    edge.file_format = "PNG"
+    edge.save()
     obj.data.materials.clear()
     print("BAKED", name)
 

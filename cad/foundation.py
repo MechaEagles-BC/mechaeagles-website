@@ -300,8 +300,10 @@ def refine_arcs(verts, tris, max_seg=180.0):
     return verts, done
 
 
-def corner_normals(verts, tris, crease_deg=28.0):
-    """Per-corner normals: flat faces stay exactly flat, and only faces within the crease angle blend together."""
+def corner_normals(verts, tris, crease_deg=28.0, turned=False):
+    """Per-corner normals: flat faces stay exactly flat, and only faces within the crease angle blend together.
+    On turned parts, thin triangles can skew a blended normal sideways and make a curved chamfer ripple. A surface of
+    revolution has no sideways component, so it is removed wherever a face is clearly on such a surface."""
     def unit(v):
         m = math.hypot(*v) or 1.0
         return (v[0] / m, v[1] / m, v[2] / m)
@@ -316,6 +318,11 @@ def corner_normals(verts, tris, crease_deg=28.0):
         for x in (a, b, c):
             around.setdefault(x, []).append(i)
     limit = math.cos(math.radians(crease_deg))
+
+    def sideways(p):
+        r = math.hypot(p[0], p[1]) or 1.0
+        return (-p[1] / r, p[0] / r, 0.0)
+
     out = []
     for i, t in enumerate(tris):
         n0 = face[i][0]
@@ -326,6 +333,10 @@ def corner_normals(verts, tris, crease_deg=28.0):
                 n, area = face[j]
                 if sum(p * q for p, q in zip(n0, n)) > limit:
                     s = [s[k] + n[k] * area for k in range(3)]
+            if turned and abs(sum(p * q for p, q in zip(n0, sideways(verts[x])))) < 0.5:
+                t_axis = sideways(verts[x])
+                along = sum(p * q for p, q in zip(s, t_axis))
+                s = [s[k] - along * t_axis[k] for k in range(3)]
             corners.append(unit(s))
         out.append(corners)
     return out
@@ -353,7 +364,7 @@ def write_obj(shape, path, tolerance=1.0, angular=0.45, arcs=False):
         if arcs:
             w, t = refine_arcs(w, t)
         base = len(verts)
-        normals += corner_normals(w, t)
+        normals += corner_normals(w, t, turned=arcs)
         verts += w
         tris += [(a + base, b + base, c + base) for a, b, c in t]
     with open(path, "w", encoding="ascii") as f:

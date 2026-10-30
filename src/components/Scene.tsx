@@ -37,7 +37,53 @@ const shared = {
 };
 
 // ---------- machined metal ----------
-type Finish = { color: string; roughness: number; metalness?: number; turned?: number; blast?: number; scale?: boolean };
+type Finish = { color: string; roughness: number; metalness?: number; turned?: number; blast?: number; scale?: boolean; wear?: number; stencil?: 1 | 2 };
+
+// ---------- markings, drawn once from the typeface the page already uses ----------
+function makeMarkings() {
+  const font = (px: number) => `500 ${px}px "IBM Plex Mono", Consolas, monospace`;
+  const scaleCanvas = document.createElement("canvas");
+  scaleCanvas.width = 8192;
+  scaleCanvas.height = 96;
+  const stencilCanvas = document.createElement("canvas");
+  stencilCanvas.width = stencilCanvas.height = 1024;
+  const scaleTex = new THREE.CanvasTexture(scaleCanvas);
+  const stencilTex = new THREE.CanvasTexture(stencilCanvas);
+  scaleTex.wrapS = THREE.RepeatWrapping;
+  scaleTex.anisotropy = stencilTex.anisotropy = 8;
+  const draw = () => {
+    const g = scaleCanvas.getContext("2d")!;
+    g.clearRect(0, 0, 8192, 96);
+    g.fillStyle = "#fff";
+    g.font = font(58);
+    g.textAlign = "center";
+    g.textBaseline = "middle";
+    // A strip pixel is about 3.7 mm around the ring but 1.15 mm across it, so letters are drawn narrow to read true.
+    for (let deg = 0; deg < 360; deg += 15) {
+      g.save();
+      g.translate((deg / 360) * 8192, 50);
+      g.scale(0.32, 1);
+      g.fillText(String(deg).padStart(3, "0"), 0, 0);
+      g.restore();
+    }
+    const c = stencilCanvas.getContext("2d")!;
+    c.clearRect(0, 0, 1024, 1024);
+    c.fillStyle = "#fff";
+    c.font = font(44);
+    c.textAlign = "center";
+    c.textBaseline = "middle";
+    // 4 columns by 16 rows: 24 bearing panels, then 32 deck plates
+    for (let i = 0; i < 56; i++) {
+      const label = i < 24 ? `BR-${String(i + 1).padStart(2, "0")}` : `DK-${String(i - 23).padStart(2, "0")}`;
+      c.fillText(label, ((i % 4) + 0.5) * 256, (Math.floor(i / 4) + 0.5) * 64);
+    }
+    scaleTex.needsUpdate = stencilTex.needsUpdate = true;
+  };
+  draw();
+  document.fonts?.load(font(44)).then(draw);
+  return { scaleTex, stencilTex };
+}
+const markings = { current: null as null | ReturnType<typeof makeMarkings> };
 
 const NOISE = /* glsl */ `
   float hash3(vec3 p){ p = fract(p * 0.3183099 + 0.1); p *= 17.0; return fract(p.x * p.y * p.z * (p.x + p.y + p.z)); }
@@ -47,20 +93,28 @@ const NOISE = /* glsl */ `
 `;
 
 /** Standard PBR plus finish detail computed in part space, so it needs no UVs, never tiles and fades out before it can shimmer. */
-function machined({ color, roughness, metalness = 1, turned = 0, blast = 0, scale = false }: Finish, ao?: THREE.Texture) {
+function machined({ color, roughness, metalness = 1, turned = 0, blast = 0, scale = false, wear = 0, stencil }: Finish, ao?: THREE.Texture) {
+  markings.current ??= makeMarkings();
+  const { scaleTex, stencilTex } = markings.current;
   const m = new THREE.MeshStandardMaterial({ color, roughness, metalness, aoMap: ao ?? null, aoMapIntensity: 0.9 });
   m.onBeforeCompile = (s) => {
     Object.assign(s.uniforms, shared);
     s.uniforms.uTurned = { value: turned };
     s.uniforms.uBlast = { value: blast };
     s.uniforms.uScale = { value: scale ? 1 : 0 };
+    s.uniforms.uWear = { value: wear };
+    s.uniforms.uStencilKind = { value: stencil ?? 0 };
+    s.uniforms.uScaleTex = { value: scaleTex };
+    s.uniforms.uStencilTex = { value: stencilTex };
     s.vertexShader = s.vertexShader
-      .replace("#include <common>", "#include <common>\nvarying vec3 vPart; varying vec3 vWorld;")
+      .replace("#include <common>", "#include <common>\nvarying vec3 vPart; varying vec3 vWorld; varying float vInst;")
       .replace(
         "#include <begin_vertex>",
         `#include <begin_vertex>
          vPart = position;
+         vInst = 0.0;
          #ifdef USE_INSTANCING
+           vInst = float(gl_InstanceID);
            vWorld = (modelMatrix * instanceMatrix * vec4(position, 1.0)).xyz;
          #else
            vWorld = (modelMatrix * vec4(position, 1.0)).xyz;
@@ -70,8 +124,9 @@ function machined({ color, roughness, metalness = 1, turned = 0, blast = 0, scal
       .replace(
         "#include <common>",
         `#include <common>
-         varying vec3 vPart; varying vec3 vWorld;
-         uniform float uTurned, uBlast, uScale, uTime, uWave, uWaveAmp; uniform vec3 uAccent;
+         varying vec3 vPart; varying vec3 vWorld; varying float vInst;
+         uniform float uTurned, uBlast, uScale, uWear, uStencilKind, uTime, uWave, uWaveAmp; uniform vec3 uAccent;
+         uniform sampler2D uScaleTex, uStencilTex;
          ${NOISE}`,
       )
       .replace(
@@ -92,16 +147,51 @@ function machined({ color, roughness, metalness = 1, turned = 0, blast = 0, scal
            float major = 1.0 - smoothstep(0.0, 0.07, abs(fract(deg / 15.0 + 0.5) - 0.5) * 15.0);
            float band = step(4.94, partR) * step(partR, 5.02);
            float longBand = step(4.86, partR) * step(partR, 5.02);
-           etch = max(fine * band, major * longBand) * step(0.28, vPart.y);
+           float rNum = (4.86 - partR) / 0.11;
+           // The angle wraps at the seam, so its derivative comes from a coordinate that doesn't.
+           vec2 numUv = vec2(1.0 - fract(partA / 6.2831853 + 1.0), rNum);
+           vec2 dx = vec2(fwidth(partR) / 4.8 / 6.2831853, dFdx(rNum));
+           vec2 dy = vec2(fwidth(partR) / 4.8 / 6.2831853, dFdy(rNum));
+           float numerals = textureGrad(uScaleTex, numUv, dx, dy).r * step(0.0, rNum) * step(rNum, 1.0);
+           etch = max(max(fine * band, major * longBand), numerals) * step(0.28, vPart.y);
            roughnessFactor = mix(roughnessFactor, 0.9, etch);
-         }`,
+         }
+         // stamped identifiers, read from outside the platform
+         float paint = 0.0;
+         if (uStencilKind > 0.5) {
+           bool panel = uStencilKind < 1.5;
+           float index = panel ? vInst : vInst + 24.0;
+           vec2 box = panel ? vec2(0.7, 0.175) : vec2(0.5, 0.125);
+           vec2 origin = panel ? vec2(-0.35, 6.27) : vec2(0.09, 8.14);
+           vec2 uv = vec2((origin.x + box.x - vPart.z) / box.x, (origin.y + box.y - vPart.x) / box.y);
+           bool onFace = panel ? vPart.y > 0.62 : (vPart.y > 0.44 && vPart.y < 0.46);
+           vec2 cellBase = vec2(mod(index, 4.0), 15.0 - floor(index / 4.0));
+           vec2 scaleUv = vec2(4.0, 16.0);
+           float inside = step(0.0, uv.x) * step(uv.x, 1.0) * step(0.0, uv.y) * step(uv.y, 1.0) * (onFace ? 1.0 : 0.0);
+           float letters = textureGrad(uStencilTex, (cellBase + clamp(uv, 0.0, 1.0)) / scaleUv, dFdx(uv) / scaleUv, dFdy(uv) / scaleUv).r;
+           paint = inside * letters * (0.55 + 0.45 * smoothstep(0.3, 0.6, vnoise(vPart * 90.0)));
+           roughnessFactor = mix(roughnessFactor, 0.85, paint);
+         }
+         // coatings wear back to bare metal on convex edges, broken up so the wear never reads as an outline
+         #ifdef USE_AOMAP
+           float edgeMask = texture2D(aoMap, vAoMapUv).g;
+         #else
+           float edgeMask = 0.0;
+         #endif
+         float wearBreak = vnoise(vPart * 11.0) * 0.55 + vnoise(vPart * 47.0) * 0.45;
+         float worn = smoothstep(0.3, 0.7, edgeMask) * smoothstep(0.42, 0.68, wearBreak) * uWear * fadeB;
+         roughnessFactor = mix(roughnessFactor, 0.4, worn);`,
       )
       .replace("#include <color_fragment>", "#include <color_fragment>\n")
       .replace(
         "#include <metalnessmap_fragment>",
         `#include <metalnessmap_fragment>
          metalnessFactor = mix(metalnessFactor, 0.2, etch);
-         diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.012), etch);`,
+         diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.012), etch);
+         diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.6, 0.61, 0.63), worn);
+         metalnessFactor = mix(metalnessFactor, 1.0, worn);
+         diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.62, 0.64, 0.66), paint);
+         metalnessFactor = mix(metalnessFactor, 0.05, paint);`,
       )
       .replace(
         "#include <emissivemap_fragment>",
@@ -111,7 +201,7 @@ function machined({ color, roughness, metalness = 1, turned = 0, blast = 0, scal
          totalEmissiveRadiance += uAccent * rip * 0.16;`,
       );
   };
-  m.customProgramCacheKey = () => `machined-${turned > 0}-${blast > 0}-${scale}`;
+  m.customProgramCacheKey = () => "machined";
   return m;
 }
 
@@ -210,16 +300,16 @@ function useAssets() {
   const mats = useMemo(
     () => ({
       plinth: machined({ color: "#44484f", roughness: 0.66, metalness: 0.95, blast: 1 }, ao.plinth),
-      deck_plate: machined({ color: "#5c6168", roughness: 0.62, metalness: 0.98, blast: 1 }, ao.deck_plate),
-      bearing_panel: machined({ color: "#858a92", roughness: 0.5, blast: 0.8 }, ao.bearing_panel),
+      deck_plate: machined({ color: "#5c6168", roughness: 0.62, metalness: 0.98, blast: 1, wear: 0.45, stencil: 2 }, ao.deck_plate),
+      bearing_panel: machined({ color: "#858a92", roughness: 0.5, blast: 0.8, wear: 0.4, stencil: 1 }, ao.bearing_panel),
       ring_gear: machined({ color: "#858a92", roughness: 0.5, turned: 1, scale: true }, ao.ring_gear),
       pinion: machined({ color: "#b3b7bd", roughness: 0.42, turned: 1 }, ao.pinion),
       shaft: machined({ color: "#2b2d31", roughness: 0.4 }, ao.shaft),
       fin_ring: machined({ color: "#8a8e95", roughness: 0.44, turned: 0.8 }, ao.fin_ring),
       collar: machined({ color: "#8e9299", roughness: 0.42, turned: 1 }, ao.collar),
-      spar: machined({ color: "#6a6f77", roughness: 0.56, blast: 1 }, ao.spar),
+      spar: machined({ color: "#6a6f77", roughness: 0.56, blast: 1, wear: 0.45 }, ao.spar),
       post: machined({ color: "#b1b5bb", roughness: 0.36, turned: 0.6 }, ao.post),
-      coupler: machined({ color: "#585c64", roughness: 0.58, metalness: 0.98, blast: 1 }, ao.coupler),
+      coupler: machined({ color: "#585c64", roughness: 0.58, metalness: 0.98, blast: 1, wear: 0.5 }, ao.coupler),
       screw: new THREE.MeshStandardMaterial({ color: "#4a4c51", metalness: 0.95, roughness: 0.4 }),
     }),
     // useTexture returns a new record each render; the cached textures inside it never change
