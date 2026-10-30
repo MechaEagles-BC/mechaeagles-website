@@ -9,6 +9,7 @@ import { Bloom, EffectComposer, Noise, ToneMapping, Vignette } from "@react-thre
 import { BlendFunction, ToneMappingMode } from "postprocessing";
 import * as THREE from "three";
 import { TEAMS, type Fx } from "./teams";
+import Hologram from "./Hologram";
 
 const BASE = "/models/foundation/";
 const PARTS = ["plinth", "deck_plate", "bearing_panel", "ring_gear", "pinion", "shaft", "fin_ring", "collar", "spar", "post", "coupler"] as const;
@@ -29,6 +30,7 @@ const TAU = Math.PI * 2;
 const Y = new THREE.Vector3(0, 1, 0);
 
 // ---------- shared light state ----------
+export type SharedLight = typeof shared;
 const shared = {
   uTime: { value: 0 },
   uWave: { value: -1 },
@@ -261,7 +263,7 @@ function sparLineMaterial(color: string) {
 }
 
 // ---------- assets ----------
-function usePartGeometry(name: string) {
+export function usePartGeometry(name: string) {
   const { scene } = useGLTF(`${BASE}${name}.glb`, false, true);
   return useMemo(() => {
     let found: THREE.BufferGeometry | null = null;
@@ -516,6 +518,7 @@ function Platform({ fx, onHover, onSelect, onReady }: { fx: RefObject<Fx>; onHov
       <Instanced geometry={screw} material={mats.screw} matrices={place.collarScrews} receive={false} />
       <mesh geometry={shapes.surface} material={emissive.surface} position={[0, 0.502, 0]} />
       <pointLight ref={glow} position={[0, 1.6, 0]} intensity={0} distance={11} decay={1.6} />
+      <Hologram fx={fx} shared={shared} />
 
       {/* fixed spars and team couplers */}
       <Instanced geometry={screw} material={mats.screw} matrices={place.couplerScrews} receive={false} />
@@ -540,7 +543,7 @@ function Platform({ fx, onHover, onSelect, onReady }: { fx: RefObject<Fx>; onHov
 
 function CameraRig({ closeup }: { closeup: number[] | null }) {
   const home = useMemo(() => new THREE.Vector3(0, 14.2, 25), []);
-  const look = useMemo(() => new THREE.Vector3(0, -1.5, 0.6), []);
+  const look = useMemo(() => new THREE.Vector3(0, -0.9, 0.6), []);
   useFrame((state, rawDt) => {
     const dt = Math.min(rawDt, 0.05);
     const cam = state.camera;
