@@ -1,0 +1,35 @@
+@import "@fontsource-variable/archivo/wdth.css";
+@import "@fontsource/ibm-plex-mono/400.css";
+@import "@fontsource/ibm-plex-mono/500.css";
+
+:root {
+  --ink: #05060a;
+  --chalk: #eef0f2;
+  --soft: #a4a9b2;
+  --line: rgb(255 255 255 / 0.16);
+  --mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+  --display: "Archivo Variable", "Arial Narrow", Arial, sans-serif;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; background: var(--ink); color: var(--chalk); font: 14px/1.5 var(--mono); }
+.lab { position: fixed; inset: 0; overflow: hidden; }
+.lab__canvas { position: absolute; inset: 0; }
+.lab__head { position: absolute; left: clamp(16px, 3vw, 40px); top: clamp(16px, 3vw, 36px); pointer-events: none; max-width: calc(100vw - 32px); }
+.lab__kicker { margin: 0 0 8px; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--soft); }
+.lab__title { margin: 0; font: 800 clamp(24px, 2.6vw, 36px)/1 var(--display); font-stretch: 118%; letter-spacing: -0.005em; text-transform: uppercase; }
+.lab__note { margin: 10px 0 0; font-size: 12px; color: var(--soft); }
+.lab__foot { position: absolute; inset: auto clamp(16px, 3vw, 40px) clamp(14px, 2.4vw, 28px); display: grid; gap: 10px; }
+.lab__status { margin: 0; min-height: 1.5em; font-size: 12px; letter-spacing: 0.04em; color: var(--soft); }
+.lab__teams { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.lab__team { --c: #fff; display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 10px 14px; border: 1px solid var(--line); border-radius: 2px; background: rgb(6 8 12 / 0.62); color: var(--chalk); font: 500 13px/1.2 var(--mono); text-align: left; cursor: pointer; transition: border-color 0.2s, background 0.2s; }
+.lab__team i { flex: none; width: 8px; height: 8px; background: var(--c); }
+.lab__team:hover, .lab__team:focus-visible { border-color: var(--c); background: color-mix(in srgb, var(--c) 12%, rgb(6 8 12 / 0.82)); }
+.lab__team:focus-visible { outline: 2px solid var(--c); outline-offset: 2px; }
+.lab__team[aria-pressed="true"] { border-color: var(--c); background: color-mix(in srgb, var(--c) 22%, rgb(6 8 12 / 0.82)); }
+.lab__fallback { position: absolute; inset: 0; display: grid; place-items: center; padding: 24px; color: var(--soft); text-align: center; }
+.note { padding: 24px; }
+@media (max-width: 700px) {
+  .lab__teams { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .lab__team { font-size: 12px; padding: 8px 10px; }
+}
