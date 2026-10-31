@@ -12,12 +12,16 @@ elif WHAT == "wide":
     MAP, SEQ, SIZE = "MC_Land", "Seq_LandWide", (2400, 1200)
 elif WHAT == "tall":
     MAP, SEQ, SIZE = "MC_Land", "Seq_LandTall", (1200, 3000)
-elif WHAT == "space":
-    MAP, SEQ, SIZE = "MC_Space", "Seq_Space", (2400, 1800) if MODE == "final" else (1200, 900)
-elif WHAT == "space-wide":
-    MAP, SEQ, SIZE = "MC_Space", "Seq_SpaceWide", (2400, 1200)
-elif WHAT == "space-tall":
-    MAP, SEQ, SIZE = "MC_Space", "Seq_SpaceTall", (1200, 3000)
+elif WHAT.startswith("space"):
+    suffix = "Matte" if WHAT.endswith("matte") else ""
+    shape = WHAT.replace("-matte", "")
+    MAP = "MC_Space" + suffix
+    if shape == "space-wide":
+        SEQ, SIZE = "Seq_SpaceWide" + suffix, (2400, 1200)
+    elif shape == "space-tall":
+        SEQ, SIZE = "Seq_SpaceTall" + suffix, (1200, 3000)
+    else:
+        SEQ, SIZE = "Seq_Space" + suffix, (2400, 1800)
 else:
     MAP, SEQ, SIZE = "MC_LandEnv", "Seq_LandEnv", (512, 512)
 

@@ -1,0 +1,8 @@
+---
+/** The one world behind every page and section: the turning sky in space, and leaves on the breeze in the valley. Fixed, so scrolling never leaves it. */
+const LEAVES: [number, number, number, string][] = [[6, 21, 0, "#7f9a4a"], [18, 26, 6, "#5f7f3a"], [33, 23, 11, "#a7a35a"], [47, 29, 3, "#6d8a40"], [64, 25, 14, "#8aa04e"], [78, 28, 8, "#b4a862"], [91, 24, 18, "#6d8a40"]];
+---
+<canvas id="sky" aria-hidden="true"></canvas>
+<div class="breeze" aria-hidden="true">
+  {LEAVES.map((l) => <i style={`--x:${l[0]}%;--t:${l[1]}s;--d:${l[2]}s;--leaf:${l[3]}`}></i>)}
+</div>

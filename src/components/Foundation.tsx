@@ -5,6 +5,7 @@
 import { Component, createRef, lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { flushSync } from "react-dom";
 import { captionTransform, filmFit, plateFor, SIGNS, TEAMS, type Fx, type World } from "./teams";
+import { startSky } from "./sky";
 import ValleyFx from "./ValleyFx";
 
 const Scene = lazy(() => import("./Scene"));
@@ -12,7 +13,6 @@ const Scene = lazy(() => import("./Scene"));
 // Where each caption sits in the 1920 x 1080 poster, for visitors and moments without live 3D.
 const STILL_ANCHORS = [{ x: 278, y: 886 }, { x: 400, y: 558 }, { x: 1520, y: 558 }, { x: 1642, y: 886 }];
 const STILL = { w: 1920, h: 1080 };
-const ARRIVAL_TURN = 0.5; // starts a little turned and settles, which shows it can move
 const DRAG_THRESHOLD = 6;
 const OPEN_DELAY = 520; // long enough to see the pulse leave the card
 
@@ -54,7 +54,8 @@ class GLBoundary extends Component<{ onError: () => void; children: ReactNode },
 const OTHER: Record<World, World> = { valley: "space", space: "valley" };
 
 const MENU_LINKS = [
-  { label: "People", href: "#people" },
+  { label: "Teams", href: "/teams/" },
+  { label: "People", href: "/people/" },
   { label: "Sponsors", href: "/sponsors/" },
   { label: "About", href: "/about/" },
   { label: "Log", href: "/log/" },
@@ -65,7 +66,7 @@ export default function Foundation({ peopleCount, latestLog }: { peopleCount: nu
   const live = useMemo(canRun3D, []);
   const capture = useMemo(() => import.meta.env.DEV && new URLSearchParams(location.search).has("capture"), []);
   const lit = useMemo(() => import.meta.env.DEV && new URLSearchParams(location.search).has("lit"), []);
-  const fx = useRef<Fx>({ hover: -1, held: -1, pulse: -1, pulseT: 0, rippleT: -1, boost: 0, spin: capture ? 0 : ARRIVAL_TURN, spinGoal: 0, dragging: false, dragged: false, lit });
+  const fx = useRef<Fx>({ hover: -1, held: -1, pulse: -1, pulseT: 0, rippleT: -1, boost: 0, spin: 0, spinGoal: 0, dragging: false, dragged: false, lit });
   const [held, setHeld] = useState(-1);
   const [hovered, setHovered] = useState(-1);
   const [ready, setReady] = useState(false);
@@ -129,8 +130,8 @@ export default function Foundation({ peopleCount, latestLog }: { peopleCount: nu
     if (img && img.getAttribute("src") !== plate.src) img.src = plate.src;
     return img;
   }, []);
-  // The new world opens as a circle from the button, once its picture is ready, so the change is one clean move.
-  const switchWorld = useCallback((e: React.MouseEvent) => {
+  // The worlds dissolve into each other once the new picture is ready, so the change is one clean move.
+  const switchWorld = useCallback(() => {
     const next = OTHER[document.documentElement.dataset.theme === "space" ? "space" : "valley"];
     const apply = () => {
       document.documentElement.dataset.theme = next;
@@ -144,20 +145,11 @@ export default function Foundation({ peopleCount, latestLog }: { peopleCount: nu
     } catch {
       // private windows can refuse storage; the choice still holds for this page
     }
-    const button = e.currentTarget.getBoundingClientRect(); // React clears the event before the picture has decoded
     const img = loadPlate(next);
     (img ? img.decode().catch(() => undefined) : Promise.resolve()).then(() => {
-      const doc = document as Document & { startViewTransition?: (cb: () => void) => { ready: Promise<void> } };
+      const doc = document as Document & { startViewTransition?: (cb: () => void) => unknown };
       if (!doc.startViewTransition || matchMedia("(prefers-reduced-motion: reduce)").matches) return apply();
-      const x = button.left + button.width / 2;
-      const y = button.top + button.height / 2;
-      const reach = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y));
-      doc.startViewTransition(apply).ready.then(() => {
-        document.documentElement.animate(
-          { clipPath: [`circle(0 at ${x}px ${y}px)`, `circle(${reach}px at ${x}px ${y}px)`] },
-          { duration: 1100, easing: "cubic-bezier(0.5, 0, 0.15, 1)", pseudoElement: "::view-transition-new(root)" },
-        );
-      });
+      doc.startViewTransition(apply);
     });
   }, [loadPlate]);
   useEffect(() => {
@@ -212,6 +204,11 @@ export default function Foundation({ peopleCount, latestLog }: { peopleCount: nu
     return () => removeEventListener("resize", place);
   }, [showing3D, ready, labelRefs]);
 
+  useEffect(() => {
+    const sky = document.querySelector<HTMLCanvasElement>("#sky");
+    if (sky) return startSky(sky, live);
+  }, [live]);
+
   // No drawing while the stage is scrolled out of view.
   useEffect(() => {
     if (!stageRef.current) return;
@@ -241,8 +238,7 @@ export default function Foundation({ peopleCount, latestLog }: { peopleCount: nu
     };
     const up = () => {
       start = null;
-      f.dragging = false;
-      f.spinGoal = 0;
+      f.dragging = false; // it stays where it was put, and never springs home
       document.documentElement.classList.remove("turning");
     };
     stage.addEventListener("pointerdown", down);
@@ -258,7 +254,6 @@ export default function Foundation({ peopleCount, latestLog }: { peopleCount: nu
   }, [showing3D]);
 
   useEffect(() => {
-    let back = 0;
     const onKey = (e: KeyboardEvent) => {
       if (menu) {
         if (e.key === "Escape") closeMenu();
@@ -277,16 +272,11 @@ export default function Foundation({ peopleCount, latestLog }: { peopleCount: nu
         return;
       }
       if (!active || (e.key !== "ArrowLeft" && e.key !== "ArrowRight")) return;
-      fx.current.spinGoal = (e.key === "ArrowLeft" ? -1 : 1) * 0.7;
+      fx.current.spinGoal += (e.key === "ArrowLeft" ? -1 : 1) * 0.35;
       setTurned(true);
-      clearTimeout(back);
-      back = window.setTimeout(() => (fx.current.spinGoal = 0), 900);
     };
     addEventListener("keydown", onKey);
-    return () => {
-      removeEventListener("keydown", onKey);
-      clearTimeout(back);
-    };
+    return () => removeEventListener("keydown", onKey);
   }, [menu, active, closeMenu]);
 
   useEffect(() => {

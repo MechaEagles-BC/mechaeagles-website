@@ -118,6 +118,8 @@ def build(map_path, proxies):
     spawn("trees", MATS["trees"])
     kit = {}
     for it in PLACED["items"]:
+        if it.get("live") == "grass":
+            continue  # drawn live in src/components/Grass.tsx
         small = it["name"].startswith(("Flower", "Grass", "Plant"))
         if (not proxies and small) or it["name"] not in KIT:
             continue  # the reflection map doesn't need thousands of tufts
@@ -128,6 +130,10 @@ def build(map_path, proxies):
         c.set_mobility(unreal.ComponentMobility.MOVABLE)
         if small:
             c.set_editor_property("cast_shadow", False)
+        if it.get("live") == "tree" and proxies:
+            # Drawn live in src/components/Valley.tsx. Hidden here, but its shadow stays on the ground.
+            a.set_actor_hidden_in_game(True)
+            c.set_editor_property("cast_hidden_shadow", True)
     # The live platform, hologram and portals are composited over this plate, so nothing stands in their place.
 
     # Soft high daylight over the viewer's left shoulder, as in the pack's preview.

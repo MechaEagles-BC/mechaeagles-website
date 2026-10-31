@@ -1,11 +1,11 @@
 /**
- * What moves in the valley that isn't part of its picture: a flock crossing the sky, seeds drifting through the light, and the wooden signpost.
- * The wind in the trees and the cloud shadows are in ValleyFx.tsx, which works on the picture itself.
+ * What moves in the valley: real trees bending in the breeze, leaves coming down, a flock crossing the sky, and the wooden signpost.
+ * Nothing here warps the picture. Everything that moves is a model in the world, and the grass is in Grass.tsx.
  */
-import { useMemo, useRef, type RefObject } from "react";
+import { useEffect, useMemo, useRef, useState, type RefObject } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
+import { useGLTF } from "@react-three/drei";
 import * as THREE from "three";
-import { GLASS } from "./additive";
 import { filmPoint } from "./filmPoint";
 import { SIGNS } from "./teams";
 
@@ -74,42 +74,163 @@ export function Birds() {
   );
 }
 
-// ---------- seeds in the light ----------
-const SEEDS = 130;
+// ---------- the trees: real models, bending from the trunk, with leaves that also flutter ----------
+const breeze = { value: 0 };
+// The dusk capture dims its picture of the valley, so the trees have to fall with it.
+const DUSK = import.meta.env.DEV && new URLSearchParams(location.search).has("lit");
 
-export function Seeds() {
+function swayMaterial(source: THREE.MeshStandardMaterial) {
+  const leaf = source.alphaTest > 0 || source.transparent || /leaf|leaves/i.test(source.name + (source.map?.name ?? ""));
+  const m = new THREE.MeshStandardMaterial({
+    map: source.map,
+    side: THREE.DoubleSide,
+    alphaTest: leaf ? 0.35 : 0,
+    roughness: 0.9,
+    metalness: 0,
+    envMapIntensity: 0.55,
+    emissive: new THREE.Color(0xffffff),
+    emissiveMap: source.map,
+    color: new THREE.Color(DUSK ? 0x24282c : 0xffffff),
+    emissiveIntensity: (leaf ? 0.26 : 0.16) * (DUSK ? 0.06 : 1), // the valley's painted look: colour stays bright in shade
+  });
+  m.onBeforeCompile = (s) => {
+    s.uniforms.uBreeze = breeze;
+    s.vertexShader = s.vertexShader
+      .replace("#include <common>", "#include <common>\nuniform float uBreeze;")
+      .replace(
+        "#include <begin_vertex>",
+        /* glsl */ `#include <begin_vertex>
+         vec3 rootAt = instanceMatrix[3].xyz;
+         // A gust rolls across the valley, so neighbours lean one after another, not together.
+         float wave = uBreeze * 0.9 - rootAt.x * 0.045 + rootAt.z * 0.03;
+         float gust = 0.55 + 0.45 * sin(wave * 0.31) * sin(wave * 0.17 + 1.1);
+         float lean = (sin(wave) * 0.7 + sin(wave * 2.17 + 0.7) * 0.3) * gust;
+         // The higher up the tree, the further it moves. The trunk stays planted.
+         float rise = transformed.y / 6.0;
+         float bend = rise * rise;
+         transformed.x += bend * lean * 0.2;
+         transformed.z += bend * lean * 0.09 + bend * sin(wave * 0.63 + 0.9) * 0.05;
+         ${leaf ? `float flutter = sin(uBreeze * 3.4 + position.x * 2.3 + position.y * 3.1 + position.z * 1.9);
+         transformed += normal * flutter * 0.035 * (0.5 + gust) * min(rise, 1.0);
+         transformed.y += flutter * 0.02 * (0.5 + gust);` : ""}`,
+      );
+  };
+  m.customProgramCacheKey = () => (leaf ? "sway-leaf" : "sway-bark");
+  return m;
+}
+
+export function Trees() {
+  const { scene } = useGLTF("/valley/trees.glb", false, true);
+  const [spots, setSpots] = useState<Record<string, number[][]> | null>(null);
+  useEffect(() => {
+    let stale = false;
+    fetch("/valley/trees.json").then((r) => r.json()).then((d) => stale || setSpots(d)).catch(() => undefined);
+    return () => {
+      stale = true;
+    };
+  }, []);
+  const batches = useMemo(() => {
+    if (!spots) return [];
+    const shared = new Map<THREE.Material, THREE.Material>();
+    const out: { geometry: THREE.BufferGeometry; material: THREE.Material; matrices: THREE.Matrix4[] }[] = [];
+    scene.updateMatrixWorld(true);
+    scene.traverse((o) => {
+      const mesh = o as THREE.Mesh;
+      if (!mesh.isMesh) return;
+      let owner: THREE.Object3D | null = mesh;
+      while (owner && !Object.keys(spots).some((k) => owner!.name.startsWith(k))) owner = owner.parent;
+      const key = owner && Object.keys(spots).find((k) => owner!.name.startsWith(k));
+      if (!key) return;
+      const source = mesh.material as THREE.MeshStandardMaterial;
+      if (!shared.has(source)) shared.set(source, swayMaterial(source));
+      // Each model was imported at the origin, so its own transform is the part to keep.
+      // Compressed models store quantized attributes scaled by their node, so expand to floats before applying it.
+      const geometry = new THREE.BufferGeometry();
+      for (const attr of ["position", "normal", "uv"]) {
+        const from = mesh.geometry.getAttribute(attr);
+        if (!from) continue;
+        const floats = new Float32Array(from.count * from.itemSize);
+        for (let i = 0; i < from.count; i++) for (let c = 0; c < from.itemSize; c++) floats[i * from.itemSize + c] = from.getComponent(i, c);
+        geometry.setAttribute(attr, new THREE.BufferAttribute(floats, from.itemSize));
+      }
+      geometry.setIndex(mesh.geometry.getIndex());
+      geometry.applyMatrix4(mesh.matrixWorld);
+      const q = new THREE.Quaternion();
+      out.push({
+        geometry,
+        material: shared.get(source)!,
+        matrices: spots[key].map(([x, y, z, yaw, s]) => new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), (yaw * Math.PI) / 180).clone(), new THREE.Vector3(s, s, s))),
+      });
+    });
+    return out;
+  }, [scene, spots]);
+  useFrame((_, dt) => {
+    breeze.value += Math.min(dt, 0.05);
+  });
+  return (
+    <>
+      {batches.map((b, i) => (
+        <instancedMesh
+          key={i}
+          args={[b.geometry, b.material, b.matrices.length]}
+          frustumCulled={false}
+          ref={(mesh) => {
+            if (!mesh) return;
+            b.matrices.forEach((m, n) => mesh.setMatrixAt(n, m));
+            mesh.instanceMatrix.needsUpdate = true;
+          }}
+        />
+      ))}
+    </>
+  );
+}
+
+// ---------- falling leaves: a few at a time, each turning as it comes down ----------
+const LEAVES = 70;
+
+export function FallingLeaves() {
   const { geometry, material } = useMemo(() => {
     const rand = seeded(67);
-    const pos: number[] = [];
+    const g = new THREE.InstancedBufferGeometry();
+    g.setAttribute("position", new THREE.Float32BufferAttribute([-1, 0, 0, 0, -0.45, 0, 1, 0, 0, 0, 0.45, 0], 3));
+    g.setIndex([0, 1, 2, 0, 2, 3]);
+    const start: number[] = [];
     const seed: number[] = [];
-    for (let i = 0; i < SEEDS; i++) {
-      pos.push(-22 + rand() * 44, 0.4 + rand() * 7, -16 + rand() * 30);
-      seed.push(rand() * 6.28, 0.5 + rand(), rand());
+    // They come down near the trees that drop them, not out of an empty sky.
+    const GROVES = [[-19, -3, 6], [-24, -13, 6], [20, -25, 6], [25, -31, 6], [-46, -42, 12], [44, -74, 14]];
+    for (let i = 0; i < LEAVES; i++) {
+      const [cx, cz, r] = GROVES[Math.floor(rand() * GROVES.length)];
+      start.push(cx + (rand() - 0.5) * r * 2, 9 + rand() * 8, cz + (rand() - 0.5) * r * 2);
+      seed.push(rand() * 100, 0.7 + rand() * 0.6, rand());
     }
-    const g = new THREE.BufferGeometry();
-    g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
-    g.setAttribute("aSeed", new THREE.Float32BufferAttribute(seed, 3));
+    g.setAttribute("aStart", new THREE.InstancedBufferAttribute(new Float32Array(start), 3));
+    g.setAttribute("aSeed", new THREE.InstancedBufferAttribute(new Float32Array(seed), 3));
+    g.instanceCount = LEAVES;
     return {
       geometry: g,
       material: new THREE.ShaderMaterial({
-        uniforms: { uTime: { value: 0 }, uPx: { value: Math.min(devicePixelRatio, 1.75) } },
-        vertexShader: /* glsl */ `attribute vec3 aSeed; uniform float uTime, uPx; varying float vA;
+        uniforms: { uTime: { value: 0 } },
+        vertexShader: /* glsl */ `attribute vec3 aStart, aSeed; uniform float uTime; varying float vT; varying float vLight;
           void main(){
-            float t = uTime * aSeed.y;
-            vec3 p = position;
-            // Carried along by the wind, wrapping round so there are always some in view.
-            p.x = mod(p.x + 22.0 + t * 0.75, 44.0) - 22.0;
-            p.y += sin(t * 0.5 + aSeed.x) * 0.9;
-            p.z += cos(t * 0.37 + aSeed.x) * 0.8;
-            vA = (0.4 + 0.6 * pow(max(0.5 + 0.5 * sin(t * 1.4 + aSeed.x), 0.0), 2.0)) * smoothstep(22.0, 17.0, abs(p.x));
-            vec4 mv = viewMatrix * vec4(p, 1.0);
-            gl_Position = projectionMatrix * mv;
-            gl_PointSize = uPx * (1.5 + aSeed.z * 2.4) * (28.0 / -mv.z);
+            float life = 15.0 * aSeed.y;
+            float k = fract((uTime + aSeed.x) / life);
+            vT = k;
+            float t = k * life;
+            // Swinging side to side as it falls and turning over, with the wind carrying it along.
+            float swing = sin(t * 1.25 + aSeed.x) * 1.15;
+            vec3 at = aStart + vec3(t * 0.62 + swing, -k * aStart.y, cos(t * 0.8 + aSeed.x) * 0.7);
+            at.y = max(at.y, 0.03);
+            float spin = t * (1.4 + aSeed.z);
+            mat3 tumble = mat3(cos(spin), 0.0, sin(spin), 0.0, 1.0, 0.0, -sin(spin), 0.0, cos(spin));
+            float flip = sin(t * 1.25 + aSeed.x);
+            mat3 tip = mat3(1.0, 0.0, 0.0, 0.0, cos(flip), sin(flip), 0.0, -sin(flip), cos(flip));
+            vLight = 0.72 + 0.28 * flip;
+            gl_Position = projectionMatrix * viewMatrix * vec4(at + tumble * tip * position * 0.13, 1.0);
           }`,
-        fragmentShader: `varying float vA; void main(){ vec2 p = gl_PointCoord - 0.5; float d = smoothstep(0.25, 0.02, dot(p, p)); float a = d * vA * 0.86; gl_FragColor = vec4(vec3(1.0, 0.98, 0.86) * a, a); }`,
-        transparent: true,
-        ...GLASS,
-        depthWrite: false,
+        fragmentShader: /* glsl */ `varying float vT; varying float vLight;
+          void main(){ float a = smoothstep(0.0, 0.05, vT) * (1.0 - smoothstep(0.93, 1.0, vT)); if (a < 0.5) discard;
+            gl_FragColor = vec4(mix(vec3(0.42, 0.58, 0.16), vec3(0.74, 0.68, 0.24), step(0.7, fract(vT * 37.0))) * vLight, 1.0); }`,
+        side: THREE.DoubleSide,
         toneMapped: false,
       }),
     };
@@ -117,11 +238,11 @@ export function Seeds() {
   useFrame((_, dt) => {
     material.uniforms.uTime.value += Math.min(dt, 0.05);
   });
-  return <points geometry={geometry} material={material} frustumCulled={false} />;
+  return <mesh geometry={geometry} material={material} frustumCulled={false} />;
 }
 
 // ---------- the signpost: real links in the page, carried by boards in the world ----------
-const POST = new THREE.Vector3(15.6, 0, -11.5);
+const POST = new THREE.Vector3(15.6, 0, -11.5); // beside the path, clear of the cards
 const POST_HEIGHT = 8.9;
 const BOARD_W = 4.5;
 const BOARD_H = 1.02;

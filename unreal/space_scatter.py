@@ -56,14 +56,8 @@ for k in range(4):
     x, y = LANDER[0] + math.cos(a) * 7.5, LANDER[1] + math.sin(a) * 7.5
     glows.append({"x": x, "y": y, "z": ground(x, y) + 0.1, "scale": 0.3})
 
-# ---------- the convoy: one line climbing to the right, away from the platform, in order of size ----------
 SHIP_LENGTH = {"Imperial": 18.55, "Zenith": 12.07, "Bob": 5.61, "Challenger": 10.18}
-for name, u, v, dist, length, yaw, pitch, roll in (
-    ("Zenith", 0.12, 0.2, 2200.0, 112.0, -56, 7, -12),
-    ("Imperial", 0.3, 0.215, 2200.0, 300.0, -58, 8, -14),
-    ("Bob", 0.43, 0.272, 2200.0, 60.0, -60, 8, -16),
-):
-    fly(name, u, v, dist, length, yaw, pitch, roll)
+# The flying ships are live now (src/components/Space.tsx), so they can move. Only the landed saucer stays in the picture.
 
 (HERE / "space_placements.json").write_text(json.dumps({"items": items, "glows": glows}))
 

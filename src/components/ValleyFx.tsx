@@ -1,6 +1,6 @@
 /**
- * The valley's picture, brought to life in place: leaves move in the wind, clouds drift, and cloud shadows and gusts cross the meadow.
- * A small mask says what each pixel is. It costs one full-window pass, and the plain image stays underneath if WebGL fails.
+ * Cloud shadows crossing the valley's meadow. This only changes light and shade: it never moves or warps the picture.
+ * A small mask says where the meadow is. It costs one full-window pass, and the plain image stays underneath if WebGL fails.
  */
 import { useEffect, useRef, useState } from "react";
 
@@ -20,36 +20,14 @@ float fbm(vec2 p){ return noise(p) * 0.55 + noise(p * 2.1 + 7.0) * 0.3 + noise(p
 
 void main(){
   vec2 uv = vUv;
-  vec3 mask = texture(uMask, uv).rgb; // red: leaves and grass; green: open meadow; blue: sky
-  // Film position, so the same pixel of the world gets the same wind in all three plates.
-  vec2 film = (uv - 0.5) * uFilm;
-
-  // Gusts move across the world left to right. Each leaf mass also has its own quick shiver.
-  float gust = fbm(vec2(film.x * 1.3 - uTime * 0.17, uTime * 0.05));
-  float strength = 0.35 + smoothstep(0.35, 0.75, gust) * 0.95;
-  float big = sin(uTime * 1.25 + film.x * 7.0 + film.y * 3.0) * 0.6 + sin(uTime * 0.53 + film.x * 3.0) * 0.4;
-  float shiver = (noise(film * 34.0 + uTime * 2.4) - 0.5);
-  vec2 sway = vec2(big * 0.003 + 0.0015, big * 0.0007) * strength + vec2(shiver * 0.0017, shiver * 0.0012) * strength;
-  uv += sway * mask.r / uFilm;
-
-  // Two copies of the sky drift in turn and cross-fade, so the clouds can keep moving for ever without stretching.
-  vec3 base;
-  if (mask.b > 0.01) {
-    float cycle = uTime / 46.0;
-    float a = fract(cycle), b = fract(cycle + 0.5);
-    float warp = fbm(film * 3.0 + uTime * 0.01) - 0.5;
-    vec2 flow = vec2(0.03, 0.002 + warp * 0.012);
-    vec3 s = texture(uPlate, uv - flow * (a - 0.5) / uFilm).rgb * (1.0 - abs(a - 0.5) * 2.0) + texture(uPlate, uv - flow * (b - 0.5) / uFilm).rgb * (1.0 - abs(b - 0.5) * 2.0);
-    base = mix(texture(uPlate, uv).rgb, s, mask.b);
-  } else base = texture(uPlate, uv).rgb;
-
-  // Cloud shadows, wider toward the viewer, as they would be lying on the ground. A gust leaves a brighter band in the grass as it passes.
+  vec3 mask = texture(uMask, uv).rgb; // green says where the open meadow is
+  vec2 film = (uv - 0.5) * uFilm; // so the same spot in the world gets the same cloud in all three plates
+  vec3 base = texture(uPlate, uv).rgb;
+  // Cloud shadows, wider toward the viewer, as they would be lying on the ground. Light and shade only: no pixel moves.
   float depth = max(0.12, 0.22 - film.y * 0.9);
   vec2 ground = vec2(film.x / depth, 1.0 / depth);
   float shadow = smoothstep(0.5, 0.7, fbm(ground * 0.34 + vec2(-uTime * 0.05, uTime * 0.012)));
-  float band = smoothstep(0.58, 0.78, fbm(vec2(ground.x * 0.9 - uTime * 0.42, ground.y * 0.5 + 8.0)));
-  base *= 1.0 - shadow * 0.24 * mask.g;
-  base *= 1.0 + band * 0.1 * mask.g;
+  base *= 1.0 - shadow * 0.22 * mask.g;
   color = vec4(base, 1.0);
 }`;
 

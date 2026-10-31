@@ -10,8 +10,8 @@ import { ToneMappingMode } from "postprocessing";
 import * as THREE from "three";
 import { ADDITIVE } from "./additive";
 import Grass from "./Grass";
-import { Flyby, HoverBurst, Regolith, Rocket, Sky } from "./Space";
-import { Birds, Seeds, Signpost } from "./Valley";
+import { Fleet, Regolith } from "./Space";
+import { Birds, FallingLeaves, Signpost, Trees } from "./Valley";
 import { FILM, filmFit, PORTAL, TEAMS, type Fx, type World } from "./teams";
 import Hologram from "./Hologram";
 import Portal from "./Portal";
@@ -633,12 +633,13 @@ function CameraRig({ closeup }: { closeup: number[] | null }) {
   return null;
 }
 
-const ENV_FACES = ["px.webp", "nx.webp", "py.webp", "ny.webp", "pz.webp", "nz.webp"];
+// Full paths: drei caches a map by its file names alone, so two folders of same-named files would come back as one map.
+const envFaces = (dir: string) => ["px", "nx", "py", "ny", "pz", "nz"].map((f) => `${dir}${f}.webp`);
 
 function Studio({ world }: { world: World }) {
   // Both maps stay loaded, so a change of world never leaves the metal unlit while one downloads.
-  const valley = useEnvironment({ files: ENV_FACES, path: "/env/" });
-  const space = useEnvironment({ files: ENV_FACES, path: "/env/space/" });
+  const valley = useEnvironment({ files: envFaces("/env/") });
+  const space = useEnvironment({ files: envFaces("/env/space/") });
   const inSpace = world === "space";
   return (
     <>
@@ -686,7 +687,7 @@ function Scene({ world, fx, labelRefs, signRefs, signHover, signPress, active, o
       shadows
       dpr={dpr}
       frameloop={active ? "always" : "never"}
-      camera={{ position: [...FILM.position], fov: FILM.fov, near: 0.1, far: 160, manual: true }}
+      camera={{ position: [...FILM.position], fov: FILM.fov, near: 0.1, far: 320, manual: true }}
       gl={{ antialias: false, alpha: true, premultipliedAlpha: true, powerPreference: "high-performance" }}
       onCreated={({ gl }) => {
         gl.setClearColor(0x000000, 0);
@@ -701,25 +702,22 @@ function Scene({ world, fx, labelRefs, signRefs, signHover, signPress, active, o
         <Platform fx={fx} labelRefs={labelRefs} onHover={onHover} onSelect={onSelect} onReady={onReady} />
       </Suspense>
       {world === "valley" && <Grass />}
-      {world === "valley" && !capture && (
-        <>
-          <Birds />
-          <Seeds />
-          <HoverBurst fx={fx} floating />
-          {innerWidth / innerHeight > 0.9 && <Signpost linkRefs={signRefs} hovered={signHover} pressed={signPress} />}
-        </>
+      {world === "valley" && (
+        <Suspense fallback={null}>
+          <Trees />
+          {!capture && (
+            <>
+              <Birds />
+              <FallingLeaves />
+              {innerWidth / innerHeight > 0.9 && <Signpost linkRefs={signRefs} hovered={signHover} pressed={signPress} />}
+            </>
+          )}
+        </Suspense>
       )}
       {world === "space" && (
         <Suspense fallback={null}>
           <Regolith />
-          {!capture && (
-            <>
-              <Sky />
-              <Rocket />
-              <Flyby />
-              <HoverBurst fx={fx} floating={false} />
-            </>
-          )}
+          <Fleet />
         </Suspense>
       )}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.002, 0]} receiveShadow>

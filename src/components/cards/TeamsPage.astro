@@ -1,0 +1,121 @@
+---
+import "../../styles/lab.css";
+import "../../styles/cards.css";
+import WorldHead from "../WorldHead.astro";
+import WorldBackdrop from "../WorldBackdrop.astro";
+import MemberCard from "./MemberCard.astro";
+import Sigil from "./Sigil.astro";
+import { BRANCHES, DEPUTIES, PEOPLE_COUNT, PROJECT_MANAGERS, profiles } from "../../data/org";
+
+/** The organisation, top to bottom: project management, deputies, then a branch for each team with its leads, subsystems and engineers. */
+const { open = null, all = false } = Astro.props as { open?: string | null; all?: boolean };
+const shown = (id: string) => all || open === id;
+const LINKS = [{ label: "Home", href: "/" }, { label: "People", href: "/people/" }, { label: "Sponsors", href: "/sponsors/" }, { label: "About", href: "/about/" }, { label: "Join", href: "/join/" }];
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <meta name="description" content="How MechaEagles is organised, and the people in every team." />
+    <title>{all ? "People" : "Teams"} · MechaEagles</title>
+    <WorldHead />
+  </head>
+  <body class="org-page">
+    <WorldBackdrop />
+    <header class="bar">
+      <a class="logo" href="/" aria-label="MechaEagles home"><img src="/brand/eagle.webp" alt="" width="44" height="28" /><span>MechaEagles</span></a>
+      <nav aria-label="Main"><ul class="bar__links">{LINKS.map((l) => <li><a href={l.href}>{l.label}</a></li>)}</ul></nav>
+      <button type="button" class="bar__world" data-world-switch aria-label="Change world">
+        <svg class="only-valley-icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="12" cy="12" r="5" fill="none" stroke="currentColor" stroke-width="1.6" /><ellipse cx="12" cy="12" rx="10.4" ry="3.2" fill="none" stroke="currentColor" stroke-width="1.6" transform="rotate(-24 12 12)" /></svg>
+        <svg class="only-space-icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="12" cy="12" r="4.2" fill="none" stroke="currentColor" stroke-width="1.6" /><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M18.7 5.3l-2.1 2.1M7.4 16.6l-2.1 2.1" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" /></svg>
+      </button>
+    </header>
+
+    <main class="org">
+      <div class="org__intro wrap">
+        <p class="eyebrow reveal">{PEOPLE_COUNT} people · 4 teams</p>
+        <h1 class="reveal">How MechaEagles is organised</h1>
+        <p class="lede reveal">Read it from the top. Every card is a person: open one to meet them, and open a team to see its subsystems.</p>
+      </div>
+
+      <section class="tier tier--1 wrap" aria-labelledby="t1">
+        <h2 class="tier__label" id="t1"><b>1</b>Project Management and Systems Engineering</h2>
+        <div class="tier__cards">{PROJECT_MANAGERS.map((c) => <MemberCard card={c} />)}</div>
+      </section>
+      <div class="stem" aria-hidden="true"></div>
+      <section class="tier tier--2 wrap" aria-labelledby="t2">
+        <h2 class="tier__label" id="t2"><b>2</b>Deputy Project Managers</h2>
+        <div class="tier__cards">{DEPUTIES.map((c, i) => <MemberCard card={c} style={`--i:${i}`} />)}</div>
+      </section>
+      <div class="stem" aria-hidden="true"></div>
+
+      <section class="tier tier--3 wrap" aria-labelledby="t3">
+        <h2 class="tier__label" id="t3"><b>3</b>Team and Subsystem Leads</h2>
+        <div class="branches">
+          {BRANCHES.map((b, i) => (
+            <div class="branch reveal" data-el={b.element.key} style={`--c:${b.element.color};--i:${i}`}>
+              <div class="branch__cards">
+                {b.leads.slice(0, 1).map((c) => <MemberCard card={{ ...c, size: "m" }} />)}
+              </div>
+              <button type="button" class="branch__open" data-branch={b.id} aria-expanded={shown(b.id) ? "true" : "false"} aria-controls={`world-${b.id}`}>
+                <Sigil el={b.element.key} />
+                <span class="branch__name">{b.name}</span>
+                <span class="branch__spirit">{b.element.spirit} · {b.count} people</span>
+              </button>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {BRANCHES.map((b) => (
+        <section class="world" id={`world-${b.id}`} data-world={b.id} data-el={b.element.key} style={`--c:${b.element.color}`} data-start-open={shown(b.id) ? "" : undefined} aria-label={b.name}>
+          <div class="world__sky" aria-hidden="true"></div>
+          <div class="wrap">
+            <header class="world__head">
+              <Sigil el={b.element.key} />
+              <div>
+                <p class="eyebrow">{b.element.spirit}</p>
+                <h2>{b.name}</h2>
+                <p class="world__tag">{b.element.line}</p>
+              </div>
+              <p class="world__mission">{b.mission}</p>
+            </header>
+            {b.leads.length > 0 && (
+              <div class="world__leads">
+                <h3 class="tier__label"><b>3</b>{b.id === "programmatics" ? "Leads" : "Team lead"}</h3>
+                <div class="tier__cards tier__cards--start">{b.leads.map((c) => <MemberCard card={c} />)}</div>
+              </div>
+            )}
+            <h3 class="tier__label"><b>4</b>{b.id === "programmatics" ? "Members" : "Subsystems and engineers"}</h3>
+            <div class="subs">
+              {b.groups.map((g) => (
+                <details class="sub" open>
+                  <summary>
+                    <span class="sub__name">{g.name}</span>
+                    {g.detail && <span class="sub__detail">{g.detail}</span>}
+                    <span class="sub__count">{g.leads.length + g.engineers.length}</span>
+                  </summary>
+                  <div class="sub__tree">
+                    {g.leads.length > 0 && <div class="sub__leads">{g.leads.map((c) => <MemberCard card={c} />)}</div>}
+                    {g.engineers.length > 0 && <div class="sub__engineers">{g.engineers.map((c, i) => <MemberCard card={c} style={`--i:${i % 6}`} />)}</div>}
+                  </div>
+                </details>
+              ))}
+            </div>
+          </div>
+        </section>
+      ))}
+    </main>
+
+    <footer class="foot"><div class="wrap"><p>Names and portraits appear only as each member has agreed. Bios and projects are added by members themselves.</p></div></footer>
+
+    <dialog class="profile" id="profile" aria-labelledby="profile-name"><div class="profile__body" id="profile-body"></div></dialog>
+    <script type="application/json" id="profile-data" set:html={JSON.stringify(profiles())} />
+    <script>
+      import { startOrgPage } from "./org-page";
+      startOrgPage();
+    </script>
+  </body>
+</html>

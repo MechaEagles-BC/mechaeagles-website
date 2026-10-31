@@ -1,0 +1,29 @@
+---
+import ElementArt from "./ElementArt.astro";
+import Sigil from "./Sigil.astro";
+import { ELEMENTS, TEAM_NAMES, type Card } from "../../data/org";
+
+/** One member, as one card. A real link: it opens their profile, can be copied or opened in a new tab, and works with a keyboard. */
+const { card, href, style } = Astro.props as { card: Card; href?: string; style?: string };
+const { person, team, rank, role, size } = card;
+const el = ELEMENTS[team];
+const initials = person.name.split(/\s+/).map((w) => w[0]).slice(0, 2).join("");
+---
+<a class={`mcard mcard--${size} reveal`} data-el={el.key} data-person={person.slug} href={href ?? `#${person.slug}`} style={`--c:${el.color};${style ?? ""}`} aria-label={`${person.name}, ${role}, ${TEAM_NAMES[team]}. Open profile`}>
+  <span class="mcard__tilt">
+    <ElementArt el={el.key} />
+    <span class="mcard__glow"></span>
+    {person.photo ? (
+      <img class="mcard__photo" src={person.photo} alt="" loading="lazy" decoding="async" width="640" height="800" />
+    ) : (
+      <span class="mcard__monogram" aria-hidden="true">{initials}</span>
+    )}
+    <span class="mcard__top"><span class="mcard__rank">{rank}</span><Sigil el={el.key} /></span>
+    <span class="mcard__plate">
+      <span class="mcard__name">{person.name}</span>
+      <span class="mcard__role">{role}</span>
+      <span class="mcard__team">{TEAM_NAMES[team]}</span>
+    </span>
+    <span class="mcard__sheen"></span>
+  </span>
+</a>

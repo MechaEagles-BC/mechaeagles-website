@@ -6,7 +6,7 @@ const deg = (d: number) => (d * Math.PI) / 180;
 
 export const TEAMS = [
   {
-    id: "baja", name: "Baja SAE", color: "#f2a33a", angle: deg(-135), portalAngle: deg(-150), href: "/teams/baja/",
+    id: "baja", name: "Baja SAE", color: "#7fd66a", angle: deg(-135), portalAngle: deg(-150), href: "/teams/baja/",
     tagline: "Earth · Off-road vehicle engineering", note: "Illustrative, not team CAD",
     caption: "below", drawing: "baja_corner", drawingScale: 2.45, drawingYaw: -0.62, drawingLean: 0,
   },
@@ -16,12 +16,12 @@ export const TEAMS = [
     caption: "left", drawing: "aero_baldwin", drawingScale: 1.02, drawingYaw: 0, drawingLean: -0.6,
   },
   {
-    id: "combat", name: "Combat Robotics", color: "#ff3d1f", angle: deg(45), portalAngle: deg(30), href: "/teams/combat-robotics/",
+    id: "combat", name: "Combat Robotics", color: "#ff7a2a", angle: deg(45), portalAngle: deg(30), href: "/teams/combat-robotics/",
     tagline: "Fire · Arena robots", note: "Illustrative, not a team robot",
     caption: "right", drawing: "combat_robot", drawingScale: 3.7, drawingYaw: -0.7, drawingLean: 0,
   },
   {
-    id: "ai", name: "AI Safety", color: "#9b8cff", angle: deg(-45), portalAngle: deg(-30), href: "/teams/ai-safety/",
+    id: "ai", name: "AI Safety", color: "#a78bff", angle: deg(-45), portalAngle: deg(-30), href: "/teams/ai-safety/",
     tagline: "Mind · Research and governance", note: "Abstract diagram, not a product",
     caption: "below", drawing: "ai_lattice", drawingScale: 2.2, drawingYaw: 0, drawingLean: 0,
   },

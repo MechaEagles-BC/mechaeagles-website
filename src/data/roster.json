@@ -1,0 +1,819 @@
+{
+ "people": [
+  {
+   "slug": "ambrose-mccullough",
+   "name": "Ambrose McCullough",
+   "consent": "photo",
+   "memberships": [
+    {
+     "team": "programmatics",
+     "role": "lead",
+     "title": "DPM / Programmatics"
+    },
+    {
+     "team": "ai-safety",
+     "role": "lead",
+     "title": "AI Safety Lead"
+    }
+   ],
+   "specialties": [],
+   "photo": "/people/ambrose-mccullough.webp",
+   "linkedin": "https://www.linkedin.com/in/ambrosemccullough/"
+  },
+  {
+   "slug": "arhant-jajodia",
+   "name": "Arhant Jajodia",
+   "consent": "roster",
+   "memberships": [
+    {
+     "team": "programmatics",
+     "role": "member"
+    }
+   ],
+   "specialties": [
+    "Outreach"
+   ]
+  },
+  {
+   "slug": "armand-koochekzadeh",
+   "name": "Armand Koochekzadeh",
+   "consent": "photo",
+   "memberships": [
+    {
+     "team": "combat-robotics",
+     "role": "member"
+    }
+   ],
+   "specialties": [
+    "Software"
+   ],
+   "photo": "/people/armand-koochekzadeh.webp",
+   "linkedin": "https://www.linkedin.com/in/armand-koochekzadeh-140236311/"
+  },
+  {
+   "slug": "asad-faqirzada",
+   "name": "Asad Faqirzada",
+   "consent": "photo",
+   "memberships": [
+    {
+     "team": "baja",
+     "role": "member"
+    }
+   ],
+   "specialties": [
+    "Drivetrain"
+   ],
+   "photo": "/people/asad-faqirzada.webp",
+   "linkedin": "https://www.linkedin.com/in/asadfaqirzada/"
+  },
+  {
+   "slug": "austin-kinnealey",
+   "name": "Austin Kinnealey",
+   "consent": "photo",
+   "memberships": [
+    {
+     "team": "leadership",
+     "role": "lead",
+     "title": "Project Manager"
+    }
+   ],
+   "specialties": [],
+   "photo": "/people/austin-kinnealey.webp",
+   "linkedin": "https://www.linkedin.com/in/austin-kinnealey-9a9755243/"
+  },
+  {
+   "slug": "benson-lin",
+   "name": "Benson Lin",
+   "consent": "photo",
+   "memberships": [
+    {
+     "team": "programmatics",
+     "role": "member"
+    },
+    {
+     "team": "ai-safety",
+     "role": "member"
+    }
+   ],
+   "specialties": [
+    "Marketing"
+   ],
+   "photo": "/people/benson-lin.webp",
+   "linkedin": "https://www.linkedin.com/in/benson-lin-527b8335a/"
+  },
+  {
+   "slug": "brandon-perez-lopez",
+   "name": "Brandon Perez Lopez",
+   "consent": "roster",
+   "memberships": [
+    {
+     "team": "ai-safety",
+     "role": "member"
+    }
+   ],
+   "specialties": []
+  },
+  {
+   "slug": "brandon",
+   "name": "Brandon",
+   "consent": "roster",
+   "memberships": [
+    {
+     "team": "combat-robotics",
+     "role": "member"
+    }
+   ],
+   "specialties": []
+  },
+  {
+   "slug": "carlos-contreras",
+   "name": "Carlos Contreras",
+   "consent": "photo",
+   "memberships": [
+    {
+     "team": "combat-robotics",
+     "role": "lead",
+     "title": "Combat Robotics Lead"
+    }
+   ],
+   "specialties": [],
+   "photo": "/people/carlos-contreras.webp",
+   "linkedin": "https://www.linkedin.com/in/juan-contreras-884b69267/"
+  },
+  {
+   "slug": "carlos-silva",
+   "name": "Carlos Silva",
+   "consent": "roster",
+   "memberships": [
+    {
+     "team": "baja",
+     "role": "member"
+    }
+   ],
+   "specialties": []
+  },
+  {
+   "slug": "carson-matckie",
+   "name": "Carson Matckie",
+   "consent": "roster",
+   "memberships": [
+    {
+     "team": "aero",
+     "role": "member",
+     "title": "Recovery Lead"
+    }
+   ],
+   "specialties": [
+    "Recovery"
+   ]
+  },
+  {
+   "slug": "charlie-anderson",
+   "name": "Charlie Anderson",
+   "consent": "photo",
+   "memberships": [
+    {
+     "team": "combat-robotics",
+     "role": "member"
+    }
+   ],
+   "specialties": [],
+   "photo": "/people/charlie-anderson.webp"
+  },
+  {
+   "slug": "chloe-rhee",
+   "name": "Chloe Rhee",
+   "consent": "photo",
+   "memberships": [
+    {
+     "team": "programmatics",
+     "role": "member"
+    }
+   ],
+   "specialties": [
+    "Outreach"
+   ],
+   "photo": "/people/chloe-rhee.webp",
+   "linkedin": "https://www.linkedin.com/in/chloerhee07/"
+  },
+  {
+   "slug": "colin-noble",
+   "name": "Colin Noble",
+   "consent": "photo",
+   "memberships": [
+    {
+     "team": "baja",
+     "role": "member"
+    }
+   ],
+   "specialties": [
+    "Steering & braking"
+   ],
+   "photo": "/people/colin-noble.webp",
+   "linkedin": "https://www.linkedin.com/in/colin-noble-b909a0291/"
+  },
+  {
+   "slug": "deven-creeth",
+   "name": "Deven Creeth",
+   "consent": "photo",
+   "memberships": [
+    {
+     "team": "baja",
+     "role": "member"
+    }
+   ],
+   "specialties": [
+    "Steering & braking"
+   ],
+   "photo": "/people/deven-creeth.webp",
+   "linkedin": "https://www.linkedin.com/in/deven-creeth-7b903436a/"
+  },
+  {
+   "slug": "dylan-sastrawidjaja",
+   "name": "Dylan Sastrawidjaja",
+   "consent": "roster",
+   "memberships": [
+    {
+     "team": "programmatics",
+     "role": "member"
+    }
+   ],
+   "specialties": []
+  },
+  {
+   "slug": "effie-hatzopoulos",
+   "name": "Effie Hatzopoulos",
+   "consent": "photo",
+   "memberships": [
+    {
+     "team": "baja",
+     "role": "member"
+    }
+   ],
+   "specialties": [
+    "Roll cage"
+   ],
+   "photo": "/people/effie-hatzopoulos.webp",
+   "linkedin": "https://www.linkedin.com/in/effie-hatzopoulos-14647b307/"
+  },
+  {
+   "slug": "emmanuel-bandler",
+   "name": "Emmanuel Bandler",
+   "consent": "roster",
+   "memberships": [
+    {
+     "team": "combat-robotics",
+     "role": "member"
+    }
+   ],
+   "specialties": []
+  },
+  {
+   "slug": "eric-bartunek",
+   "name": "Eric Bartunek",
+   "consent": "roster",
+   "memberships": [
+    {
+     "team": "combat-robotics",
+     "role": "member"
+    }
+   ],
+   "specialties": []
+  },
+  {
+   "slug": "eric-xie",
+   "name": "Eric Xie",
+   "consent": "photo",
+   "memberships": [
+    {
+     "team": "programmatics",
+     "role": "member"
+    }
+   ],
+   "specialties": [
+    "Scheduling"
+   ],
+   "photo": "/people/eric-xie.webp",
+   "linkedin": "https://www.linkedin.com/in/eric-xie-68a620385/"
+  },
+  {
+   "slug": "hudson-yang",
+   "name": "Hudson Yang",
+   "consent": "roster",
+   "memberships": [
+    {
+     "team": "baja",
+     "role": "member"
+    }
+   ],
+   "specialties": []
+  },
+  {
+   "slug": "jack-delgrande",
+   "name": "Jack DelGrande",
+   "consent": "photo",
+   "memberships": [
+    {
+     "team": "baja",
+     "role": "member"
+    }
+   ],
+   "specialties": [
+    "Fabrication"
+   ],
+   "photo": "/people/jack-delgrande.webp",
+   "linkedin": "https://www.linkedin.com/in/jack-delgrande-360a63228/"
+  },
+  {
+   "slug": "jack-tommaney",
+   "name": "Jack Tommaney",
+   "consent": "photo",
+   "memberships": [
+    {
+     "team": "aero",
+     "role": "lead",
+     "title": "Aero Lead · Payload Lead"
+    }
+   ],
+   "specialties": [
+    "Payload"
+   ],
+   "photo": "/people/jack-tommaney.webp",
+   "linkedin": "https://www.linkedin.com/in/jack-tommaney-19a598255/",
+   "achievements": [
+    "Flew rockets on AeroEagles' first high-power launch day, 19 Sep 2026",
+    "Earned high-power rocketry Level 1 certification on that launch day"
+   ]
+  },
+  {
+   "slug": "joseph-rusnak",
+   "name": "Joseph Rusnak",
+   "consent": "photo",
+   "memberships": [
+    {
+     "team": "baja",
+     "role": "member"
+    }
+   ],
+   "specialties": [
+    "Suspension"
+   ],
+   "photo": "/people/joseph-rusnak.webp",
+   "linkedin": "https://www.linkedin.com/in/joey-rusnak-890b8426a/"
+  },
+  {
+   "slug": "lily-zheng",
+   "name": "Lily Zheng",
+   "consent": "roster",
+   "memberships": [
+    {
+     "team": "aero",
+     "role": "member"
+    }
+   ],
+   "specialties": []
+  },
+  {
+   "slug": "logan-gale",
+   "name": "Logan Gale",
+   "consent": "roster",
+   "memberships": [
+    {
+     "team": "aero",
+     "role": "member"
+    }
+   ],
+   "specialties": []
+  },
+  {
+   "slug": "lucas-dimarco",
+   "name": "Lucas DiMarco",
+   "consent": "photo",
+   "memberships": [
+    {
+     "team": "leadership",
+     "role": "lead",
+     "title": "DPM"
+    },
+    {
+     "team": "aero",
+     "role": "member",
+     "title": "CAD & Integration Lead"
+    }
+   ],
+   "specialties": [
+    "CAD"
+   ],
+   "photo": "/people/lucas-dimarco.webp",
+   "linkedin": "https://www.linkedin.com/in/lucas-dimarco-427a21243/",
+   "achievements": [
+    "Flew rockets on AeroEagles' first high-power launch day, 19 Sep 2026"
+   ]
+  },
+  {
+   "slug": "mat-hark",
+   "name": "Mat Hark",
+   "consent": "photo",
+   "memberships": [
+    {
+     "team": "aero",
+     "role": "member"
+    }
+   ],
+   "specialties": [
+    "Roll cage"
+   ],
+   "photo": "/people/mat-hark.webp",
+   "linkedin": "https://www.linkedin.com/in/matthew-hark-998aab382/"
+  },
+  {
+   "slug": "matthew-bristing",
+   "name": "Matthew Bristing",
+   "consent": "photo",
+   "memberships": [
+    {
+     "team": "aero",
+     "role": "member",
+     "title": "Structure Lead"
+    }
+   ],
+   "specialties": [
+    "Structures"
+   ],
+   "photo": "/people/matthew-bristing.webp"
+  },
+  {
+   "slug": "maxwell-crawford",
+   "name": "Maxwell Crawford",
+   "consent": "photo",
+   "memberships": [
+    {
+     "team": "programmatics",
+     "role": "member"
+    }
+   ],
+   "specialties": [
+    "Outreach"
+   ],
+   "photo": "/people/maxwell-crawford.webp",
+   "linkedin": "https://www.linkedin.com/in/maxwell-crawford-38b5b4281/"
+  },
+  {
+   "slug": "michael-kester",
+   "name": "Michael Kester",
+   "consent": "photo",
+   "memberships": [
+    {
+     "team": "baja",
+     "role": "member"
+    }
+   ],
+   "specialties": [
+    "Drivetrain"
+   ],
+   "photo": "/people/michael-kester.webp",
+   "linkedin": "https://www.linkedin.com/in/michael-kester-121740350/"
+  },
+  {
+   "slug": "nicholas-londal",
+   "name": "Nicholas Londal",
+   "consent": "roster",
+   "memberships": [
+    {
+     "team": "combat-robotics",
+     "role": "member"
+    }
+   ],
+   "specialties": []
+  },
+  {
+   "slug": "patrick-ayrton",
+   "name": "Patrick Ayrton",
+   "consent": "roster",
+   "memberships": [
+    {
+     "team": "combat-robotics",
+     "role": "member"
+    }
+   ],
+   "specialties": [
+    "Software"
+   ]
+  },
+  {
+   "slug": "paul-gin",
+   "name": "Paul Gin",
+   "consent": "photo",
+   "memberships": [
+    {
+     "team": "baja",
+     "role": "member"
+    }
+   ],
+   "specialties": [
+    "Roll cage"
+   ],
+   "photo": "/people/paul-gin.webp",
+   "linkedin": "https://www.linkedin.com/in/paul-gin/"
+  },
+  {
+   "slug": "raei-gezahegn",
+   "name": "Raei Gezahegn",
+   "consent": "roster",
+   "memberships": [
+    {
+     "team": "aero",
+     "role": "member"
+    }
+   ],
+   "specialties": []
+  },
+  {
+   "slug": "rosha-gheshm",
+   "name": "Rosha Gheshm",
+   "consent": "roster",
+   "memberships": [
+    {
+     "team": "ai-safety",
+     "role": "member"
+    }
+   ],
+   "specialties": []
+  },
+  {
+   "slug": "sam-kaiser",
+   "name": "Sam Kaiser",
+   "consent": "photo",
+   "memberships": [
+    {
+     "team": "baja",
+     "role": "lead",
+     "title": "Baja Lead"
+    }
+   ],
+   "specialties": [],
+   "photo": "/people/sam-kaiser.webp",
+   "linkedin": "https://www.linkedin.com/in/samuel-kaiser1/"
+  },
+  {
+   "slug": "sophia-tsepenyuk",
+   "name": "Sophia Tsepenyuk",
+   "consent": "photo",
+   "memberships": [
+    {
+     "team": "combat-robotics",
+     "role": "member"
+    },
+    {
+     "team": "ai-safety",
+     "role": "member"
+    }
+   ],
+   "specialties": [
+    "Software"
+   ],
+   "photo": "/people/sophia-tsepenyuk.webp",
+   "linkedin": "https://www.linkedin.com/in/sophia-tsepenyuk-4529632b9/"
+  },
+  {
+   "slug": "taein-kang",
+   "name": "Taein Kang",
+   "consent": "roster",
+   "memberships": [
+    {
+     "team": "combat-robotics",
+     "role": "member"
+    }
+   ],
+   "specialties": []
+  },
+  {
+   "slug": "timothy-madden",
+   "name": "Timothy Madden",
+   "consent": "roster",
+   "memberships": [
+    {
+     "team": "programmatics",
+     "role": "member"
+    }
+   ],
+   "specialties": []
+  },
+  {
+   "slug": "tobin-ting",
+   "name": "Tobin Ting",
+   "consent": "photo",
+   "memberships": [
+    {
+     "team": "baja",
+     "role": "member"
+    }
+   ],
+   "specialties": [
+    "Steering & braking"
+   ],
+   "photo": "/people/tobin-ting.webp",
+   "linkedin": "https://www.linkedin.com/in/tobin-ting-3b07b527b/"
+  },
+  {
+   "slug": "troy-sterling",
+   "name": "Troy Sterling",
+   "consent": "photo",
+   "memberships": [
+    {
+     "team": "baja",
+     "role": "member"
+    }
+   ],
+   "specialties": [
+    "Suspension"
+   ],
+   "photo": "/people/troy-sterling.webp",
+   "linkedin": "https://www.linkedin.com/in/troy-sterling-69a835305/"
+  },
+  {
+   "slug": "vedarsh-mishra",
+   "name": "Vedarsh Mishra",
+   "consent": "photo",
+   "memberships": [
+    {
+     "team": "leadership",
+     "role": "lead",
+     "title": "Project Manager"
+    },
+    {
+     "team": "aero",
+     "role": "member",
+     "title": "Avionics Lead"
+    },
+    {
+     "team": "ai-safety",
+     "role": "member"
+    }
+   ],
+   "specialties": [
+    "Avionics"
+   ],
+   "photo": "/people/vedarsh-mishra.webp",
+   "linkedin": "https://www.linkedin.com/in/vedarsh/",
+   "achievements": [
+    "Flew rockets on AeroEagles' first high-power launch day, 19 Sep 2026"
+   ]
+  },
+  {
+   "slug": "vincent-zermani",
+   "name": "Vincent Zermani",
+   "consent": "photo",
+   "memberships": [
+    {
+     "team": "combat-robotics",
+     "role": "member"
+    }
+   ],
+   "specialties": [
+    "Research"
+   ],
+   "photo": "/people/vincent-zermani.webp",
+   "linkedin": "https://www.linkedin.com/in/vincentzermani/"
+  },
+  {
+   "slug": "vladislav-hoila",
+   "name": "Vladislav Hoila",
+   "consent": "photo",
+   "memberships": [
+    {
+     "team": "leadership",
+     "role": "lead",
+     "title": "CS Lead"
+    }
+   ],
+   "specialties": [
+    "Software"
+   ],
+   "photo": "/people/vladislav-hoila.webp",
+   "linkedin": "https://www.linkedin.com/in/vladislav-hoila-54a04125b"
+  },
+  {
+   "slug": "xavier",
+   "name": "Xavier",
+   "consent": "roster",
+   "memberships": [
+    {
+     "team": "combat-robotics",
+     "role": "member"
+    }
+   ],
+   "specialties": []
+  },
+  {
+   "slug": "yuhwan-chon",
+   "name": "Yuhwan Chon",
+   "consent": "photo",
+   "memberships": [
+    {
+     "team": "combat-robotics",
+     "role": "member"
+    }
+   ],
+   "specialties": [],
+   "photo": "/people/yuhwan-chon.webp",
+   "linkedin": "https://www.linkedin.com/in/yuhwan-chon-48014a1a4/"
+  },
+  {
+   "slug": "zach-donohue",
+   "name": "Zach Donohue",
+   "consent": "photo",
+   "memberships": [
+    {
+     "team": "programmatics",
+     "role": "member"
+    }
+   ],
+   "specialties": [
+    "Outreach"
+   ],
+   "photo": "/people/zach-donohue.webp",
+   "linkedin": "https://www.linkedin.com/in/zack-donohue-702082354/"
+  }
+ ],
+ "teams": {
+  "baja": {
+   "name": "Baja SAE",
+   "tagline": "Earth · Off-road vehicle engineering",
+   "mission": "We design, build and race a single-seat off-road vehicle for the Baja SAE collegiate series: frame, suspension, steering, braking and drivetrain, built by students in Boston College's shops.",
+   "subsystems": [
+    {
+     "name": "Roll cage",
+     "detail": "Tubular steel frame that protects the driver and carries every load path."
+    },
+    {
+     "name": "Suspension",
+     "detail": "Front and rear geometry, travel and damping for rough terrain."
+    },
+    {
+     "name": "Steering & braking",
+     "detail": "Steering rack, linkages and the hydraulic brake system."
+    },
+    {
+     "name": "Drivetrain",
+     "detail": "Power from the engine to all four wheels."
+    },
+    {
+     "name": "Fabrication",
+     "detail": "Cutting, notching, welding and machining the parts above."
+    }
+   ]
+  },
+  "aero": {
+   "name": "AeroEagles",
+   "tagline": "Wind · High-power rocketry",
+   "mission": "AeroEagles will design, manufacture, test, launch and safely recover a reusable high-powered rocket carrying an autonomous payload. After landing, the payload finds a passive visual target and measures its distance without GPS.",
+   "subsystems": [
+    {
+     "name": "Structure",
+     "detail": "Airframe, fins, motor mount, couplers and bulkheads."
+    },
+    {
+     "name": "CAD & integration",
+     "detail": "Full-vehicle CAD, drawings and interface checks."
+    },
+    {
+     "name": "Avionics",
+     "detail": "Altimeters, tracking, power distribution and the avionics bay."
+    },
+    {
+     "name": "Recovery",
+     "detail": "Parachute sizing, dual-deployment sequencing and descent analysis."
+    },
+    {
+     "name": "Payload",
+     "detail": "Camera ring + LiDAR rangefinding on an onboard computer, no GPS."
+    }
+   ]
+  },
+  "combat-robotics": {
+   "name": "Combat Robotics",
+   "tagline": "Fire · Arena robots",
+   "mission": "We design, manufacture, program and compete combat robots: weapons, drive systems and armor that have to survive the arena.",
+   "subsystems": []
+  },
+  "ai-safety": {
+   "name": "AI Safety",
+   "tagline": "Mind · Research and governance",
+   "mission": "We study how to make AI systems safe and accountable through technical research, responsible development practice and governance.",
+   "subsystems": []
+  },
+  "programmatics": {
+   "name": "Programmatics",
+   "tagline": "Outreach, operations and partnerships",
+   "mission": "The people who keep four engineering teams running: outreach, scheduling, marketing and partnerships.",
+   "subsystems": []
+  },
+  "leadership": {
+   "name": "Program leadership",
+   "tagline": "Project management",
+   "mission": "Project managers and deputy project managers who run MechaEagles across all four bays.",
+   "subsystems": []
+  }
+ }
+}

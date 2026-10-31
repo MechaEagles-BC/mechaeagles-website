@@ -17,23 +17,39 @@
   --edge: max(var(--gutter), calc((100vw - 1632px) / 2)); /* one left and right edge for everything on the page */
   --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
   /* The page under the stage. The stage and menu always sit on pictures and dark panels, so they keep --ink and --chalk. */
-  --page: #f4f2ea;
-  --raise: #e9e6da;
+  --page: #eff1e4;
+  --page-solid: #eff1e4;
+  --raise: rgb(226 230 208 / 0.72);
   --text: #141a14;
   --text-2: #4b544c;
   --rule: rgb(20 26 20 / 0.2);
   color-scheme: light;
 }
 html[data-theme="space"] {
-  --page: #070a10;
-  --raise: #0e131c;
+  --page: transparent; /* the sky shows through every section */
+  --page-solid: #05070c;
+  --raise: rgb(10 14 22 / 0.6);
   --text: #eef0f2;
   --text-2: #aab2bb;
   --rule: rgb(255 255 255 / 0.16);
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
-html { scroll-behavior: smooth; background: var(--page); }
+html { scroll-behavior: smooth; background: var(--page-solid); }
+/* The one world behind everything: see WorldBackdrop.astro. */
+#sky { position: fixed; inset: 0; z-index: -1; display: none; width: 100vw; height: 100vh; opacity: 0; transition: opacity 0.8s; }
+html[data-theme="space"] #sky { display: block; }
+#sky.ready { opacity: 1; }
+.breeze { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+html[data-theme="space"] .breeze { display: none; }
+.breeze i { position: absolute; top: -32px; left: var(--x); width: 14px; height: 9px; border-radius: 80% 0 80% 0; background: var(--leaf); opacity: 0; animation: leaf var(--t) linear var(--d) infinite; }
+@keyframes leaf {
+  0% { opacity: 0; transform: translate(0, 0) rotate(0deg); }
+  8% { opacity: 0.72; }
+  50% { transform: translate(14vw, 50vh) rotate(260deg); }
+  92% { opacity: 0.72; }
+  100% { opacity: 0; transform: translate(30vw, 104vh) rotate(560deg); }
+}
 html.menu-open { overflow: hidden; }
 body { margin: 0; background: var(--page); color: var(--text); font: 400 var(--t-m)/1.6 var(--mono); transition: background 0.6s ease, color 0.6s ease; }
 img { display: block; max-width: 100%; }
@@ -57,18 +73,22 @@ html.turning { cursor: grabbing; }
 html[data-theme="space"] .only-space { display: block; }
 html[data-theme="space"] .only-valley { display: none; }
 .stage__live { position: absolute; inset: 0; }
-.stage__canvas { position: absolute; inset: 0; opacity: 0; transition: opacity 0.7s ease; }
+.stage__canvas { position: absolute; inset: 0; opacity: 0; transition: opacity 0.7s ease; -webkit-mask-image: linear-gradient(#000 84%, transparent); mask-image: linear-gradient(#000 84%, transparent); }
+/* Once the moon is live, the real sky takes over from the first picture behind it. */
+html[data-state="live"] .stills { opacity: 0; transition: opacity 0.7s 0.7s; }
+html[data-state="live"] .stills { pointer-events: none; }
 .stage__canvas.ready { opacity: 1; }
 .stage__canvas canvas { position: relative; }
 .stage__plate { position: absolute; max-width: none; opacity: 0; transition: opacity 0.9s ease; }
 .stage__plate.on { opacity: 1; }
 .stage__canvas .stage__plate--fx { position: absolute; opacity: 0; }
 .stage__canvas .stage__plate--fx.on.ready { opacity: 1; }
-/* The world changes as one picture, so only the circle moves. */
-::view-transition-old(root), ::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
+/* The worlds dissolve into each other, slowly. */
+::view-transition-old(root), ::view-transition-new(root) { animation-duration: 0.9s; }
 .stage::before, .stage::after { content: ""; position: absolute; inset-inline: 0; z-index: 1; pointer-events: none; }
 .stage::before { top: 0; height: 144px; background: linear-gradient(rgb(5 12 9 / 0.74), rgb(5 12 9 / 0.62) 44%, transparent); }
-.stage::after { bottom: 0; height: 96px; background: linear-gradient(transparent, var(--ink)); }
+.stage::after { bottom: 0; height: 120px; background: linear-gradient(transparent, var(--page-solid)); }
+html[data-state="live"] .stage::after { display: none; }
 
 .top { position: absolute; z-index: 2; inset: var(--s3) var(--edge) auto; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: var(--s3); pointer-events: none; }
 .top a, .top h1 { pointer-events: auto; }
@@ -84,10 +104,12 @@ html[data-theme="space"] .only-valley { display: none; }
 .world-button:hover { background: rgb(6 12 9 / 0.96); }
 .world-button::after { content: ""; position: absolute; inset: -4px; } /* a 48 px target for touch */
 
-.bottom { position: absolute; z-index: 2; inset: auto var(--edge) var(--s2); display: flex; justify-content: space-between; align-items: end; gap: var(--s3); font-size: var(--t-xs); line-height: 1.4; color: var(--soft); pointer-events: none; }
-.bottom a { pointer-events: auto; flex: none; color: var(--chalk); text-decoration: none; }
+.bottom { position: absolute; z-index: 2; inset: auto var(--edge) var(--s2); display: flex; justify-content: space-between; align-items: end; gap: var(--s3); font-size: var(--t-xs); line-height: 1.4; color: var(--text); pointer-events: none; }
+.bottom a { pointer-events: auto; flex: none; color: var(--text); text-decoration: none; }
 .bottom a:hover { text-decoration: underline; }
-.stage__hint { position: absolute; z-index: 2; left: 50%; bottom: var(--s2); transform: translateX(-50%); font-size: var(--t-xs); line-height: 1.4; color: var(--chalk); opacity: 0; animation: hint 0.6s 3.6s forwards; transition: opacity 0.4s; pointer-events: none; }
+/* A small plate behind each line keeps it readable over grass or stars, in either world. */
+.bottom p, .bottom a, .stage__hint { padding: 4px var(--s1); background: color-mix(in srgb, var(--page-solid) 80%, transparent); }
+.stage__hint { position: absolute; z-index: 2; left: 50%; bottom: var(--s2); transform: translateX(-50%); font-size: var(--t-xs); line-height: 1.4; color: var(--text); opacity: 0; animation: hint 0.6s 3.6s forwards; transition: opacity 0.4s; pointer-events: none; }
 .stage__hint.gone { animation: none; opacity: 0; }
 @keyframes hint { to { opacity: 1; } }
 
@@ -125,18 +147,18 @@ html[data-state="live"].turning .portal-label { opacity: 0.55; pointer-events: n
 .sign-list a:hover, .sign-list a:focus-visible { transform: rotate(-2deg); }
 html[data-theme="valley"][data-state="still"] .sign-list { display: flex; }
 @media (max-aspect-ratio: 9/10) {
-  html[data-theme="valley"] .sign-list, html[data-theme="valley"][data-state="still"] .sign-list { display: grid; position: absolute; top: auto; inset: auto var(--edge) calc(var(--s7) + 112px); grid-template-columns: repeat(3, minmax(0, 1fr)); font-size: var(--t-s); }
+  html[data-theme="valley"] .sign-list, html[data-theme="valley"][data-state="still"] .sign-list { display: grid; position: absolute; top: auto; inset: auto var(--edge) calc(var(--s7) + var(--s2) + 112px); grid-template-columns: repeat(3, minmax(0, 1fr)); font-size: var(--t-s); }
   .sign-link { display: none; }
 }
 
 /* On a narrow window the captions would cover the cards, so the teams become a plain list under the platform. */
 .team-list { display: none; }
 @media (max-aspect-ratio: 9/10) {
-  .stage::after { height: 42%; background: linear-gradient(transparent, rgb(10 16 11 / 0.92) 42%, var(--ink)); }
+  .stage::after { display: block !important; height: 42%; background: linear-gradient(transparent, color-mix(in srgb, var(--page-solid) 92%, transparent) 42%, var(--page-solid)); }
   .portal-label { display: none; }
   .top { grid-template-columns: 1fr auto; }
   .top__line { grid-column: 1 / -1; grid-row: 2; padding-top: var(--s2); font-size: var(--t-l); text-align: left; }
-  .team-list { position: absolute; z-index: 2; inset: auto var(--edge) var(--s7); display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s1); }
+  .team-list { position: absolute; z-index: 2; inset: auto var(--edge) calc(var(--s7) + var(--s2)); display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s1); }
   .team-list a { --c: #fff; display: flex; align-items: center; gap: var(--s1); min-height: 48px; padding: var(--s1); border-left: 2px solid var(--c); background: rgb(6 10 8 / 0.74); font: 500 var(--t-s)/1.2 var(--mono); text-decoration: none; }
   .bottom { flex-direction: column; align-items: stretch; }
   .bottom a { align-self: flex-end; }
@@ -174,31 +196,14 @@ html[data-theme="valley"][data-state="still"] .sign-list { display: flex; }
 
 /* ---------- the three beats ---------- */
 .wrap { padding-inline: var(--edge); }
-.beat { position: relative; overflow: hidden; padding-block: var(--s7); }
+.beat { position: relative; padding-block: var(--s7); }
+.people__cards { display: flex; flex-wrap: wrap; gap: var(--s3); margin-top: var(--s5); }
 /* Sections arrive as they scroll in. Without script, or with reduced motion, everything is simply there. */
 .js .reveal { opacity: 0; transform: translateY(var(--s4)); transition: opacity 0.8s var(--ease) calc(var(--i, 0) * 0.07s), transform 1s var(--ease) calc(var(--i, 0) * 0.07s); }
 .js .reveal.in { opacity: 1; transform: none; }
 @media (prefers-reduced-motion: reduce) { .js .reveal { opacity: 1; transform: none; } }
-.person__photo { transition: transform 0.6s var(--ease), filter 0.6s; }
-.person:hover .person__photo { transform: translateY(calc(var(--s1) * -1)); }
 .wrap { position: relative; z-index: 1; }
-/* Each world keeps moving behind the page: leaves on the wind in the valley, slow stars in space. */
-.drift { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
-.drift--leaves i { position: absolute; top: -32px; left: var(--x); width: 14px; height: 9px; border-radius: 80% 0 80% 0; background: var(--leaf); opacity: 0; animation: leaf var(--t) linear var(--d) infinite; }
-@keyframes leaf {
-  0% { opacity: 0; transform: translate(0, 0) rotate(0deg); }
-  8% { opacity: 0.75; }
-  50% { transform: translate(14vw, 50vh) rotate(260deg); }
-  92% { opacity: 0.75; }
-  100% { opacity: 0; transform: translate(30vw, 104vh) rotate(560deg); }
-}
-.drift--stars::before, .drift--stars::after { content: ""; position: absolute; inset: -20% 0; background-repeat: repeat; animation: stars 90s linear infinite, twinkle 7s ease-in-out infinite alternate; }
-.drift--stars::before { background-image: radial-gradient(1px 1px at 12% 22%, #fff, transparent), radial-gradient(1px 1px at 37% 68%, #cfe9f0, transparent), radial-gradient(1.5px 1.5px at 71% 31%, #fff, transparent), radial-gradient(1px 1px at 88% 79%, #ffe9c9, transparent), radial-gradient(1px 1px at 54% 11%, #fff, transparent); background-size: 340px 340px; opacity: 0.6; }
-.drift--stars::after { background-image: radial-gradient(1px 1px at 22% 58%, #fff, transparent), radial-gradient(1.5px 1.5px at 63% 83%, #cfe9f0, transparent), radial-gradient(1px 1px at 81% 14%, #fff, transparent); background-size: 520px 520px; animation-duration: 140s, 11s; opacity: 0.45; }
-@keyframes stars { to { transform: translateY(-20%); } }
-@keyframes twinkle { from { opacity: 0.25; } to { opacity: 0.7; } }
-.only-space.drift, .only-valley.drift { display: block; }
-html[data-theme="space"] .only-valley.drift, html:not([data-theme="space"]) .only-space.drift { display: none; }
+
 .eyebrow { font-size: var(--t-xs); color: var(--text-2); margin-bottom: var(--s2); }
 .beat h2, .ending__title { font: 800 var(--t-2xl)/1.02 var(--display); font-stretch: 112%; text-transform: uppercase; text-wrap: balance; }
 .beat h3 { font: 700 var(--t-xl)/1.1 var(--display); font-stretch: 108%; }
@@ -240,13 +245,11 @@ html[data-theme="space"] .only-valley.drift, html:not([data-theme="space"]) .onl
 
 .ending { position: relative; color: var(--chalk); display: grid; align-items: end; min-height: 100vh; min-height: 100svh; }
 .ending { overflow: hidden; }
-.ending__image { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; animation: push 34s ease-in-out infinite alternate; }
+.ending__image { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; -webkit-mask-image: linear-gradient(transparent, #000 24%, #000 86%, transparent); mask-image: linear-gradient(transparent, #000 24%, #000 86%, transparent); animation: push 34s ease-in-out infinite alternate; }
 /* A slow push in, the way a film holds its last shot. */
 @keyframes push { from { transform: scale(1); } to { transform: scale(1.07) translateY(-1%); } }
-.ending__rocket { position: absolute; z-index: 1; left: 71%; bottom: 40%; width: 3px; height: 28vh; background: linear-gradient(transparent, rgb(255 220 170 / 0.08) 30%, rgb(255 168 90 / 0.7) 90%, #fff); border-radius: 3px; filter: blur(0.5px); box-shadow: 0 0 16px rgb(255 150 70 / 0.65); transform-origin: bottom; opacity: 0; animation: climb 16s cubic-bezier(0.5, 0, 0.9, 0.6) 3s infinite; }
-@keyframes climb { 0% { opacity: 0; transform: translateY(0) rotate(5deg) scaleY(0.2); } 8% { opacity: 1; } 45% { opacity: 1; transform: translateY(-62vh) rotate(9deg) scaleY(1); } 50%, 100% { opacity: 0; transform: translateY(-84vh) rotate(9deg) scaleY(1); } }
-.ending::before { content: ""; position: absolute; z-index: 1; inset: 0; background: linear-gradient(var(--raise), transparent 24%, transparent 55%, rgb(5 8 7 / 0.9)); }
-.ending__text { position: relative; z-index: 2; width: 100%; padding-block: var(--s7) var(--s6); }
+.ending::before { content: ""; position: absolute; z-index: 1; inset: 0; pointer-events: none; background: linear-gradient(transparent 50%, rgb(5 8 7 / 0.62) 76%, transparent); }
+.ending__text { position: relative; z-index: 2; width: 100%; padding-block: var(--s7) var(--s7); }
 
 .foot { padding-block: var(--s5); font-size: var(--t-xs); color: var(--text-2); }
 .foot .logo { color: var(--text); }

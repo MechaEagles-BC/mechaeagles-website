@@ -1,5 +1,10 @@
 ---
 import "../styles/lab.css";
+import "../styles/cards.css";
+import WorldHead from "../components/WorldHead.astro";
+import WorldBackdrop from "../components/WorldBackdrop.astro";
+import MemberCard from "../components/cards/MemberCard.astro";
+import { cardFor, PEOPLE_COUNT } from "../data/org";
 import Foundation from "../components/Foundation.tsx";
 import { SIGNS, TEAMS } from "../components/teams";
 
@@ -7,22 +12,11 @@ const still = (name: string, dir = "") => ({ wide: `/stills/${dir}${name}-wide.w
 const WORLDS = [{ dir: "", key: "valley" }, { dir: "space/", key: "space" }];
 const STILLS = ["baja", "aero", "combat", "ai"];
 
-// Copied from site/src/content for this prototype. Everyone here has consent "photo" on file, which the roster notes still need each member to confirm.
-const PEOPLE_COUNT = 48;
+// From the roster in src/data. Everyone here has consent "photo" on file, which the roster notes still need each member to confirm.
 const LATEST_LOG = { date: "19 Sep 2026", title: "First launch day: three up, two back", href: "/log/" };
-const LEADS = [
-  { name: "Sam Kaiser", title: "Baja Lead", photo: "sam-kaiser", color: TEAMS[0].color },
-  { name: "Jack Tommaney", title: "Aero Lead · Payload Lead", photo: "jack-tommaney", color: TEAMS[1].color },
-  { name: "Carlos Contreras", title: "Combat Robotics Lead", photo: "carlos-contreras", color: TEAMS[2].color },
-  { name: "Ambrose McCullough", title: "AI Safety Lead", photo: "ambrose-mccullough", color: TEAMS[3].color },
-];
-const PROGRAM = [
-  { name: "Austin Kinnealey", title: "Project Manager", photo: "austin-kinnealey" },
-  { name: "Vedarsh Mishra", title: "Project Manager", photo: "vedarsh-mishra" },
-  { name: "Lucas DiMarco", title: "DPM", photo: "lucas-dimarco" },
-  { name: "Ambrose McCullough", title: "DPM / Programmatics", photo: "ambrose-mccullough" },
-  { name: "Vladislav Hoila", title: "CS Lead", photo: "vladislav-hoila" },
-];
+const LEADS = ["sam-kaiser", "jack-tommaney", "carlos-contreras", "ambrose-mccullough"];
+const PROGRAM = ["austin-kinnealey", "vedarsh-mishra", "lucas-dimarco", "ambrose-mccullough", "vladislav-hoila"];
+const LEAD_TEAM: Record<string, string> = { "ambrose-mccullough": "ai-safety" };
 // Carried over from the 2025-26 sponsors page. Confirm each entry with the partner before launch.
 const PARTNERS = [
   { name: "SolidWorks", provided: "30 software licenses" },
@@ -30,8 +24,6 @@ const PARTNERS = [
   { name: "Boston College Engineering", provided: "Funding and shop access" },
   { name: "IGOS Welding", provided: "Bolts and welding materials" },
 ];
-// Where each leaf starts, how long it falls, when it starts and its colour. A few, and all greens and straw, since the team colours are spoken for.
-const LEAVES: [number, number, number, string][] = [[6, 19, 0, "#7f9a4a"], [18, 24, 6, "#5f7f3a"], [33, 21, 11, "#a7a35a"], [47, 27, 3, "#6d8a40"], [64, 23, 14, "#8aa04e"], [78, 26, 8, "#b4a862"]];
 const NAV = [
   { label: "Teams", href: "/teams/" },
   { label: "People", href: "/people/" },
@@ -49,24 +41,10 @@ const NAV = [
     <meta name="robots" content="noindex" />
     <meta name="description" content="MechaEagles: four student engineering teams at Boston College." />
     <title>MechaEagles</title>
-    <!-- Runs before the first paint, so the page never flashes the wrong world, and preloads only that world's picture. -->
-    <script is:inline>
-      (function () {
-        var q = new URLSearchParams(location.search), saved = null;
-        try { saved = localStorage.getItem("mc-world"); } catch (e) {}
-        var world = q.has("space") ? "space" : q.has("valley") ? "valley" : saved || (matchMedia("(prefers-color-scheme: dark)").matches ? "space" : "valley");
-        document.documentElement.dataset.theme = world;
-        document.documentElement.classList.add("js");
-        var dir = world === "space" ? "/stills/space/" : "/stills/";
-        [["wide", "(min-aspect-ratio: 9/10)"], ["tall", "(max-aspect-ratio: 9/10)"]].forEach(function (s) {
-          var l = document.createElement("link");
-          l.rel = "preload"; l.as = "image"; l.href = dir + "idle-" + s[0] + ".webp"; l.media = s[1]; l.fetchPriority = "high";
-          document.head.appendChild(l);
-        });
-      })();
-    </script>
+    <WorldHead preloadStills />
   </head>
   <body>
+    <WorldBackdrop />
     <main>
       <section class="stage" aria-label="The four teams">
         <div class="stills" aria-hidden="true">
@@ -99,41 +77,28 @@ const NAV = [
       </section>
 
       <section class="beat" id="people">
-        <div class="drift drift--leaves only-valley" aria-hidden="true">
-          {LEAVES.map((l) => <i style={`--x:${l[0]}%;--t:${l[1]}s;--d:${l[2]}s;--leaf:${l[3]}`}></i>)}
-        </div>
-        <div class="drift drift--stars only-space" aria-hidden="true"></div>
         <div class="wrap">
           <p class="eyebrow reveal">The people</p>
           <h2 class="reveal">Who leads the teams</h2>
-          <div class="people__row people__row--4">
-            {LEADS.map((p, i) => (
-              <article class="person reveal" style={`--c:${p.color};--i:${i}`}>
-                <img class="person__photo" src={`/people/${p.photo}.webp`} alt={`Portrait of ${p.name}`} loading="lazy" width="640" height="800" />
-                <span class="person__name">{p.name}</span>
-                <span class="person__title">{p.title}</span>
-              </article>
-            ))}
+          <div class="people__cards">
+            {LEADS.map((slug, i) => {
+              const c = cardFor(slug, "l");
+              const team = LEAD_TEAM[slug];
+              return <MemberCard card={team ? { ...c, team, rank: "Team Lead", role: "AI Safety Lead" } : c} href={`/teams/#${slug}`} style={`--i:${i}`} />;
+            })}
           </div>
           <div class="people__second">
             <h3 class="reveal">Who makes it possible</h3>
             <p class="lede reveal">Project management, outreach, operations and partnerships. None of the four teams runs without them.</p>
-            <div class="people__row people__row--5">
-              {PROGRAM.map((p, i) => (
-                <article class="person reveal" style={`--i:${i}`}>
-                  <img class="person__photo" src={`/people/${p.photo}.webp`} alt={`Portrait of ${p.name}`} loading="lazy" width="640" height="800" />
-                  <span class="person__name">{p.name}</span>
-                  <span class="person__title">{p.title}</span>
-                </article>
-              ))}
+            <div class="people__cards">
+              {PROGRAM.map((slug, i) => <MemberCard card={cardFor(slug, "m")} href={`/teams/#${slug}`} style={`--i:${i}`} />)}
             </div>
           </div>
-          <a class="people__all" href="/people/">See all {PEOPLE_COUNT} people</a>
+          <a class="people__all reveal" href="/teams/">See how all {PEOPLE_COUNT} people fit together</a>
         </div>
       </section>
 
       <section class="beat beat--support" id="support">
-        <div class="drift drift--stars only-space" aria-hidden="true"></div>
         <div class="wrap support">
           <div class="reveal">
             <p class="eyebrow">For sponsors and faculty</p>
@@ -166,7 +131,6 @@ const NAV = [
           <source media="(max-aspect-ratio: 9/10)" srcset="/plate/space-end-tall.webp" />
           <img class="ending__image" src="/plate/space-end.webp" alt="The MechaEagles platform on a small moon with its circuits lit" loading="lazy" width="1920" height="1080" />
         </picture>
-        <div class="ending__rocket only-space" aria-hidden="true"></div>
         <div class="ending__text wrap">
           <h2 class="ending__title reveal">Come build with us.</h2>
           <div class="actions reveal" style="--i:2"><a class="button button--solid" href="/join/">Join MechaEagles</a></div>
@@ -182,6 +146,10 @@ const NAV = [
         </div>
       </div>
     </footer>
+    <script>
+      import { tiltCards } from "../components/cards/tilt";
+      tiltCards();
+    </script>
     <script is:inline>
       (function () {
         var items = document.querySelectorAll(".reveal");

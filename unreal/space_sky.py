@@ -48,26 +48,10 @@ sky *= (1 - dust[..., None] * 0.68)
 far = smooth(0.45, 0.8, fbm(u * 2 + 90, v * 2 + 7, 4))
 sky += far[..., None] * np.array([0.004, 0.0085, 0.009])
 
-# ---------- stars: many faint, a few bright, thicker in the band ----------
-def splat(n, sigma, lo, hi, density=None):
-    count = 0
-    r = int(np.ceil(sigma * 3))
-    gx, gy = np.meshgrid(np.arange(-r, r + 1), np.arange(-r, r + 1))
-    shape = np.exp(-(gx * gx + gy * gy) / (2 * sigma * sigma))
-    while count < n:
-        x, y = int(rng.integers(r, W - r)), int(rng.integers(r, H - r))
-        if density is not None and rng.random() > density[y, x]:
-            continue
-        warm = rng.random()
-        tint = np.array([1.0, 0.86, 0.68]) if warm < 0.18 else np.array([0.76, 0.9, 1.0]) if warm < 0.42 else np.array([1.0, 1.0, 1.0])
-        sky[y - r:y + r + 1, x - r:x + r + 1] += shape[..., None] * tint * (lo + (hi - lo) * rng.random() ** 3)
-        count += 1
-
-
-density = 0.3 + band * (1 - dust * 0.85) * 0.7
-splat(26000, 0.75, 0.018, 0.16, density)
-splat(1500, 1.05, 0.06, 0.42, density)
-splat(90, 1.6, 0.4, 1.2)
+# The galaxy alone, with no stars, for the web. The stars are drawn live, so they can drift at their own depths.
+PLATE = HERE.parent / "public" / "plate"
+glowed = np.clip(to_srgb(sky) + (rng.random((H, W, 3)) - 0.5) / 255 * 1.6, 0, 1)
+Image.fromarray((glowed * 255 + 0.5).astype(np.uint8)).resize((1400, int(1400 * H / W)), Image.LANCZOS).save(PLATE / "space-nebula.webp", quality=82, method=6)
 
 # ---------- the planet: pale bands, lit from the upper left, with a thin ring and its shadow ----------
 cx, cy, R = PLANET
@@ -87,19 +71,23 @@ base = (np.array([0.62, 0.66, 0.66]) * (1 - bands[..., None]) + np.array([0.86, 
 base = base * (1 - storm[..., None] * 0.22)
 planet = base * (light[..., None] ** 0.9) * 0.72
 limb = np.exp(-(((np.hypot(px, py) - 1) / 0.03) ** 2)) * np.clip(px * SUN[0] + py * SUN[1] + 0.32, 0, 1)
-sky = np.where(inside[..., None], planet + np.array([0.003, 0.004, 0.006]), sky)
-sky += limb[..., None] * np.array([0.33, 0.47, 0.5]) * 0.8
 ring = (smooth(1.32, 1.4, rr) * (1 - smooth(1.56, 1.62, rr)) * 0.55 + smooth(1.66, 1.7, rr) * (1 - smooth(1.98, 2.08, rr)) * 0.3)
 ring = ring * (0.65 + fbm(rr * 45, np.full_like(rr, 7.7), 3) * 0.7)
-shadowed = (ry < 0) | ~inside  # the near half of the ring crosses in front of the planet
-ring = ring * shadowed
+ring = ring * ((ry < 0) | ~inside)  # the near half of the ring crosses in front of the planet
 sun_side = np.clip(0.5 + rx * 0.55, 0.12, 1)
-sky = sky * (1 - ring[..., None] * 0.75) + ring[..., None] * sun_side[..., None] * np.array([0.26, 0.26, 0.235])
-
-noise = (rng.random((H, W, 3)) - 0.5) / 255 * 1.6  # dither, because a dark gradient bands in 8 bits
-out = np.clip(to_srgb(sky) + noise, 0, 1)
-(HERE / "parts").mkdir(exist_ok=True)
-Image.fromarray((out * 255 + 0.5).astype(np.uint8)).save(HERE / "parts" / "T_SpaceSky.png")
+ring_colour = sun_side[..., None] * np.array([0.26, 0.26, 0.235])
+# The planet by itself, with its edge and ring as transparency, on its own layer.
+y0, y1 = [int((SKY_V[1] - (cy + k * R * 2.3)) / (SKY_V[1] - SKY_V[0]) * H) for k in (1, -1)]
+x0, x1 = [int((cx + k * R * 2.3 - SKY_U[0]) / (SKY_U[1] - SKY_U[0]) * W) for k in (-1, 1)]
+disc = np.clip((1 - np.hypot(px, py)) * R * PER_UNIT, 0, 1)
+a_ring = np.clip(ring * 0.9, 0, 1)
+a_limb = np.clip(limb * 0.75, 0, 1)
+alpha = 1 - (1 - disc) * (1 - a_ring) * (1 - a_limb)
+colour = planet * disc[..., None] + ring_colour * a_ring[..., None] + limb[..., None] * np.array([0.33, 0.47, 0.5]) * 0.5
+colour = np.where(alpha[..., None] > 0.003, colour / np.maximum(alpha[..., None], 0.003), 0)
+layer = np.dstack([to_srgb(colour), alpha])[y0:y1, x0:x1]
+Image.fromarray((np.clip(layer, 0, 1) * 255 + 0.5).astype(np.uint8), "RGBA").save(PLATE / "space-planet.webp", quality=86, alpha_quality=90, method=6)
+print("PLANET", layer.shape, "half width in film units", R * 2.3)
 
 # ---------- the reflection map: lit dust below, the galaxy overhead, and a soft pale patch where the planet sits ----------
 ENV = HERE.parent / "public" / "env" / "space"

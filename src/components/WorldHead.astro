@@ -1,0 +1,20 @@
+---
+/** Runs before the first paint on every page, so nothing flashes the wrong world. On the homepage it also preloads that world's first picture. */
+const { preloadStills = false } = Astro.props as { preloadStills?: boolean };
+---
+<script is:inline define:vars={{ preloadStills }}>
+  (function () {
+    var q = new URLSearchParams(location.search), saved = null;
+    try { saved = localStorage.getItem("mc-world"); } catch (e) {}
+    var world = q.has("space") ? "space" : q.has("valley") ? "valley" : saved || (matchMedia("(prefers-color-scheme: dark)").matches ? "space" : "valley");
+    document.documentElement.dataset.theme = world;
+    document.documentElement.classList.add("js");
+    if (!preloadStills) return;
+    var dir = world === "space" ? "/stills/space/" : "/stills/";
+    [["wide", "(min-aspect-ratio: 9/10)"], ["tall", "(max-aspect-ratio: 9/10)"]].forEach(function (s) {
+      var l = document.createElement("link");
+      l.rel = "preload"; l.as = "image"; l.href = dir + "idle-" + s[0] + ".webp"; l.media = s[1]; l.fetchPriority = "high";
+      document.head.appendChild(l);
+    });
+  })();
+</script>

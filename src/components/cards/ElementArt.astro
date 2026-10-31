@@ -1,0 +1,46 @@
+---
+/** The element behind a card. The art is here, and how it moves is in cards.css: mostly at rest, and awake when the card is. */
+const { el } = Astro.props as { el: string };
+const motes = Array.from({ length: el === "fire" ? 9 : el === "earth" ? 6 : 0 }, (_, i) => ({ x: 8 + ((i * 37) % 86), d: (i * 0.37) % 2.1, s: 2 + (i % 3) }));
+const NODES = [[42, 64], [108, 38], [182, 72], [66, 138], [140, 118], [206, 160], [38, 214], [120, 196], [190, 246]];
+const LINKS = [[0, 1], [1, 2], [0, 3], [1, 4], [2, 4], [3, 4], [4, 5], [3, 6], [3, 7], [4, 7], [5, 7], [6, 7], [7, 8], [5, 8]];
+---
+<span class={`fx fx--${el}`} aria-hidden="true">
+  {el === "earth" && (
+    <svg viewBox="0 0 250 350" preserveAspectRatio="xMidYMid slice">
+      <path class="fx__strata" d="M0 74 C60 58 90 88 150 72 S230 60 250 76 M0 136 C50 150 110 118 170 138 S230 150 250 132 M0 212 C70 196 100 228 160 208 S230 200 250 216" />
+      <path class="fx__ridge" d="M0 112 L44 58 L74 92 L118 28 L160 82 L192 54 L250 118" />
+      <path class="fx__crack" pathLength="1" d="M124 0 L112 44 L134 78 L104 124 L126 168 L92 214 L112 264 L84 350" />
+      <path class="fx__crack" pathLength="1" d="M104 124 L60 148 L36 138 L0 168 M126 168 L170 186 L196 174 L250 206 M112 264 L154 288 L176 350" />
+    </svg>
+  )}
+  {el === "wind" && (
+    <svg viewBox="0 0 250 350" preserveAspectRatio="xMidYMid slice">
+      <path class="fx__cloud" d="M-10 86 C40 54 90 110 140 76 S220 62 262 92 M-10 172 C50 138 100 196 160 158 S230 148 262 176 M-10 256 C36 226 96 282 150 244 S226 230 262 262" />
+      <path class="fx__air" pathLength="1" d="M-10 118 C60 88 110 148 170 112 S240 96 262 118" />
+      <path class="fx__air fx__air--2" pathLength="1" d="M-10 206 C40 176 120 236 180 196 S240 186 262 208" />
+      <path class="fx__air fx__air--3" pathLength="1" d="M-10 42 C70 18 120 68 190 36 S244 28 262 44" />
+    </svg>
+  )}
+  {el === "fire" && (
+    <svg viewBox="0 0 250 350" preserveAspectRatio="xMidYMid slice">
+      <path class="fx__seam" d="M-6 300 C30 262 56 306 96 268 S150 296 182 256 S232 286 256 244 L256 356 L-6 356 Z" />
+      <path class="fx__seam fx__seam--2" d="M-6 330 C36 304 64 334 104 306 S160 326 196 296 S240 318 256 292 L256 356 L-6 356 Z" />
+      <path class="fx__plates" d="M0 70 H250 M0 150 H250 M62 0 V70 M188 70 V150 M104 150 V230" />
+    </svg>
+  )}
+  {el === "mind" && (
+    <svg viewBox="0 0 250 350" preserveAspectRatio="xMidYMid slice">
+      {LINKS.map(([a, b], i) => <line class="fx__link" style={`--i:${i}`} pathLength="1" x1={NODES[a][0]} y1={NODES[a][1]} x2={NODES[b][0]} y2={NODES[b][1]} />)}
+      {NODES.map(([x, y], i) => <circle class="fx__node" style={`--i:${i}`} cx={x} cy={y} r="2.6" />)}
+    </svg>
+  )}
+  {el === "core" && (
+    <svg viewBox="0 0 250 350" preserveAspectRatio="xMidYMid slice">
+      <path class="fx__trace" pathLength="1" d="M0 60 H70 L96 86 H250 M0 150 H40 L70 120 H180 L210 150 H250 M0 240 H120 L146 214 H250" />
+      <circle class="fx__ring" cx="125" cy="130" r="86" />
+      <circle class="fx__ring fx__ring--2" cx="125" cy="130" r="58" />
+    </svg>
+  )}
+  {motes.map((m) => <i class="fx__mote" style={`--x:${m.x}%;--d:${m.d}s;--s:${m.s}px`}></i>)}
+</span>

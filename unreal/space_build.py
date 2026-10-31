@@ -125,7 +125,8 @@ ROCK = solid("M_MoonRock", (0.075, 0.078, 0.085), 0.92, 0.15)
 PROP = solid("M_MoonProp", (0.18, 0.19, 0.2), 0.55, 0.3)
 LAMP = glowing("M_LandingLamp", (0.86, 0.95, 0.96), 5.0)
 ENGINE = glowing("M_EngineGlow", (0.72, 0.95, 1.0), 9.0)
-SKY = sky_material(unreal.load_asset(MESHES["__sky"]), 0.85)
+SKY_BLACK = glowing("M_SkyBlack", (0.0, 0.0, 0.0), 0.0)
+SKY_WHITE = glowing("M_SkyWhite", (1.0, 1.0, 1.0), 1.0)
 # Where each flying ship's engines sit, in the model's own centimetres, measured from its imported bounds.
 ENGINES = {"Imperial": [(-230, -690, 50), (230, -690, 50), (0, -690, 90)], "Zenith": [(-95, -370, 0), (95, -370, 0)], "Bob": [(-120, -275, 10), (120, -275, 10)]}
 
@@ -154,7 +155,7 @@ def spawn_mesh(key, mat, cast=True):
     return a
 
 
-def build(map_path):
+def build(map_path, sky):
     if eal.does_asset_exist(map_path):
         levels.load_level(map_path)
         actors.destroy_actors(actors.get_all_level_actors())
@@ -162,7 +163,7 @@ def build(map_path):
         levels.new_level(map_path)
     spawn_mesh("moon_near", MOON)
     spawn_mesh("moon_far", MOON)
-    spawn_mesh("space_sky", SKY, cast=False)
+    spawn_mesh("space_sky", sky, cast=False)
     cone = unreal.load_asset("/Engine/BasicShapes/Sphere")
     for it in PLACED["items"]:
         mesh = unreal.load_asset(MESHES[it["name"]])
@@ -231,7 +232,7 @@ def build(map_path):
         "override_auto_exposure_method": True, "auto_exposure_method": unreal.AutoExposureMethod.AEM_MANUAL,
         "override_auto_exposure_apply_physical_camera_exposure": True, "auto_exposure_apply_physical_camera_exposure": False,
         "override_auto_exposure_bias": True, "auto_exposure_bias": EXPOSURE,
-        "override_bloom_intensity": True, "bloom_intensity": 0.28,
+        "override_bloom_intensity": True, "bloom_intensity": 0.0,  # bloom would break the matte
         "override_vignette_intensity": True, "vignette_intensity": 0.0,
         "override_motion_blur_amount": True, "motion_blur_amount": 0.0,
         "override_lens_flare_intensity": True, "lens_flare_intensity": 0.0,
@@ -287,8 +288,10 @@ def sequence(path, label, sensor, p, pitch, yaw):
 d = (CAM_LOOK[0] - CAM_POS[0], CAM_LOOK[2] - CAM_POS[2], CAM_LOOK[1] - CAM_POS[1])
 yaw = math.degrees(math.atan2(d[1], d[0]))
 pitch = math.degrees(math.atan2(d[2], math.hypot(d[0], d[1])))
-build(ROOT + "/Maps/MC_Space")
-sequence(ROOT + "/Seq_Space", "Cam_Space", (SENSOR_W, SENSOR_H), ue(CAM_POS), pitch, yaw)
-sequence(ROOT + "/Seq_SpaceWide", "Cam_SpaceWide", (SENSOR_W * 1.5, SENSOR_H), ue(CAM_POS), pitch, yaw)
-sequence(ROOT + "/Seq_SpaceTall", "Cam_SpaceTall", (SENSOR_W, SENSOR_H * 10 / 3), ue(CAM_POS), pitch, yaw)
+# The same moon twice: comparing a black sky with a white one gives a perfect edge, so the sky can move behind a still moon.
+for suffix, sky in (("", SKY_BLACK), ("Matte", SKY_WHITE)):
+    build(ROOT + "/Maps/MC_Space" + suffix, sky)
+    sequence(ROOT + "/Seq_Space" + suffix, "Cam_Space", (SENSOR_W, SENSOR_H), ue(CAM_POS), pitch, yaw)
+    sequence(ROOT + "/Seq_SpaceWide" + suffix, "Cam_SpaceWide", (SENSOR_W * 1.5, SENSOR_H), ue(CAM_POS), pitch, yaw)
+    sequence(ROOT + "/Seq_SpaceTall" + suffix, "Cam_SpaceTall", (SENSOR_W, SENSOR_H * 10 / 3), ue(CAM_POS), pitch, yaw)
 unreal.log("SPACE BUILD OK pitch %.2f yaw %.2f" % (pitch, yaw))

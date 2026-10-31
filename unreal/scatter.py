@@ -104,6 +104,22 @@ while count < 4200:
     count += 1
 torches = []
 
+# Broadleaf trees near enough to see move, and every tuft, are drawn live so they can really sway. Their picture keeps the trees' shadows only.
+trees = {}
+tufts = []
+for p in placements:
+    if "Tree" in p["name"] and "Pine" not in p["name"] and p["y"] < 140 and abs(p["x"]) < 140:
+        p["live"] = "tree"
+        trees.setdefault(p["name"], []).append([p["x"], p["z"], -p["y"], p["yaw"], p["scale"]])
+    elif p["name"].startswith("Grass"):
+        p["live"] = "grass"
+        tufts.append((p["x"], p["z"], -p["y"], p["scale"] * (1.0 if p["name"] == "Grass_Large" else 0.72)))
+LIVE = HERE.parent / "public" / "valley"
+LIVE.mkdir(exist_ok=True)
+(LIVE / "trees.json").write_text(json.dumps(trees))
+(LIVE / "grass.bin").write_bytes(np.array(tufts, dtype=np.float32).tobytes())
+print("live trees", sum(len(v) for v in trees.values()), "tufts", len(tufts))
+
 (HERE / "placements.json").write_text(json.dumps({"items": placements, "torches": torches}))
 
 # ---------- the import list, with foliage set to masked ----------

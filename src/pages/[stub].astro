@@ -1,6 +1,6 @@
 ---
 import "../styles/lab.css";
-export const getStaticPaths = () => ["teams", "projects", "people", "sponsors", "about", "log", "join"].map((stub) => ({ params: { stub } }));
+export const getStaticPaths = () => ["projects", "sponsors", "about", "log", "join"].map((stub) => ({ params: { stub } }));
 const { stub } = Astro.params;
 ---
 <!doctype html>
