@@ -803,7 +803,7 @@ function Scene({ world, fx, labelRefs, signRefs, signHover, signPress, founderRe
           )}
         </Suspense>
       )}
-      {!capture && innerWidth / innerHeight > 0.9 && <Signpost key={world} look={world === "space" ? "circuit" : "wood"} linkRefs={signRefs} hovered={signHover} pressed={signPress} />}
+      {!capture && innerWidth / innerHeight > 0.9 && !matchMedia("(pointer: coarse) and (max-height: 500px)").matches && <Signpost key={world} look={world === "space" ? "circuit" : "wood"} linkRefs={signRefs} hovered={signHover} pressed={signPress} />}
       {world === "space" && (
         <Suspense fallback={null}>
           <Regolith />

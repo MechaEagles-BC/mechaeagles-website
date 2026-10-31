@@ -165,11 +165,13 @@ html[data-state="still"] .sign-list { display: flex; }
 html[data-theme="space"] .sign-list::before { border-radius: 2px; background: linear-gradient(90deg, #1b2028, #2b3038 42%, #6fd2ff 47% 53%, #2b3038 58%, #1b2028); box-shadow: 0 0 14px rgb(111 210 255 / 0.35); }
 html[data-theme="space"] .sign-list a { color: #e9f6ff; font: 800 var(--t-s)/1 var(--display); font-stretch: 112%; letter-spacing: 0.04em; text-transform: uppercase; text-shadow: 0 0 10px #6fd2ff; background: linear-gradient(#6fd2ff, #6fd2ff) 0 7px / 100% 1.5px no-repeat, linear-gradient(#6fd2ff, #6fd2ff) 0 calc(100% - 7px) / 100% 1.5px no-repeat, linear-gradient(#161e2a, #0b1018); }
 @media (max-aspect-ratio: 9/10) {
-  .sign-list, html[data-state="still"] .sign-list { display: grid; position: absolute; top: auto; width: auto; inset: auto var(--edge) calc(var(--s7) + var(--s2) + 112px); grid-template-columns: repeat(3, minmax(0, 1fr)); font-size: var(--t-s); }
-  .sign-list::before { display: none; }
-  .sign-list li { height: auto; }
-  .sign-list a, .sign-list li:nth-child(even) a { position: static; height: 44px; min-height: 44px; }
+  /* A phone has the Menu, and the landscape deserves the room. */
+  .sign-list, html[data-state="still"] .sign-list { display: none; }
   .sign-link { display: none; }
+}
+/* The same for a phone held sideways. */
+@media (pointer: coarse) and (max-height: 500px) {
+  .sign-list, html[data-state="still"] .sign-list, .sign-link { display: none; }
 }
 
 /* On a narrow window the captions would cover the cards, so the teams become a plain list under the platform. */
