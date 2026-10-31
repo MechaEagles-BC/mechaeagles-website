@@ -2,7 +2,7 @@
 import Site from "../layouts/Site.astro";
 import MemberCard from "../components/cards/MemberCard.astro";
 import Sigil from "../components/cards/Sigil.astro";
-import { ENGINEERING, LEADERS, PEOPLE_COUNT, RESPONSIBILITIES, introOf, primaryCard, branchOf } from "../data/org";
+import { ENGINEERING, LEADERS, PEOPLE_COUNT, RESPONSIBILITIES, LED_BY_LEADERSHIP, TEAM_LEADS, introOf, primaryCard, branchOf } from "../data/org";
 import sponsors from "../data/sponsors.json";
 ---
 <Site title="Home" page="home" description="MechaEagles: four student engineering teams at Boston College.">
@@ -31,6 +31,19 @@ import sponsors from "../data/sponsors.json";
           </article>
         ))}
       </div>
+      <h3 class="leaders__sub reveal">Engineering team leads</h3>
+      <div class="leaders__row leaders__row--leads">
+        {TEAM_LEADS.map((m, i) => (
+          <article class="leader reveal" style={`--i:${i}`}>
+            <MemberCard card={primaryCard(m, "m")} />
+            <div class="leader__text">
+              <p>{introOf(m)}</p>
+              <a class="leader__more" data-person={m.id} href={`/people/#${m.id}`}>Full profile<span class="sr-only"> of {m.name}</span></a>
+            </div>
+          </article>
+        ))}
+      </div>
+      {LED_BY_LEADERSHIP.map((l) => <p class="leaders__note reveal">{l.team} is led by {l.name}, introduced above.</p>)}
       <a class="leaders__all reveal" href="/people/">See how all {PEOPLE_COUNT} people fit together</a>
     </div>
   </section>

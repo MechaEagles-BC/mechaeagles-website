@@ -83,6 +83,10 @@ export function branchOf(team: Team): Branch {
 }
 
 export const BRANCHES = ENGINEERING.map(branchOf);
+/** Engineering team leads who aren't already introduced as project leadership. */
+export const TEAM_LEADS = BRANCHES.flatMap((b) => b.leads).filter((m, i, all) => !LEADERS.includes(m) && all.indexOf(m) === i);
+/** Teams led by someone already introduced above, so the list of leads never looks like it's missing a team. */
+export const LED_BY_LEADERSHIP = BRANCHES.flatMap((b) => b.leads.filter((m) => LEADERS.includes(m)).map((m) => ({ team: b.team.name, name: m.name })));
 export const PROGRAM_BRANCH = branchOf(PROGRAMMATICS);
 
 /** People on the roster with no current team or position. They stay findable while someone places them. */
@@ -96,6 +100,10 @@ export function introOf(m: Member) {
   const parts = now(m);
   const main = primaryRole(m);
   const others = parts.filter((r) => r !== main);
+  if (main?.kind === "team-lead") {
+    const also = others.filter((r) => r.kind !== "member").map((r) => (r.subsystem ? `its ${r.subsystem} subsystem` : TEAM[r.org].name));
+    return `Leads the ${TEAM[main.org].name} team${also.length ? ` and ${also.join(" and ")}` : ""}.`;
+  }
   const first = main?.kind === "pm" ? "Runs MechaEagles across all four teams." : "Helps run MechaEagles across all four teams, as deputy to the project managers.";
   const led = others.filter((r) => r.kind !== "member").map((r) => (r.subsystem ? `${r.subsystem} on ${TEAM[r.org].name}` : TEAM[r.org].name));
   return led.length ? `${first} Also leads ${led.join(" and ")}.` : first;

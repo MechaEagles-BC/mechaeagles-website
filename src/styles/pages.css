@@ -63,15 +63,23 @@ html[data-theme="space"] .leaders { background: linear-gradient(transparent, rgb
 .leader__jobs span { display: grid; line-height: 1.25; }
 .leader__jobs small { font-size: var(--t-xs); color: var(--text-2); }
 .leader__more { justify-self: start; padding-block: 4px; color: var(--text); font-size: var(--t-s); }
-.leaders__all { display: block; width: max-content; max-width: 100%; margin: var(--s5) auto 0; padding-block: 4px; font-size: var(--t-s); }
+.leaders__sub { position: relative; margin-top: var(--s6); padding-bottom: var(--s3); text-align: center; font: 700 var(--t-l)/1.25 var(--display); font-stretch: 106%; }
+.leaders__sub::after { content: ""; position: absolute; left: calc(50% - 1px); bottom: 0; width: 2px; height: var(--s2); background: var(--rule); }
+.leaders__row--leads { width: min(100%, 75%); margin-inline: auto; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.leaders__row--leads::before { left: 16.67%; right: 16.67%; }
+.leaders__note { margin-top: var(--s4); text-align: center; font-size: var(--t-s); color: var(--text-2); }
+.leaders__all { display: block; width: max-content; max-width: 100%; margin: var(--s3) auto 0; padding-block: 4px; font-size: var(--t-s); }
 @media (max-width: 1100px) { .leaders__row { grid-template-columns: repeat(2, minmax(0, 1fr)); } .leaders__row::before { left: 25%; right: 25%; } .leader:nth-child(n + 3)::before { display: none; } }
+@media (max-width: 1100px) { .leaders__row--leads { width: 100%; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s2); } .leaders__row--leads::before { left: 16.67%; right: 16.67%; } .leaders__row--leads .leader:nth-child(n + 3)::before { display: block; } }
 @media (max-width: 600px) {
+  .leaders__row--leads { grid-template-columns: minmax(0, 1fr); gap: var(--s4); }
+  .leaders__row--leads::before, .leaders__row--leads .leader:nth-child(n + 3)::before, .leaders__sub::after { display: none; }
   .leaders { padding-top: var(--s7); }
   .leaders__row { grid-template-columns: minmax(0, 1fr); gap: var(--s4); }
   .leaders__row::before, .leader::before { display: none; }
   .leader { grid-template-columns: minmax(0, 42%) minmax(0, 1fr); align-items: start; justify-items: start; gap: var(--s2); }
   .leader .mcard { --w: calc((100vw - var(--gutter) * 2 - var(--s2)) * 0.42); }
-  .leader .mcard__rank { display: none; }
+  .leader .mcard__rank, .leader .mcard__team { display: none; }
 }
 
 .tstrip { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--s2); margin-top: var(--s4); }
