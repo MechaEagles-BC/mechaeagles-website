@@ -1,0 +1,12 @@
+[
+  { "team": "aero", "src": "/media/aero/pad-check.webp", "alt": "A member checking a rocket on the launch rail under a streaked sky", "caption": "Pre-flight check", "date": "19 Sep 2026", "kind": "Photo" },
+  { "team": "aero", "src": "/media/aero/crew.webp", "alt": "Three AeroEagles members on the launch field with their rockets", "caption": "The launch crew", "date": "19 Sep 2026", "kind": "Photo" },
+  { "team": "aero", "src": "/media/aero/pad.webp", "alt": "A rocket standing on its rail in a green field", "caption": "On the rail", "date": "19 Sep 2026", "kind": "Photo" },
+  { "team": "aero", "src": "/media/aero/contrail.webp", "alt": "A rocket's smoke trail climbing into a blue sky", "caption": "Ascent", "date": "19 Sep 2026", "kind": "Photo" },
+  { "team": "aero", "src": "/media/aero/crew-2.webp", "alt": "Three members posing with their rockets in the field", "caption": "With the rockets", "date": "19 Sep 2026", "kind": "Photo" },
+  { "team": "aero", "src": "/media/aero/motor.webp", "alt": "A rocket motor being unpacked", "caption": "Motor prep", "date": "19 Sep 2026", "kind": "Photo" },
+  { "team": "aero", "src": "/media/aero/openrocket.webp", "alt": "OpenRocket window showing the AeroEagle-1 design in side view with its simulated flights", "caption": "AeroEagle-1 in OpenRocket", "date": "19 Sep 2026", "kind": "Simulation" },
+  { "team": "baja", "src": "/media/baja/frame-prep.webp", "alt": "Grinding steel tubing, sparks flying", "caption": "Frame prep", "date": null, "kind": "Photo" },
+  { "team": "baja", "src": "/media/baja/welding.webp", "alt": "Welding at a steel fixture table", "caption": "Welding", "date": null, "kind": "Photo" },
+  { "team": "baja", "src": "/media/baja/bench.webp", "alt": "A member working at a shop bench", "caption": "Bench work", "date": null, "kind": "Photo" }
+]

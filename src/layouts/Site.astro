@@ -1,0 +1,66 @@
+---
+/** The frame around every page. Change the navigation or footer here, or in data/site.json, and it changes everywhere. */
+import { ClientRouter } from "astro:transitions";
+import "../styles/lab.css";
+import "../styles/cards.css";
+import "../styles/pages.css";
+import WorldHead from "../components/WorldHead.astro";
+import WorldBackdrop from "../components/WorldBackdrop.astro";
+import Stage from "../components/Stage.astro";
+import ElementArt from "../components/cards/ElementArt.astro";
+import { SITE } from "../data/org";
+
+const { title, description, page } = Astro.props as { title: string; description: string; page: string };
+const heading = page === "home" ? "MechaEagles" : `${title} · MechaEagles`;
+---
+<!doctype html>
+<html lang="en" data-page={page}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <meta name="description" content={description} />
+    <title>{heading}</title>
+    <link rel="icon" href="/brand/eagle.webp" />
+    <WorldHead />
+    <ClientRouter fallback="none" />
+  </head>
+  <body>
+    <a class="skip" href="#content">Skip to content</a>
+    <WorldBackdrop />
+    <Stage />
+    <header class="bar">
+      <a class="logo" href="/" aria-label="MechaEagles home" data-astro-prefetch="load"><img src="/brand/eagle.webp" alt="" width="44" height="28" /><span>MechaEagles</span></a>
+      <nav aria-label="Main">
+        <ul class="bar__links">
+          {SITE.nav.map((l) => <li><a href={l.href} class={l.page === "join" ? "bar__join" : undefined} aria-current={l.page === page ? "page" : undefined} data-astro-prefetch="load">{l.label}</a></li>)}
+        </ul>
+      </nav>
+      <button type="button" class="bar__world" data-world-switch aria-label="Change world" title="Change world">
+        <svg class="only-valley-icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="12" cy="12" r="5" fill="none" stroke="currentColor" stroke-width="1.6" /><ellipse cx="12" cy="12" rx="10.4" ry="3.2" fill="none" stroke="currentColor" stroke-width="1.6" transform="rotate(-24 12 12)" /></svg>
+        <svg class="only-space-icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="12" cy="12" r="4.2" fill="none" stroke="currentColor" stroke-width="1.6" /><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M18.7 5.3l-2.1 2.1M7.4 16.6l-2.1 2.1" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" /></svg>
+      </button>
+      <button type="button" class="bar__menu" data-sheet-open aria-haspopup="dialog">Menu</button>
+    </header>
+    <dialog class="sheet" id="site-sheet" aria-label="Menu">
+      <button type="button" class="sheet__close" data-sheet-close>Close</button>
+      <ul>{SITE.nav.map((l) => <li><a href={l.href} aria-current={l.page === page ? "page" : undefined}>{l.label}</a></li>)}</ul>
+    </dialog>
+    <main id="content"><slot /></main>
+    <footer class="foot">
+      <div class="wrap">
+        <div class="foot__row">
+          <a class="logo" href="/"><img src="/brand/eagle.webp" alt="" width="44" height="28" loading="lazy" /><span>MechaEagles</span></a>
+          <nav aria-label="Footer"><ul>{SITE.nav.map((l) => <li><a href={l.href}>{l.label}</a></li>)}</ul></nav>
+          <a href={`mailto:${SITE.email}`}>{SITE.email}</a>
+        </div>
+        <p>Names and portraits appear only as each member has agreed. Bios and projects are added by members themselves.</p>
+      </div>
+    </footer>
+    <dialog class="profile" id="profile" aria-labelledby="profile-name"><div class="profile__body" id="profile-body"></div></dialog>
+    {["earth", "wind", "fire", "mind", "core"].map((el) => <template id={`fx-${el}`}><ElementArt el={el} /></template>)}
+    <script>
+      import "../components/site";
+    </script>
+  </body>
+</html>

@@ -1,0 +1,11 @@
+---
+/** A short reference to someone whose full card is elsewhere: their face and what they do here, leading to the same profile. */
+import type { Member } from "../../data/org";
+
+const { member, role, color } = Astro.props as { member: Member; role: string; color: string };
+const initials = member.name.split(/\s+/).map((w) => w[0]).slice(0, 2).join("");
+---
+<a class="pref" data-person={member.id} href={`/people/#${member.id}`} style={`--c:${color}`}>
+  {member.photo ? <img src={member.photo} alt="" width="40" height="40" loading="lazy" decoding="async" /> : <span class="pref__mono" aria-hidden="true">{initials}</span>}
+  <span class="pref__text"><strong>{member.name}</strong><small>{role}</small></span>
+</a>

@@ -33,10 +33,10 @@ export const PORTAL = { radius: 10.3, scale: 0.8 };
 export const SIGNS = [
   { label: "Home", href: "/", points: 1 as const, yaw: 0.2, tilt: 0.022 },
   { label: "Teams", href: "/teams/", points: -1 as const, yaw: -0.28, tilt: -0.03 },
-  { label: "Projects", href: "/projects/", points: 1 as const, yaw: -0.16, tilt: -0.018 },
-  { label: "People", href: "#people", points: -1 as const, yaw: 0.2, tilt: 0.026 },
-  { label: "About", href: "/about/", points: 1 as const, yaw: 0.3, tilt: 0.012 },
-  { label: "Sponsors", href: "/sponsors/", points: 1 as const, yaw: -0.26, tilt: -0.02 },
+  { label: "People", href: "/people/", points: 1 as const, yaw: -0.16, tilt: -0.018 },
+  { label: "About", href: "/about/", points: -1 as const, yaw: 0.2, tilt: 0.026 },
+  { label: "Sponsors", href: "/sponsors/", points: 1 as const, yaw: 0.3, tilt: 0.012 },
+  { label: "Legacy", href: "/legacy/", points: 1 as const, yaw: -0.26, tilt: -0.02 },
 ];
 
 /**

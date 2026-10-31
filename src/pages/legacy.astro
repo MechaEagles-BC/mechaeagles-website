@@ -1,0 +1,108 @@
+---
+import Site from "../layouts/Site.astro";
+import PersonRef from "../components/cards/PersonRef.astro";
+import Empty from "../components/Empty.astro";
+import { ALUMNI, COHORTS, MEMBERS, TEAM, roleName, type Role } from "../data/org";
+
+const roleLine = (roles: Role[]) => roles.map((r) => (r.kind === "member" ? `${r.subsystem ?? "Member"}, ${TEAM[r.org].short}` : roleName(r))).join(" · ") || "Member";
+const colorOf = (roles: Role[]) => TEAM[roles[0]?.org ?? "leadership"].color;
+const open = COHORTS[COHORTS.length - 1].term;
+// Every stone gets its own small bit of hardware planted beside it.
+const PROPS = [
+  '<circle cx="24" cy="24" r="9"/><path d="M24 7v6M24 35v6M7 24h6M35 24h6M12 12l4 4M32 32l4 4M36 12l-4 4M16 32l-4 4"/>',
+  '<path d="M10 38 30 18M26 14a8 8 0 0 1 10-2l-5 5 2 4 4 2 5-5a8 8 0 0 1-11 10"/>',
+  '<path d="M24 5c5 6 7 13 7 21v9H17v-9c0-8 2-15 7-21ZM17 28l-7 9h7M31 28l7 9h-7"/>',
+];
+const years = [...new Set(ALUMNI.map((m) => m.alumni!.graduated))].sort();
+const alumRoles = (m: (typeof MEMBERS)[number]) => m.roles.map((r) => `${r.title ?? "Member"}, ${TEAM[r.org].name}`);
+---
+<Site title="Legacy" page="legacy" description="The MechaEagles archive: every past year, and where its people went next.">
+  <div class="page-head wrap">
+    <p class="eyebrow reveal">MechaEagles Legacy</p>
+    <h1 class="reveal">Everyone who built this is still part of it</h1>
+    <p class="lede reveal">Students graduate and teams change. The record stays. Walk the yard for each past year, or find where people went next in the <a href="#alumni">Alumni Network</a>.</p>
+  </div>
+
+  <section class="yardzone" aria-labelledby="yard-title">
+    <div class="wrap">
+      <h2 id="yard-title">The Graveyard</h2>
+      <p class="yard__sub">No one's gone. Only retired machines, finished seasons and a few lost rockets lie here. Pick a year.</p>
+      <div class="yard">
+        {COHORTS.map((c, i) => (
+          <button type="button" class="stone reveal" data-stone={c.term} aria-pressed={c.term === open ? "true" : "false"} aria-controls={`cohort-${c.term}`} style={`--i:${i}`}>
+            <span class="stone__slab">
+              <span class="stone__year">{c.label}</span>
+              <span class="stone__line">{c.epitaph}</span>
+              <span class="stone__count">{c.roster.length ? `${c.roster.length} members` : "Roster not archived"} · {c.teams.length} {c.teams.length === 1 ? "team" : "teams"}</span>
+              {c.current && <span class="stone__now">This year</span>}
+            </span>
+            <svg class="stone__prop" viewBox="0 0 48 48" aria-hidden="true" set:html={PROPS[i % PROPS.length]} />
+          </button>
+        ))}
+        <div class="yard__ground" aria-hidden="true"></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="wrap cohorts">
+    {COHORTS.map((c) => (
+      <section class="cohort" id={`cohort-${c.term}`} data-cohort={c.term} hidden={c.term !== open} aria-label={`The ${c.label} cohort`}>
+        <header><h2>{c.label}</h2><p>{c.teams.join(" · ")}</p></header>
+        <div class="cohort__facts">
+          <div>
+            <h3>What happened</h3>
+            <ul class="ticks">{c.accomplishments.map((a) => <li>{a}</li>)}</ul>
+          </div>
+          {c.competitions.length > 0 && <div><h3>Competitions</h3><ul class="ticks">{c.competitions.map((a) => <li>{a}</li>)}</ul></div>}
+          {c.projects.length > 0 && <div><h3>Projects</h3><ul class="ticks">{c.projects.map((a) => <li>{a}</li>)}</ul></div>}
+          {c.photo && <figure><img src={c.photo.src} alt={c.photo.alt} loading="lazy" /><figcaption>{c.photo.caption}</figcaption></figure>}
+        </div>
+        {c.roster.length ? <>
+          {c.leadership.length > 0 && <>
+            <h3>Leadership</h3>
+            <ul class="cohort__people">{c.leadership.map((r) => <li><PersonRef member={r.member} role={roleLine(r.roles.filter((x) => x.kind === "pm" || x.kind === "dpm"))} color={colorOf(r.roles)} /></li>)}</ul>
+          </>}
+          <div class="finder">
+            <label for={`find-${c.term}`}>Search this year's roster</label>
+            <input id={`find-${c.term}`} type="search" data-search={`roster-${c.term}`} autocomplete="off" />
+            <span class="finder__count" data-count={`roster-${c.term}`} aria-live="polite"></span>
+          </div>
+          <ul class="cohort__people" id={`roster-${c.term}`}>
+            {[...c.roster].sort((a, b) => a.member.name.localeCompare(b.member.name)).map((r) => (
+              <li data-find={`${r.member.name} ${roleLine(r.roles)}`.toLowerCase()}><PersonRef member={r.member} role={roleLine(r.roles)} color={colorOf(r.roles)} /></li>
+            ))}
+          </ul>
+        </> : <Empty what={`The ${c.label} roster and leadership haven't been archived yet.`} note="Only what's on record is shown here. Names get added as past members are confirmed." />}
+      </section>
+    ))}
+  </div>
+
+  <section class="tsec wrap" id="alumni">
+    <div class="tsec__head"><p class="eyebrow">Alumni Network</p><h2>Where MechaEagles go next</h2></div>
+    <p class="lede tiers__note">For mentorship, recruiting and staying in touch. Everything here is shared by alumni themselves, and nothing is published without their say-so.</p>
+    {ALUMNI.length ? <>
+      <div class="finder">
+        <label for="find-alum">Search by name, team, company or field</label>
+        <input id="find-alum" type="search" data-search="alumni-list" autocomplete="off" />
+        <span class="finder__count" data-count="alumni-list" aria-live="polite"></span>
+      </div>
+      <ul class="alumni" id="alumni-list">
+        {ALUMNI.map((m) => {
+          const a = m.alumni!;
+          const now = [a.title, a.company].filter(Boolean).join(", ") || a.field;
+          return (
+            <li data-find={[m.name, a.company, a.title, a.field, ...alumRoles(m)].filter(Boolean).join(" ").toLowerCase()}>
+              <a data-person={m.id} href={`/people/#${m.id}`}>
+                <strong>{m.name}</strong>
+                <span class="alumni__year">Class of {a.graduated}</span>
+                {now && <span>{now}</span>}
+                <small>{alumRoles(m).join(" · ")}</small>
+              </a>
+            </li>
+          );
+        })}
+      </ul>
+      <p class="directory__note">Classes on record: {years.join(", ")}.</p>
+    </> : <Empty what="No alumni profiles are published yet. The first graduating members will appear here once they've chosen what to share." note="Graduated from MechaEagles? Email mechaeagles@bc.edu to add your profile." />}
+  </section>
+</Site>

@@ -1,20 +1,41 @@
 ---
-/** Runs before the first paint on every page, so nothing flashes the wrong world. On the homepage it also preloads that world's first picture. */
-const { preloadStills = false } = Astro.props as { preloadStills?: boolean };
+/** Runs before the first paint on every page, so nothing flashes the wrong world. Moving between pages replaces the page's attributes, so the world is put back each time. */
 ---
-<script is:inline define:vars={{ preloadStills }}>
+<script is:inline>
   (function () {
-    var q = new URLSearchParams(location.search), saved = null;
-    try { saved = localStorage.getItem("mc-world"); } catch (e) {}
-    var world = q.has("space") ? "space" : q.has("valley") ? "valley" : saved || (matchMedia("(prefers-color-scheme: dark)").matches ? "space" : "valley");
-    document.documentElement.dataset.theme = world;
-    document.documentElement.classList.add("js");
-    if (!preloadStills) return;
-    var dir = world === "space" ? "/stills/space/" : "/stills/";
-    [["wide", "(min-aspect-ratio: 9/10)"], ["tall", "(max-aspect-ratio: 9/10)"]].forEach(function (s) {
-      var l = document.createElement("link");
-      l.rel = "preload"; l.as = "image"; l.href = dir + "idle-" + s[0] + ".webp"; l.media = s[1]; l.fetchPriority = "high";
-      document.head.appendChild(l);
+    var root = document.documentElement;
+    function pick() {
+      var q = new URLSearchParams(location.search), saved = null;
+      try { saved = localStorage.getItem("mc-world"); } catch (e) {}
+      return q.has("space") ? "space" : q.has("valley") ? "valley" : saved || (matchMedia("(prefers-color-scheme: dark)").matches ? "space" : "valley");
+    }
+    function stamp(page) {
+      root.dataset.theme = window.__mcWorld || (window.__mcWorld = pick());
+      root.classList.add("js");
+      if (window.__mcState) root.dataset.state = window.__mcState;
+      root.classList.toggle("past-hero", page !== "home" || scrollY > innerHeight * 0.4);
+    }
+    stamp(root.dataset.page);
+    if (window.__mcStamp) return;
+    window.__mcStamp = true;
+    // Registered ahead of the router, so going back from a profile can close it without reloading the page behind it.
+    addEventListener("popstate", function (e) { if (window.__mcPop) window.__mcPop(e); });
+    new MutationObserver(function () { window.__mcWorld = root.dataset.theme || window.__mcWorld; }).observe(root, { attributes: true, attributeFilter: ["data-theme"] });
+    document.addEventListener("astro:before-swap", function (e) {
+      // Done on the incoming page, before it's shown, so the swap never paints the wrong world.
+      var next = e.newDocument.documentElement;
+      next.dataset.theme = root.dataset.theme;
+      next.classList.add("js");
+      if (root.dataset.state) next.dataset.state = root.dataset.state;
+      next.classList.toggle("past-hero", next.dataset.page !== "home");
     });
+    if (root.dataset.page === "home") {
+      var dir = root.dataset.theme === "space" ? "/stills/space/" : "/stills/";
+      [["wide", "(min-aspect-ratio: 9/10)"], ["tall", "(max-aspect-ratio: 9/10)"]].forEach(function (s) {
+        var l = document.createElement("link");
+        l.rel = "preload"; l.as = "image"; l.href = dir + "idle-" + s[0] + ".webp"; l.media = s[1]; l.fetchPriority = "high";
+        document.head.appendChild(l);
+      });
+    }
   })();
 </script>

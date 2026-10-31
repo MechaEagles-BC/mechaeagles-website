@@ -1,7 +1,8 @@
-/** The tilt and wake of a card, for pages that show cards without the whole organisation. */
+/** The tilt and wake of a card. Cards come and go with pages, so each is set up once, and its listeners leave with it. */
 export function tiltCards() {
   if (!matchMedia("(hover: hover) and (pointer: fine)").matches || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-  document.querySelectorAll<HTMLElement>(".mcard").forEach((card) => {
+  document.querySelectorAll<HTMLElement>(".mcard:not([data-tilt])").forEach((card) => {
+    card.dataset.tilt = "";
     let frame = 0;
     card.addEventListener("pointermove", (e) => {
       const r = card.getBoundingClientRect();

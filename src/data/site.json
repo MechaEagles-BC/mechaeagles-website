@@ -1,0 +1,15 @@
+{
+  "currentTerm": "2026-27",
+  "email": "mechaeagles@bc.edu",
+  "instagram": "https://www.instagram.com/mecha.eagles/",
+  "applyUrl": "https://docs.google.com/forms/d/e/1FAIpQLSdOunUSR7l-q5qoLFwdAk3kbL_Radpw5x2goj_70lSLZm_vgQ/viewform",
+  "nav": [
+    { "label": "Home", "href": "/", "page": "home" },
+    { "label": "Teams", "href": "/teams/", "page": "teams" },
+    { "label": "People", "href": "/people/", "page": "people" },
+    { "label": "About", "href": "/about/", "page": "about" },
+    { "label": "Sponsors", "href": "/sponsors/", "page": "sponsors" },
+    { "label": "Legacy", "href": "/legacy/", "page": "legacy" },
+    { "label": "Join", "href": "/join/", "page": "join" }
+  ]
+}

@@ -637,29 +637,31 @@ function CameraRig({ closeup }: { closeup: number[] | null }) {
 const envFaces = (dir: string) => ["px", "nx", "py", "ny", "pz", "nz"].map((f) => `${dir}${f}.webp`);
 
 function Studio({ world }: { world: World }) {
-  // Both maps stay loaded, so a change of world never leaves the metal unlit while one downloads.
-  const valley = useEnvironment({ files: envFaces("/env/") });
-  const space = useEnvironment({ files: envFaces("/env/space/") });
+  // Only this world's light is prepared up front. The other one downloads quietly afterwards, so a change of world still never leaves the metal unlit.
   const inSpace = world === "space";
+  const map = useEnvironment({ files: envFaces(inSpace ? "/env/space/" : "/env/") });
+  useEffect(() => useEnvironment.preload({ files: envFaces(inSpace ? "/env/" : "/env/space/") }), [inSpace]);
   return (
     <>
       {/* Matches the sun in unreal/land_build.py and space_build.py, so shadows on the live parts fall the same way as in the picture. */}
       <directionalLight position={[-9.6, 23, 16.7]} intensity={inSpace ? 3.2 : 2.6} color={inSpace ? "#eef6ff" : "#fff4e6"} castShadow shadow-mapSize={[2048, 2048]} shadow-bias={-0.0004} shadow-normalBias={0.02} shadow-camera-left={-16} shadow-camera-right={16} shadow-camera-top={16} shadow-camera-bottom={-16} shadow-camera-far={70} />
       {inSpace && <directionalLight position={[10, 5, -22]} intensity={0.7} color="#dfe4ea" />}
-      <Environment map={inSpace ? space : valley} environmentIntensity={inSpace ? 1.7 : 1.5} />
+      <Environment map={map} environmentIntensity={inSpace ? 1.7 : 1.5} />
     </>
   );
 }
 
 function FrameWatch({ onGiveUp }: { onGiveUp: () => void }) {
-  const window = useRef({ time: 0, frames: 0 });
+  const window = useRef({ time: 0, frames: 0, bad: 0 });
   useFrame((_, dt) => {
     if (dt > 1) return; // a hidden tab or a stall, not a slow GPU
     const w = window.current;
     w.time += dt;
     w.frames += 1;
     if (w.time < 8) return;
-    if (w.frames / w.time < 18) onGiveUp();
+    // Only a machine that truly can't manage loses the live world. A busy moment on a good one doesn't.
+    w.bad = w.frames / w.time < 9 ? w.bad + 1 : 0;
+    if (w.bad >= 2) onGiveUp();
     w.time = w.frames = 0;
   });
   return null;

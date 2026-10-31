@@ -1,0 +1,73 @@
+[
+  {
+    "id": "baja", "kind": "engineering", "name": "Baja SAE", "short": "Baja", "element": "earth", "spirit": "Earth Spirit", "color": "#7fd66a",
+    "tagline": "Off-road vehicle engineering",
+    "line": "Stone, terrain and mechanical strength",
+    "mission": "We design, build and race a single-seat off-road vehicle for the Baja SAE collegiate series: frame, suspension, steering, braking and drivetrain, built by students in Boston College's shops.",
+    "overview": "Baja SAE gives every team the same engine, so the result comes down to engineering decisions rather than power. The vehicle is judged through design reviews, cost analysis, dynamic events and a four-hour endurance race, where reliability and execution decide who finishes.",
+    "objectives": ["Build a vehicle that survives rough terrain and a multi-hour endurance race", "Take the whole design, build and test cycle through student hands", "Defend the design and its cost in front of judges"],
+    "hero": "/media/baja/frame-prep.webp", "heroAlt": "A member grinding steel tubing in the shop, with sparks flying",
+    "facts": [
+      { "label": "Series", "value": "Baja SAE", "note": "Static design events, dynamic events and a four-hour endurance race" },
+      { "label": "Model year", "value": "ME-B26" }
+    ],
+    "subsystems": [
+      { "name": "Roll cage", "detail": "Tubular steel frame that protects the driver and carries every load path." },
+      { "name": "Suspension", "detail": "Front and rear geometry, travel and damping for rough terrain." },
+      { "name": "Steering & braking", "detail": "Steering rack, linkages and the hydraulic brake system." },
+      { "name": "Drivetrain", "detail": "Power from the engine to all four wheels." },
+      { "name": "Fabrication", "detail": "Cutting, notching, welding and machining the parts above." }
+    ]
+  },
+  {
+    "id": "aero", "kind": "engineering", "name": "AeroEagles", "short": "Aero", "element": "wind", "spirit": "Wind Spirit", "color": "#6fb7ff",
+    "tagline": "High-power rocketry",
+    "line": "Sky, currents and flight",
+    "mission": "AeroEagles will design, manufacture, test, launch and safely recover a reusable high-powered rocket carrying an autonomous payload. After landing, the payload finds a passive visual target and measures its distance without GPS.",
+    "overview": "The team is working toward NASA Student Launch 2027 with Baldwin-1, a single-stage vehicle with three sections tethered through descent and one central avionics bay. Every flight feeds a model-to-test loop: predict the flight, fly it, compare, and update the next design.",
+    "objectives": ["Launch and safely recover a reusable high-power rocket", "Carry an autonomous payload that ranges a passive visual target without GPS", "Treat recovery as mission-critical, with independent checks before every flight"],
+    "hero": "/media/aero/pad-hold.webp", "heroAlt": "An AeroEagles member holding a black high-power rocket on the launch field under a wide blue sky",
+    "status": { "text": "Baldwin-1 preliminary design review in revision", "updated": "27 Oct 2026" },
+    "facts": [
+      { "label": "Program", "value": "NASA Student Launch 2027", "note": "Proposal submitted 14 Sep 2026" },
+      { "label": "Vehicle", "value": "Baldwin-1", "note": "Madcow 6 in G12 airframe, 330 cm long (design baseline)" },
+      { "label": "First launch day", "value": "3 flown · 2 recovered", "note": "19 Sep 2026" },
+      { "label": "Certifications", "value": "1 × HPR Level 1", "note": "Earned on the first launch day" }
+    ],
+    "subsystems": [
+      { "name": "Structure", "detail": "Airframe, fins, motor mount, couplers and bulkheads." },
+      { "name": "CAD & integration", "detail": "Full-vehicle CAD, drawings and interface checks." },
+      { "name": "Avionics", "detail": "Altimeters, tracking, power distribution and the avionics bay." },
+      { "name": "Recovery", "detail": "Parachute sizing, dual-deployment sequencing and descent analysis." },
+      { "name": "Payload", "detail": "Camera ring and LiDAR rangefinding on an onboard computer, no GPS." }
+    ]
+  },
+  {
+    "id": "combat-robotics", "kind": "engineering", "name": "Combat Robotics", "short": "Combat", "element": "fire", "spirit": "Fire Spirit", "color": "#ff7a2a",
+    "tagline": "Arena robots",
+    "line": "Molten metal, sparks and the forge",
+    "mission": "We design, manufacture, program and compete combat robots: weapons, drive systems and armor that have to survive the arena.",
+    "overview": null, "objectives": [], "hero": null, "heroAlt": null, "facts": [], "subsystems": []
+  },
+  {
+    "id": "ai-safety", "kind": "engineering", "name": "AI Safety", "short": "AI Safety", "element": "mind", "spirit": "Mind Spirit", "color": "#a78bff",
+    "tagline": "Research and governance",
+    "line": "Networks, reasoning and safeguards",
+    "mission": "We study how to make AI systems safe and accountable through technical research, responsible development practice and governance.",
+    "overview": null, "objectives": [], "hero": null, "heroAlt": null, "facts": [], "subsystems": []
+  },
+  {
+    "id": "programmatics", "kind": "group", "name": "Programmatics", "short": "Programmatics", "element": "core", "spirit": "The Core", "color": "#d4dae0",
+    "tagline": "Outreach, operations and partnerships",
+    "line": "The people who keep four teams running",
+    "mission": "The people who keep four engineering teams running: outreach, scheduling, marketing and partnerships.",
+    "overview": null, "objectives": [], "hero": null, "heroAlt": null, "facts": [], "subsystems": []
+  },
+  {
+    "id": "leadership", "kind": "group", "name": "Program leadership", "short": "Leadership", "element": "core", "spirit": "The Core", "color": "#d4dae0",
+    "tagline": "Project management",
+    "line": "Running MechaEagles across all four teams",
+    "mission": "Project managers and deputy project managers who run MechaEagles across all four teams.",
+    "overview": null, "objectives": [], "hero": null, "heroAlt": null, "facts": [], "subsystems": []
+  }
+]

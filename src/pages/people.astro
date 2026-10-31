@@ -1,4 +1,141 @@
 ---
-import TeamsPage from "../components/cards/TeamsPage.astro";
+import Site from "../layouts/Site.astro";
+import MemberCard from "../components/cards/MemberCard.astro";
+import PersonRef from "../components/cards/PersonRef.astro";
+import Sigil from "../components/cards/Sigil.astro";
+import { BRANCHES, CURRENT, DPMS, PMS, PEOPLE_COUNT, PROGRAM_BRANCH, TEAM, UNPLACED, cardOf, isHome, now, primaryCard, primaryRole, roleName, type Branch, type Member } from "../data/org";
+
+const TOP = new Set(["pm", "dpm"]);
+// Leads who sit higher in the chart appear here as a reference to their card, never as a second copy of it.
+const hasCardAbove = (m: Member) => TOP.has(primaryRole(m)?.kind ?? "");
+const leadRole = (m: Member, org: string) => now(m).filter((r) => r.org === org && (r.kind === "team-lead" || r.kind === "group-lead")).map(roleName)[0] ?? "Lead";
+const roleHere = (m: Member, org: string) => {
+  const r = now(m).filter((x) => x.org === org);
+  return r.map((x) => (x.kind === "member" ? x.subsystem ?? "Member" : roleName(x))).join(" · ");
+};
+const showsFull = (m: Member, b: Branch) => isHome(m, b.team.id) && !b.leads.includes(m);
+const everyone = [...CURRENT].sort((a, b) => a.name.localeCompare(b.name));
+const describe = (m: Member) => now(m).map((r) => (r.kind === "member" ? `${r.subsystem ?? "Member"}, ${TEAM[r.org].short}` : roleName(r)));
+const branches = [...BRANCHES, PROGRAM_BRANCH];
 ---
-<TeamsPage all />
+<Site title="People" page="people" description="How MechaEagles is organised, and everyone in it.">
+  <div class="page-head wrap">
+    <p class="eyebrow reveal">{PEOPLE_COUNT} people · 4 engineering teams · Programmatics</p>
+    <h1 class="reveal">The people building MechaEagles</h1>
+    <p class="lede reveal">Read it from the top. Point at a team to see how it connects to leadership, open it to meet everyone, and open any card for that person's full profile.</p>
+  </div>
+
+  <div class="chart wrap" data-chart>
+    <section class="chart__leaders tier" aria-labelledby="t1">
+      <h2 class="tier__label" id="t1"><b>1</b>Project Management and Systems Engineering</h2>
+      <div class="tier__cards">{PMS.map((m) => <MemberCard card={cardOf(m, "leadership", "l")} />)}</div>
+    </section>
+    <div class="chart__stem" aria-hidden="true"></div>
+    <section class="chart__leaders tier" aria-labelledby="t2">
+      <h2 class="tier__label" id="t2"><b>2</b>Deputy Project Managers</h2>
+      <div class="tier__cards">{DPMS.map((m, i) => <MemberCard card={cardOf(m, "leadership", "l")} style={`--i:${i}`} />)}</div>
+    </section>
+    <div class="chart__stem" aria-hidden="true"></div>
+
+    <div class="fork" aria-hidden="true"><i class="fork__eng"></i><i class="fork__prog"></i></div>
+    <section class="forest" aria-labelledby="t3">
+      <h2 class="tier__label forest__label" id="t3"><b>3</b>Team and Subsystem Leads</h2>
+      <div class="forest__grid">
+        <div class="trunk trunk--eng">
+          <p class="trunk__node">Engineering</p>
+          <ul class="trunk__teams">
+            {BRANCHES.map((b, i) => (
+              <li class="branch reveal" data-branch={b.team.id} data-trunk="eng" style={`--c:${b.team.color};--i:${i}`}>
+                <div class="branch__lead">
+                  {b.leads.map((m) => hasCardAbove(m)
+                    ? <PersonRef member={m} role={leadRole(m, b.team.id)} color={b.team.color} />
+                    : <MemberCard card={cardOf(m, b.team.id, "m")} hideTeam />)}
+                </div>
+                <button type="button" class="branch__open" data-open-branch={b.team.id} aria-expanded="false" aria-controls={`panel-${b.team.id}`}>
+                  <Sigil el={b.team.element} />
+                  <span class="branch__name">{b.team.name}</span>
+                  <span class="branch__spirit">{b.everyone.length} people · Open</span>
+                </button>
+                <a class="branch__page" href={`/teams/${b.team.id}/`}>Team page</a>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div class="trunk trunk--prog">
+          <p class="trunk__node">Programmatics</p>
+          <ul class="trunk__teams">
+            <li class="branch reveal" data-branch="programmatics" data-trunk="prog" style={`--c:${PROGRAM_BRANCH.team.color};--i:4`}>
+              <div class="branch__lead">
+                {PROGRAM_BRANCH.leads.map((m) => <PersonRef member={m} role={leadRole(m, "programmatics")} color={PROGRAM_BRANCH.team.color} />)}
+                <p class="branch__note">{PROGRAM_BRANCH.team.tagline}</p>
+              </div>
+              <button type="button" class="branch__open" data-open-branch="programmatics" aria-expanded="false" aria-controls="panel-programmatics">
+                <Sigil el="core" />
+                <span class="branch__name">Programmatics</span>
+                <span class="branch__spirit">{PROGRAM_BRANCH.everyone.length} people · Open</span>
+              </button>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  {branches.map((b) => (
+    <section class="panel" id={`panel-${b.team.id}`} data-el={b.team.element} style={`--c:${b.team.color}`} aria-label={b.team.name}>
+      <div class="panel__sky" aria-hidden="true"></div>
+      <div class="wrap">
+        <header class="panel__head">
+          <Sigil el={b.team.element} />
+          <div>
+            <h2>{b.team.name}</h2>
+            <p class="lede">{b.team.mission}</p>
+          </div>
+          {b.team.kind === "engineering" && <a class="button" href={`/teams/${b.team.id}/`}>See what they're building</a>}
+        </header>
+        <h3 class="tier__label panel__level"><b>{b.team.kind === "engineering" ? 4 : 3}</b>{b.team.kind === "engineering" ? (b.team.subsystems.length ? "Subsystems, leads and members" : "Team members") : "Members"}</h3>
+        {b.groups.map((g) => (
+          <details class="sub" open>
+            <summary>
+              <span class="sub__name">{g.name}</span>
+              {g.detail && <span class="sub__detail">{g.detail}</span>}
+              <span class="sub__count">{g.leads.length + g.members.length}</span>
+            </summary>
+            <div class="sub__tree">
+              {[...g.leads, ...g.members].filter((m) => showsFull(m, b)).length > 0 && (
+                <div class="sub__cards">
+                  {g.leads.filter((m) => showsFull(m, b)).map((m) => <MemberCard card={cardOf(m, b.team.id, "m")} hideTeam />)}
+                  {g.members.filter((m) => showsFull(m, b)).map((m, i) => <MemberCard card={cardOf(m, b.team.id, "s")} hideTeam style={`--i:${i % 6}`} />)}
+                </div>
+              )}
+              {[...g.leads, ...g.members].filter((m) => !showsFull(m, b)).length > 0 && (
+                <div class="sub__refs">
+                  {[...g.leads, ...g.members].filter((m) => !showsFull(m, b)).map((m) => <PersonRef member={m} role={roleHere(m, b.team.id)} color={b.team.color} />)}
+                </div>
+              )}
+            </div>
+          </details>
+        ))}
+      </div>
+    </section>
+  ))}
+
+  <section class="beat directory" id="everyone">
+    <div class="wrap">
+      <h2>Find anyone</h2>
+      <div class="finder">
+        <label for="find-person">Search by name, role or team</label>
+        <input id="find-person" type="search" data-search="person-list" autocomplete="off" />
+        <span class="finder__count" data-count="person-list" aria-live="polite"></span>
+      </div>
+      <ul class="directory__list" id="person-list">
+        {everyone.map((m) => {
+          const c = primaryCard(m, "s");
+          const lines = describe(m);
+          return <li data-find={[m.name, ...lines, ...m.specialties].join(" ").toLowerCase()}><PersonRef member={m} role={lines.join(" · ") || m.specialties[0] || "Member"} color={TEAM[c.org].color} /></li>;
+        })}
+      </ul>
+      {UNPLACED.length > 0 && <p class="directory__note">{UNPLACED.map((m) => m.name).join(", ")} {UNPLACED.length === 1 ? "isn't" : "aren't"} on a team in the current records yet, so {UNPLACED.length === 1 ? "appears" : "appear"} here rather than in the chart.</p>}
+    </div>
+  </section>
+</Site>

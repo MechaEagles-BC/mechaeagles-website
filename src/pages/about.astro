@@ -1,0 +1,112 @@
+---
+import Site from "../layouts/Site.astro";
+import Sigil from "../components/cards/Sigil.astro";
+import { ENGINEERING, PEOPLE_COUNT, SITE } from "../data/org";
+import milestones from "../data/milestones.json";
+
+const history = milestones.filter((m) => m.team === "org");
+const VALUES = [
+  { title: "People in every decision", text: "We treat drivers, teammates and the communities around us as stakeholders in every design choice. Safety, clarity and inclusion sit alongside performance." },
+  { title: "Education and outreach", text: "Hands-on workshops and school visits make engineering feel reachable long before college. AeroEagles is planning water-rocket launches and design challenges with public high schools in Roxbury and Dorchester, and an event with the Boston Children's Museum." },
+  { title: "Responsible engineering", text: "Material choices aren't only about strength and weight. We weigh sourcing, fabrication impact, service life and end-of-life, and every rocket program runs on a written safety plan, a hazard analysis and a team safety agreement." },
+  { title: "Accountability", text: "Clear ownership, documented decisions and honest retrospectives. We publish failures alongside wins, like the rocket we lost on our first launch day and what we changed because of it." },
+];
+const SHOP = [
+  { src: "/media/baja/frame-prep.webp", alt: "Grinding steel tubing, sparks flying", cap: "Frame prep" },
+  { src: "/media/baja/welding.webp", alt: "Welding at a steel fixture table", cap: "Welding" },
+  { src: "/media/aero/crew.webp", alt: "AeroEagles members on the launch field with their rockets", cap: "Launch day" },
+  { src: "/media/org/design-review.webp", alt: "Members reviewing CAD on lab workstations", cap: "Design review" },
+  { src: "/media/org/meeting.webp", alt: "A full lab of members at workstations", cap: "General meeting" },
+  { src: "/media/org/planning.webp", alt: "Members collaborating around a table", cap: "Planning" },
+];
+---
+<Site title="About" page="about" description="The MechaEagles story: founded at Boston College in fall 2024, run by students, building real machines.">
+  <section class="ahero wrap">
+    <div>
+      <p class="eyebrow reveal">About MechaEagles</p>
+      <h1 class="reveal">Built by people. For people.</h1>
+      <p class="lede reveal">MechaEagles is a student-run engineering organization at Boston College. We started in fall 2024 with one goal: give students the chance to build real machines. Today that's a race car, rockets, combat robots and AI safety research, and {PEOPLE_COUNT} people working on them.</p>
+    </div>
+    <figure class="reveal"><img src="/media/org/group.webp" alt="MechaEagles members in a group photo" fetchpriority="high" /><figcaption>The team, 2025–26</figcaption></figure>
+  </section>
+
+  <section class="chapter wrap">
+    <p class="chapter__n">Our mission</p>
+    <div>
+      <h2 class="reveal">Experience that mirrors industry</h2>
+      <p class="chapter__big reveal">Our mission is to provide hands-on engineering experience that mirrors industry practice, emphasizing reliability, manufacturability and performance under real-world constraints.</p>
+      <p class="reveal">Members take a project through the complete design, build and test cycle, and come out with practical skills in mechanical design, systems integration, project management and technical communication. The aim is simple: to move from the classroom to industry with confidence.</p>
+    </div>
+  </section>
+
+  <section class="chapter wrap">
+    <p class="chapter__n">How it began</p>
+    <div>
+      <h2 class="reveal">From one car to four teams</h2>
+      <ol class="timeline">
+        {history.map((m) => (
+          <li class="timeline__item timeline__item--done reveal">
+            <span class="timeline__when">{m.when}</span>
+            <div><h3>{m.title}</h3><p>{m.detail}</p></div>
+          </li>
+        ))}
+      </ol>
+    </div>
+  </section>
+
+  <section class="chapter wrap">
+    <p class="chapter__n">Why here</p>
+    <div>
+      <h2 class="reveal">Engineering at Boston College is new, and growing fast</h2>
+      <p class="reveal">Boston College has launched its first undergraduate engineering degree and invested more than $300 million in new science and engineering infrastructure, including the 150,000-square-foot facility at 245 Beacon Street, with collaborative labs, maker spaces and design studios for applied, project-based learning.</p>
+      <p class="reveal">Student-led technical organizations turn that investment into hands-on experience. That's the gap MechaEagles is here to fill.</p>
+    </div>
+  </section>
+
+  <section class="chapter wrap">
+    <p class="chapter__n">What we build</p>
+    <div>
+      <h2 class="reveal">Our four engineering teams</h2>
+      <ul class="tstrip tstrip--2">
+        {ENGINEERING.map((t, i) => (
+          <li class="reveal" style={`--c:${t.color};--i:${i}`}>
+            <a href={`/teams/${t.id}/`}><Sigil el={t.element} /><strong>{t.name}</strong><span>{t.mission}</span></a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+
+  <section class="chapter wrap">
+    <p class="chapter__n">How we work</p>
+    <div>
+      <h2 class="reveal">An interdisciplinary approach</h2>
+      <p class="reveal">A rocket needs avionics and structures. A competition entry needs schedules and sponsors. An AI safety project needs research and governance. Engineers and Programmatics work on the same organization, and the machine is the second thing we build.</p>
+      <ul class="values">
+        {VALUES.map((v, i) => <li class="reveal" style={`--i:${i}`}><h3>{v.title}</h3><p>{v.text}</p></li>)}
+      </ul>
+    </div>
+  </section>
+
+  <section class="shopreel" aria-labelledby="hands-on">
+    <div class="wrap"><p class="eyebrow reveal">Student leadership, hands-on engineering</p><h2 id="hands-on" class="reveal">Students run it, and students build it</h2></div>
+    <ul class="shopreel__track" tabindex="0" aria-label="Photos of members at work">
+      {SHOP.map((s) => <li><img src={s.src} alt={s.alt} loading="lazy" decoding="async" /><span>{s.cap}</span></li>)}
+    </ul>
+  </section>
+
+  <section class="chapter wrap">
+    <p class="chapter__n">What's next</p>
+    <div>
+      <h2 class="reveal">Where we're heading</h2>
+      <p class="chapter__big reveal">As engineering at Boston College grows, we want MechaEagles to become a unifying organization that supports, coordinates and elevates applied engineering across campus.</p>
+      <p class="reveal">Nearest on the horizon is NASA Student Launch 2027, the program AeroEagles' Baldwin-1 is being designed for.</p>
+    </div>
+  </section>
+
+  <section class="tcta wrap">
+    <h2>Within every failure is an opportunity to learn.</h2>
+    <p class="lede">Most of us had never welded, wired an altimeter or written a safety case before joining. Pick a team, show up, and learn by building.</p>
+    <div class="actions"><a class="button button--solid" href="/join/">Get involved</a><a class="button" href={`mailto:${SITE.email}`}>{SITE.email}</a></div>
+  </section>
+</Site>

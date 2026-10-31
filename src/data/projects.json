@@ -1,0 +1,21 @@
+[
+  {
+    "id": "baldwin-1", "team": "aero", "name": "Baldwin-1", "stage": "Preliminary design review, in revision", "updated": "Oct 2026",
+    "summary": "Our NASA Student Launch 2027 vehicle. Single stage, three sections tethered through descent, one central avionics bay. The payload uses a camera ring and LiDAR rangefinding to find a passive visual target after landing, without GPS.",
+    "image": "/media/aero/baldwin-1.webp", "imageAlt": "Rendered side view of the Baldwin-1 rocket design", "tall": true,
+    "specs": [
+      { "label": "Length", "value": "330 cm" },
+      { "label": "Diameter", "value": "15.7 cm" },
+      { "label": "Airframe", "value": "Madcow 6 in G12" },
+      { "label": "Simulated apogee", "value": "1,506 m" }
+    ],
+    "note": "OpenRocket simulation with the L1940X placeholder motor. Motor not yet selected. PDR design baseline, Oct 2026.",
+    "members": []
+  },
+  {
+    "id": "me-b26", "team": "baja", "name": "ME-B26", "stage": "Current model year", "updated": null,
+    "summary": "The team's single-seat off-road vehicle for the Baja SAE series: tubular steel frame, suspension, steering, braking and drivetrain, designed and fabricated by students.",
+    "image": "/media/baja/welding.webp", "imageAlt": "A member welding at a steel fixture table in the shop", "tall": false,
+    "specs": [], "note": null, "members": []
+  }
+]

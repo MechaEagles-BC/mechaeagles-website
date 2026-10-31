@@ -1,11 +1,12 @@
 /**
- * The homepage stage: the platform, its four team links, the turning control and the in-place menu.
+ * The homepage stage: the platform, its four team links and the turning control. It starts once and stays alive across pages.
  * The poster and links need no 3D. Scene.tsx downloads only for capable visitors, and everyone else keeps a still image.
  */
 import { Component, createRef, lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { flushSync } from "react-dom";
+import { navigate } from "astro:transitions/client";
 import { captionTransform, filmFit, plateFor, SIGNS, TEAMS, type Fx, type World } from "./teams";
-import { startSky } from "./sky";
+import { canRun3D } from "./capability";
 import ValleyFx from "./ValleyFx";
 
 const Scene = lazy(() => import("./Scene"));
@@ -14,28 +15,13 @@ const Scene = lazy(() => import("./Scene"));
 const STILL_ANCHORS = [{ x: 278, y: 886 }, { x: 400, y: 558 }, { x: 1520, y: 558 }, { x: 1642, y: 886 }];
 const STILL = { w: 1920, h: 1080 };
 const DRAG_THRESHOLD = 6;
-const OPEN_DELAY = 520; // long enough to see the pulse leave the card
+const OPEN_DELAY = 240; // long enough to see the pulse leave the card, short enough to feel immediate
 
 function placeOnStill(el: HTMLElement, side: string, anchor: { x: number; y: number }) {
   const scale = Math.max(innerWidth / STILL.w, innerHeight / STILL.h);
   const x = innerWidth / 2 + (anchor.x - STILL.w / 2) * scale;
   const y = innerHeight / 2 + (anchor.y - STILL.h / 2) * scale;
   el.style.transform = captionTransform(side, x, y, el, innerWidth);
-}
-
-function canRun3D() {
-  const q = new URLSearchParams(location.search);
-  if (q.has("3d")) return true;
-  if (q.has("still")) return false;
-  const conn = (navigator as unknown as { connection?: { saveData?: boolean; effectiveType?: string } }).connection;
-  if (matchMedia("(prefers-reduced-motion: reduce)").matches) return false;
-  if (conn?.saveData || /(^|-)2g/.test(conn?.effectiveType ?? "")) return false;
-  if (matchMedia("(pointer: coarse)").matches && matchMedia("(max-width: 900px)").matches) return false;
-  try {
-    return !!document.createElement("canvas").getContext("webgl2");
-  } catch {
-    return false;
-  }
 }
 
 class GLBoundary extends Component<{ onError: () => void; children: ReactNode }, { failed: boolean }> {
@@ -53,16 +39,7 @@ class GLBoundary extends Component<{ onError: () => void; children: ReactNode },
 
 const OTHER: Record<World, World> = { valley: "space", space: "valley" };
 
-const MENU_LINKS = [
-  { label: "Teams", href: "/teams/" },
-  { label: "People", href: "/people/" },
-  { label: "Sponsors", href: "/sponsors/" },
-  { label: "About", href: "/about/" },
-  { label: "Log", href: "/log/" },
-  { label: "Join", href: "/join/" },
-];
-
-export default function Foundation({ peopleCount, latestLog }: { peopleCount: number; latestLog: { date: string; title: string; href: string } }) {
+export default function Foundation() {
   const live = useMemo(canRun3D, []);
   const capture = useMemo(() => import.meta.env.DEV && new URLSearchParams(location.search).has("capture"), []);
   const lit = useMemo(() => import.meta.env.DEV && new URLSearchParams(location.search).has("lit"), []);
@@ -73,13 +50,10 @@ export default function Foundation({ peopleCount, latestLog }: { peopleCount: nu
   const [gaveUp, setGaveUp] = useState(false);
   const [active, setActive] = useState(true);
   const [turned, setTurned] = useState(false);
-  const [menu, setMenu] = useState(false);
   const [world, setWorld] = useState<World>(() => (document.documentElement.dataset.theme === "space" ? "space" : "valley"));
   const [painted, setPainted] = useState(world); // the live scene changes only once its picture is ready, so the two never disagree
   const stageRef = useRef<HTMLDivElement>(null);
   const plates = useRef<Record<World, HTMLImageElement | null>>({ valley: null, space: null });
-  const menuRef = useRef<HTMLDivElement>(null);
-  const menuButton = useRef<HTMLButtonElement>(null);
   const labelRefs = useMemo(() => TEAMS.map(() => createRef<HTMLAnchorElement>()), []);
   const signRefs = useMemo(() => SIGNS.map(() => createRef<HTMLAnchorElement>()), []);
   const signHover = useRef(-1);
@@ -107,21 +81,16 @@ export default function Foundation({ peopleCount, latestLog }: { peopleCount: nu
     if (fx.current.dragged) return;
     select(i);
     const delay = matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : OPEN_DELAY;
-    setTimeout(() => location.assign(TEAMS[i].href), delay);
+    setTimeout(() => void navigate(TEAMS[i].href), delay);
   }, [select]);
   const onReady = useCallback(() => setReady(true), []);
   const onGiveUp = useCallback(() => setGaveUp(true), []);
-  const closeMenu = useCallback(() => {
-    setMenu(false);
-    hover(-1);
-    menuButton.current?.focus();
-  }, [hover]);
 
-  // Coming back through the browser's history restores this page as it was left, mid-selection.
+  // Coming back to Home finds the stage as it was left, mid-selection.
   useEffect(() => {
     const onShow = () => select(-1);
-    addEventListener("pageshow", onShow);
-    return () => removeEventListener("pageshow", onShow);
+    document.addEventListener("mc:page", onShow);
+    return () => document.removeEventListener("mc:page", onShow);
   }, [select]);
 
   const loadPlate = useCallback((w: World) => {
@@ -149,9 +118,20 @@ export default function Foundation({ peopleCount, latestLog }: { peopleCount: nu
     (img ? img.decode().catch(() => undefined) : Promise.resolve()).then(() => {
       const doc = document as Document & { startViewTransition?: (cb: () => void) => unknown };
       if (!doc.startViewTransition || matchMedia("(prefers-reduced-motion: reduce)").matches) return apply();
-      doc.startViewTransition(apply);
+      document.documentElement.classList.add("world-change");
+      const t = doc.startViewTransition(apply) as { ready: Promise<void>; finished: Promise<void> };
+      t.ready.catch(() => undefined);
+      t.finished.finally(() => document.documentElement.classList.remove("world-change")).catch(() => undefined);
     });
   }, [loadPlate]);
+  useEffect(() => {
+    const onWorld = (e: Event) => {
+      e.preventDefault();
+      switchWorld();
+    };
+    document.addEventListener("mc:world", onWorld);
+    return () => document.removeEventListener("mc:world", onWorld);
+  }, [switchWorld]);
   useEffect(() => {
     const img = loadPlate(world);
     if (!img) return;
@@ -170,7 +150,7 @@ export default function Foundation({ peopleCount, latestLog }: { peopleCount: nu
       signPress.current = -1;
       const href = SIGNS[i].href;
       if (href.startsWith("#")) document.querySelector(href)?.scrollIntoView();
-      else location.assign(href);
+      else void navigate(href);
     }, delay);
   }, []);
 
@@ -204,17 +184,18 @@ export default function Foundation({ peopleCount, latestLog }: { peopleCount: nu
     return () => removeEventListener("resize", place);
   }, [showing3D, ready, labelRefs]);
 
+  // No drawing on other pages, or once the visitor has scrolled past the hero. The scene just waits.
   useEffect(() => {
-    const sky = document.querySelector<HTMLCanvasElement>("#sky");
-    if (sky) return startSky(sky, live);
-  }, [live]);
-
-  // No drawing while the stage is scrolled out of view.
-  useEffect(() => {
-    if (!stageRef.current) return;
-    const seen = new IntersectionObserver(([e]) => setActive(e.isIntersecting));
-    seen.observe(stageRef.current);
-    return () => seen.disconnect();
+    const root = document.documentElement;
+    const check = () => setActive(root.dataset.page === "home" && !root.classList.contains("hero-gone"));
+    const watch = new MutationObserver(check);
+    watch.observe(root, { attributes: true, attributeFilter: ["data-page", "class"] });
+    document.addEventListener("mc:page", check);
+    check();
+    return () => {
+      watch.disconnect();
+      document.removeEventListener("mc:page", check);
+    };
   }, []);
 
   // Turning. Vertical movement stays with the page, so the stage never traps a scroll.
@@ -255,37 +236,17 @@ export default function Foundation({ peopleCount, latestLog }: { peopleCount: nu
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (menu) {
-        if (e.key === "Escape") closeMenu();
-        if (e.key === "Tab") {
-          const items = menuRef.current!.querySelectorAll<HTMLElement>("a, button");
-          const first = items[0];
-          const last = items[items.length - 1];
-          if (e.shiftKey && document.activeElement === first) {
-            e.preventDefault();
-            last.focus();
-          } else if (!e.shiftKey && document.activeElement === last) {
-            e.preventDefault();
-            first.focus();
-          }
-        }
-        return;
-      }
+      if ((e.target as Element).closest?.("input, textarea, select, dialog")) return;
       if (!active || (e.key !== "ArrowLeft" && e.key !== "ArrowRight")) return;
       fx.current.spinGoal += (e.key === "ArrowLeft" ? -1 : 1) * 0.35;
       setTurned(true);
     };
     addEventListener("keydown", onKey);
     return () => removeEventListener("keydown", onKey);
-  }, [menu, active, closeMenu]);
+  }, [active]);
 
   useEffect(() => {
-    document.documentElement.classList.toggle("menu-open", menu);
-    if (menu) menuRef.current?.querySelector<HTMLElement>("a")?.focus();
-  }, [menu]);
-
-  useEffect(() => {
-    document.documentElement.dataset.state = showing3D ? (ready ? "live" : "loading") : "still";
+    document.documentElement.dataset.state = (window as unknown as { __mcState: string }).__mcState = showing3D ? (ready ? "live" : "loading") : "still";
     document.querySelectorAll<HTMLElement>("[data-still-team]").forEach((el) => {
       const on = !showing3D && el.dataset.stillTeam === String(shown) && el.dataset.world === world;
       if (on) {
@@ -306,23 +267,11 @@ export default function Foundation({ peopleCount, latestLog }: { peopleCount: nu
           <ValleyFx active={active} on={painted === "valley" && !capture} plate={plateSize} />
           <GLBoundary onError={onGiveUp}>
             <Suspense fallback={null}>
-              <Scene world={painted} fx={fx} labelRefs={labelRefs} signRefs={signRefs} signHover={signHover} signPress={signPress} active={active} onHover={hover} onSelect={open} onReady={onReady} onGiveUp={onGiveUp} />
+              <Scene world={painted} fx={fx} labelRefs={labelRefs} signRefs={signRefs} signHover={signHover} signPress={signPress} active={active || !ready} onHover={hover} onSelect={open} onReady={onReady} onGiveUp={onGiveUp} />
             </Suspense>
           </GLBoundary>
         </div>
       )}
-
-      <button type="button" className="world-button" aria-label={world === "space" ? "Go back to the valley" : "Go to space"} title={world === "space" ? "Back to the valley" : "Go to space"} onPointerEnter={() => loadPlate(OTHER[world])} onFocus={() => loadPlate(OTHER[world])} onClick={switchWorld}>
-        {world === "space" ? (
-          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="12" cy="12" r="4.2" fill="none" stroke="currentColor" strokeWidth="1.6" /><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M18.7 5.3l-2.1 2.1M7.4 16.6l-2.1 2.1" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /></svg>
-        ) : (
-          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="12" cy="12" r="5" fill="none" stroke="currentColor" strokeWidth="1.6" /><ellipse cx="12" cy="12" rx="10.4" ry="3.2" fill="none" stroke="currentColor" strokeWidth="1.6" transform="rotate(-24 12 12)" /></svg>
-        )}
-      </button>
-
-      <button ref={menuButton} type="button" className="menu-button" aria-haspopup="dialog" aria-expanded={menu} onClick={() => setMenu(true)}>
-        Menu
-      </button>
 
       {/* A real link: it can be focused, copied and opened in a new tab, and needs no 3D. */}
       {TEAMS.map((t, i) => (
@@ -381,41 +330,6 @@ export default function Foundation({ peopleCount, latestLog }: { peopleCount: nu
 
       {showing3D && <p className={`stage__hint${turned ? " gone" : ""}`} aria-hidden="true">Point at a card · Drag to turn</p>}
 
-      <div ref={menuRef} className={`menu${menu ? " open" : ""}`} role="dialog" aria-modal="true" aria-label="Menu" inert={!menu}>
-        <button type="button" className="menu-button menu-button--close" onClick={closeMenu}>
-          Close
-        </button>
-        <div className="menu__grid">
-          <nav className="menu__main" aria-label="Main">
-            <ul className="menu__teams">
-              {TEAMS.map((t, i) => (
-                <li key={t.id} style={{ "--i": i, "--c": t.color } as React.CSSProperties}>
-                  <a href={t.href} onPointerEnter={() => hover(i)} onPointerLeave={() => hover(-1)} onFocus={() => hover(i)} onBlur={() => hover(-1)}>
-                    <i aria-hidden="true"></i>
-                    <span>{t.name}</span>
-                    <small>{t.tagline}</small>
-                  </a>
-                </li>
-              ))}
-            </ul>
-            <ul className="menu__links">
-              {MENU_LINKS.map((l, i) => (
-                <li key={l.href} style={{ "--i": i + 4 } as React.CSSProperties}>
-                  <a href={l.href} onClick={() => setMenu(false)}>{l.label}</a>
-                </li>
-              ))}
-            </ul>
-          </nav>
-          <div className="menu__side" style={{ "--i": 9 } as React.CSSProperties}>
-            <dl className="menu__facts">
-              <div><dt>People on the roster</dt><dd>{peopleCount}</dd></div>
-              <div><dt>Teams</dt><dd>{TEAMS.length}</dd></div>
-              <div><dt>Latest log, {latestLog.date}</dt><dd className="menu__log"><a href={latestLog.href}>{latestLog.title}</a></dd></div>
-            </dl>
-            <a className="menu__contact" href="mailto:mechaeagles@bc.edu">mechaeagles@bc.edu</a>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

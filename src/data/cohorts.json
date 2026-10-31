@@ -1,0 +1,14 @@
+[
+  {
+    "term": "2024-25", "label": "2024–25", "epitaph": "Where it all started: one team and one car.",
+    "teams": ["Baja SAE"], "accomplishments": ["MechaEagles founded at Boston College in fall 2024"], "competitions": [], "projects": [], "photo": null
+  },
+  {
+    "term": "2025-26", "label": "2025–26", "epitaph": "The year the subteams got their own tables.",
+    "teams": ["Baja SAE"], "accomplishments": ["Organized into Science, Programmatics and Engineering divisions", "Subteams formed for suspension, steering, roll cage, drivetrain and fabrication"], "competitions": [], "projects": [], "photo": { "src": "/media/org/group.webp", "alt": "MechaEagles members in a group photo", "caption": "The team, 2025–26" }
+  },
+  {
+    "term": "2026-27", "label": "2026–27", "epitaph": "One car became four teams. Still being written.",
+    "teams": ["Baja SAE", "AeroEagles", "Combat Robotics", "AI Safety"], "accomplishments": ["MechaEagles becomes four engineering teams", "NASA Student Launch 2027 proposal submitted", "First high-power launch day: three flown, two recovered, one Level 1 certification"], "competitions": ["NASA Student Launch 2027 (proposal submitted)"], "projects": ["Baldwin-1", "ME-B26"], "photo": null
+  }
+]

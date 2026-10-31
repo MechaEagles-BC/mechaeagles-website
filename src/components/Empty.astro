@@ -1,0 +1,9 @@
+---
+/** The one way an unfilled section looks. It says plainly that nothing is published yet, and never stands in for real work. */
+const { what, note } = Astro.props as { what: string; note?: string };
+---
+<div class="empty">
+  <span class="empty__tag">Not published yet</span>
+  <p>{what}</p>
+  {note && <small>{note}</small>}
+</div>

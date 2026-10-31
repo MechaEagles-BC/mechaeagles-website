@@ -1,0 +1,20 @@
+{
+  "partners": [
+    { "id": "solidworks", "name": "SolidWorks", "logo": "/partners/solidworks.webp", "provided": "30 software licenses", "tier": "Platinum", "term": "2025–26", "url": null },
+    { "id": "fusion", "name": "Autodesk Fusion", "logo": "/partners/fusion.webp", "provided": "CAD software licenses and manufacturing support", "tier": "Platinum", "term": "2025–26", "url": null },
+    { "id": "bc-engineering", "name": "Boston College Engineering", "logo": "/partners/bc-engineering.webp", "provided": "Funding and shop access", "tier": "Platinum", "term": "2025–26", "url": null },
+    { "id": "igos", "name": "IGOS Welding", "logo": "/partners/igos.webp", "provided": "Bolts and welding materials", "tier": "Silver", "term": "2025–26", "url": null }
+  ],
+  "tiers": [
+    { "name": "Bronze", "amount": "$250+", "benefits": ["Organization and project updates", "Company name on website", "Logo on website sponsor page with hyperlink", "Social media shoutout, 2–3 times per year"] },
+    { "name": "Silver", "amount": "$500+", "benefits": ["All Bronze benefits", "Small logo on T-shirt", "Tagged social media recognition during competition season", "Access to resume book", "Option for an info session with students at Boston College"] },
+    { "name": "Gold", "amount": "$1,000+", "benefits": ["All Silver benefits", "Small logo on competition vehicle and team T-shirt", "Banner displayed at competition pit"] },
+    { "name": "Platinum", "amount": "$3,000+", "benefits": ["All Gold benefits", "Priority logo placement on competition vehicle and team T-shirt", "Priority recruiting access", "Opportunity to present at a general meeting", "Option to display the car at your company"] }
+  ],
+  "ways": [
+    { "name": "Funding", "detail": "Covers competition fees, motors, materials and travel. Recognition on our machines and this site." },
+    { "name": "In-kind", "detail": "Materials, components, software licenses and machining time. We credit the exact part your support went into." },
+    { "name": "Mentorship", "detail": "Design reviews with working engineers. It's the most valuable thing a student team can get." },
+    { "name": "Recruiting", "detail": "Meet students who've designed, built, tested and documented real hardware and research." }
+  ]
+}

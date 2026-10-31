@@ -1,0 +1,19 @@
+[
+  { "team": "org", "when": "Fall 2024", "state": "done", "title": "MechaEagles founded", "detail": "Founded at Boston College as a Baja SAE racing and engineering team." },
+  { "team": "org", "when": "2025–26", "state": "done", "title": "Divisions and subteams", "detail": "The team organizes into Science, Programmatics and Engineering divisions, with subteams for suspension, steering, roll cage, drivetrain and fabrication." },
+  { "team": "org", "when": "2026–27", "state": "done", "title": "Four engineering teams", "detail": "MechaEagles becomes four teams: Baja SAE, AeroEagles, Combat Robotics and AI Safety." },
+  { "team": "org", "when": "14 Sep 2026", "state": "done", "title": "NASA Student Launch proposal", "detail": "AeroEagles submits its NASA Student Launch 2027 proposal for the Baldwin-1 mission." },
+  { "team": "org", "when": "19 Sep 2026", "state": "done", "title": "First high-power launch day", "detail": "Three rockets flown, two recovered, one Level 1 certification earned." },
+  { "team": "baja", "when": "Fall 2024", "state": "done", "title": "The first team", "detail": "MechaEagles starts as a Baja SAE racing and engineering team." },
+  { "team": "baja", "when": "2025–26", "state": "done", "title": "Subteams formed", "detail": "Suspension, steering, roll cage, drivetrain and fabrication become their own subteams." },
+  { "team": "aero", "when": "14 Sep 2026", "state": "done", "title": "NASA Student Launch proposal submitted", "detail": "AeroEagles submits its NASA Student Launch 2027 proposal for the Baldwin-1 mission." },
+  {
+    "team": "aero", "when": "19 Sep 2026", "state": "done", "title": "First launch day: three up, two back",
+    "detail": "Jack Tommaney, Lucas DiMarco and Vedarsh Mishra took three rockets to the field for the team's first high-power outing. All three left the rail cleanly, and two were recovered. AeroEagle-1, on an AeroTech H100W, flew strongly on ascent, but its parachute didn't deploy as intended and it landed beyond the search area. Because it wasn't retrieved, the team records this as a recovery-system failure rather than guessing at a component. Jack Tommaney earned Level 1 certification on the day.",
+    "lessons": ["Keep the model-to-test loop: predict the flight, fly it, compare, update the next design.", "Verify deployment logic, hardware, packing and triggers independently before every flight.", "Record the complete flight-ready configuration before launch.", "Add a tracker or beacon so a rocket that drifts can still be found."]
+  },
+  { "team": "aero", "when": "27 Oct 2026", "state": "now", "title": "Baldwin-1 preliminary design review", "detail": "In revision." },
+  { "team": "aero", "when": "2027", "state": "next", "title": "NASA Student Launch 2027", "detail": "The program Baldwin-1 is being designed for." },
+  { "team": "combat-robotics", "when": "2026–27", "state": "done", "title": "Team formed", "detail": "Combat Robotics becomes one of MechaEagles' four teams." },
+  { "team": "ai-safety", "when": "2026–27", "state": "done", "title": "Team formed", "detail": "AI Safety becomes one of MechaEagles' four teams." }
+]

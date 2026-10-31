@@ -62,7 +62,7 @@ void main(){
   color = vec4(c, 1.0);
 }`;
 
-export function startSky(canvas: HTMLCanvasElement, animate: boolean, planet = true) {
+export function startSky(canvas: HTMLCanvasElement, animate: boolean) {
   const gl = canvas.getContext("webgl2", { alpha: false, antialias: false, powerPreference: "low-power" });
   if (!gl) return () => undefined;
   const compile = (type: number, src: string) => {
@@ -86,7 +86,7 @@ export function startSky(canvas: HTMLCanvasElement, animate: boolean, planet = t
   const uView = u("uView"), uK = u("uK"), uTime = u("uTime"), uLook = u("uLook"), uScroll = u("uScroll");
   gl.uniform1i(u("uNebula"), 0);
   gl.uniform1i(u("uPlanet"), 1);
-  gl.uniform1f(u("uPlanetOn"), planet ? 1 : 0);
+  const uPlanetOn = u("uPlanetOn");
   gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
   gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
 
@@ -120,6 +120,7 @@ export function startSky(canvas: HTMLCanvasElement, animate: boolean, planet = t
     const ease = 1 - Math.exp(-dt * 1.6);
     look.x += (look.gx - look.x) * ease;
     look.y += (look.gy - look.y) * ease;
+    gl!.uniform1f(uPlanetOn, document.documentElement.dataset.page === "home" ? 1 : 0); // the planet belongs with the moon, and would sit behind other pages' titles
     gl!.uniform1f(uTime, time);
     gl!.uniform2f(uLook, look.x, look.y);
     gl!.uniform1f(uScroll, scrollY / Math.max(innerHeight, 1));
@@ -164,8 +165,12 @@ export function startSky(canvas: HTMLCanvasElement, animate: boolean, planet = t
       .catch(() => undefined);
   };
   begin();
-  const watcher = new MutationObserver(begin);
-  watcher.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+  // A still sky redraws when the page changes, since the planet comes and goes with Home.
+  const watcher = new MutationObserver(() => {
+    begin();
+    if (begun && !animate && canvas.classList.contains("ready")) draw(performance.now());
+  });
+  watcher.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme", "data-page"] });
   return () => {
     stopped = true;
     cancelAnimationFrame(frame);

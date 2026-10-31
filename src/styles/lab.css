@@ -42,15 +42,13 @@ html[data-theme="space"] #sky { display: block; }
 #sky.ready { opacity: 1; }
 .breeze { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
 html[data-theme="space"] .breeze { display: none; }
-.breeze i { position: absolute; top: -32px; left: var(--x); width: 14px; height: 9px; border-radius: 80% 0 80% 0; background: var(--leaf); opacity: 0; animation: leaf var(--t) linear var(--d) infinite; }
-@keyframes leaf {
-  0% { opacity: 0; transform: translate(0, 0) rotate(0deg); }
-  8% { opacity: 0.72; }
-  50% { transform: translate(14vw, 50vh) rotate(260deg); }
-  92% { opacity: 0.72; }
-  100% { opacity: 0; transform: translate(30vw, 104vh) rotate(560deg); }
-}
-html.menu-open { overflow: hidden; }
+.breeze i { position: absolute; top: -32px; left: var(--x); width: 14px; height: 9px; border-radius: 80% 0 80% 0; background: var(--leaf); opacity: 0; animation: leaf-1 var(--t) linear var(--d) infinite; }
+.breeze .leaf-2 { width: 11px; height: 7px; animation-name: leaf-2; }
+.breeze .leaf-3 { width: 16px; height: 10px; animation-name: leaf-3; }
+/* Three ways of falling, and each leaf its own speed and reach, so none repeats another's path. */
+@keyframes leaf-1 { 0% { opacity: 0; transform: translate(0, 0) rotate(0deg); } 8% { opacity: 0.72; } 34% { transform: translate(calc(var(--far) * 0.5), 34vh) rotate(150deg); } 60% { transform: translate(calc(var(--far) * 0.32), 62vh) rotate(290deg); } 92% { opacity: 0.72; } 100% { opacity: 0; transform: translate(var(--far), 104vh) rotate(520deg); } }
+@keyframes leaf-2 { 0% { opacity: 0; transform: translate(0, 0) rotate(40deg); } 10% { opacity: 0.6; } 45% { transform: translate(var(--far), 40vh) rotate(-140deg); } 72% { transform: translate(calc(var(--far) * 0.6), 74vh) rotate(-260deg); } 90% { opacity: 0.6; } 100% { opacity: 0; transform: translate(calc(var(--far) * 1.3), 104vh) rotate(-420deg); } }
+@keyframes leaf-3 { 0% { opacity: 0; transform: translate(0, 0) rotate(-20deg); } 12% { opacity: 0.66; } 50% { transform: translate(calc(var(--far) * 1.2), 46vh) rotate(420deg); } 90% { opacity: 0.66; } 100% { opacity: 0; transform: translate(calc(var(--far) * 1.6), 104vh) rotate(760deg); } }
 body { margin: 0; background: var(--page); color: var(--text); font: 400 var(--t-m)/1.6 var(--mono); transition: background 0.6s ease, color 0.6s ease; }
 img { display: block; max-width: 100%; }
 a { color: inherit; }
@@ -62,7 +60,17 @@ ul { list-style: none; }
   *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
 }
 
-/* ---------- the stage: one full window, complete without scrolling ---------- */
+/* ---------- the stage: one full window, complete without scrolling. It stays pinned while the page rises over it, and it's kept alive, hidden, on other pages. ---------- */
+#stage { --p: 0; position: sticky; top: 0; z-index: 0; height: 100vh; height: 100svh; min-height: 480px; }
+html:not([data-page="home"]) #stage, html.hero-gone #stage { visibility: hidden; pointer-events: none; }
+html:not([data-page="home"]) #stage { position: fixed; inset: 0; z-index: -2; }
+html:not([data-page="home"]) .stills { display: none; } /* so its pictures don't download until Home is actually visited */
+/* Scrolling pushes toward the hologram at the middle of the platform, and the world dissolves as the people rise into view. */
+.stage__live, .stills { transform-origin: 50% 46%; transform: scale(calc(1 + var(--p) * 0.14)); opacity: calc(1 - var(--p) * 1.3); }
+.top, .bottom, .team-list, .sign-list, .stage::before { opacity: calc(1 - var(--p) * 4); }
+main { position: relative; z-index: 1; display: block; }
+html:not([data-page="home"]) main { padding-top: 72px; }
+.foot { position: relative; z-index: 1; }
 .stage { color: var(--chalk); position: relative; height: 100vh; height: 100svh; min-height: 480px; overflow: hidden; touch-action: pan-y; user-select: none; }
 html.turning { cursor: grabbing; }
 .stills, .still, .still img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
@@ -84,25 +92,20 @@ html[data-state="live"] .stills { pointer-events: none; }
 .stage__canvas .stage__plate--fx { position: absolute; opacity: 0; }
 .stage__canvas .stage__plate--fx.on.ready { opacity: 1; }
 /* The worlds dissolve into each other, slowly. */
-::view-transition-old(root), ::view-transition-new(root) { animation-duration: 0.9s; }
+html.world-change::view-transition-old(root), html.world-change::view-transition-new(root) { animation-duration: 0.9s; }
+/* Moving between pages is a quick dissolve. */
+::view-transition-old(root), ::view-transition-new(root) { animation-duration: 0.16s; }
 .stage::before, .stage::after { content: ""; position: absolute; inset-inline: 0; z-index: 1; pointer-events: none; }
 .stage::before { top: 0; height: 144px; background: linear-gradient(rgb(5 12 9 / 0.74), rgb(5 12 9 / 0.62) 44%, transparent); }
 .stage::after { bottom: 0; height: 120px; background: linear-gradient(transparent, var(--page-solid)); }
 html[data-state="live"] .stage::after { display: none; }
 
-.top { position: absolute; z-index: 2; inset: var(--s3) var(--edge) auto; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: var(--s3); pointer-events: none; }
-.top a, .top h1 { pointer-events: auto; }
+.top { position: absolute; z-index: 7; inset: 26px var(--edge) auto; display: grid; justify-items: center; pointer-events: none; }
+@media (max-width: 960px) { .top { inset-block-start: 76px; z-index: 2; } }
 .logo { display: inline-flex; align-items: center; gap: var(--s1); color: var(--chalk); text-decoration: none; font: 800 var(--t-l)/1 var(--display); font-stretch: 112%; text-transform: uppercase; }
 .logo img { width: 44px; height: auto; }
-@media (max-width: 430px) { .top .logo span { font-size: var(--t-m); } } /* leaves room for the two buttons */
-.top__line { font: 600 var(--t-m)/1.3 var(--display); font-stretch: 105%; letter-spacing: 0.01em; text-align: center; text-wrap: balance; }
-
-.menu-button { position: fixed; z-index: 3; top: var(--s3); right: var(--edge); min-width: 88px; min-height: 40px; padding: 0 var(--s2); border: 1px solid rgb(255 255 255 / 0.5); border-radius: 2px; background: rgb(6 12 9 / 0.78); color: var(--chalk); font: 500 var(--t-s)/1 var(--mono); cursor: pointer; transition: background 0.2s; }
-.menu-button:hover { background: rgb(6 12 9 / 0.96); }
-/* Left of Menu at every width and as tall as it, so the two read as one group. */
-.world-button { position: fixed; z-index: 3; top: var(--s3); right: calc(var(--edge) + 88px + var(--s1)); display: grid; place-items: center; width: 40px; height: 40px; padding: 0; border: 1px solid rgb(255 255 255 / 0.5); border-radius: 2px; background: rgb(6 12 9 / 0.78); color: var(--chalk); cursor: pointer; transition: background 0.2s; }
-.world-button:hover { background: rgb(6 12 9 / 0.96); }
-.world-button::after { content: ""; position: absolute; inset: -4px; } /* a 48 px target for touch */
+@media (max-width: 430px) { .bar .logo span { font-size: var(--t-m); } } /* leaves room for the two buttons */
+.top__line { font: 600 var(--t-m)/1.3 var(--display); text-shadow: 0 1px 8px rgb(0 0 0 / 0.5); font-stretch: 105%; letter-spacing: 0.01em; text-align: center; text-wrap: balance; }
 
 .bottom { position: absolute; z-index: 2; inset: auto var(--edge) var(--s2); display: flex; justify-content: space-between; align-items: end; gap: var(--s3); font-size: var(--t-xs); line-height: 1.4; color: var(--text); pointer-events: none; }
 .bottom a { pointer-events: auto; flex: none; color: var(--text); text-decoration: none; }
@@ -141,13 +144,20 @@ html[data-state="live"].turning .portal-label { opacity: 0.55; pointer-events: n
 .signpost { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
 .sign-link { position: absolute; left: 0; top: 0; pointer-events: auto; color: transparent; font-size: 1px; will-change: transform; cursor: pointer; }
 .sign-link:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
-.sign-list { position: absolute; z-index: 2; top: 96px; right: var(--edge); display: none; flex-direction: column; align-items: flex-end; gap: var(--s1); font: 700 var(--t-m)/1 Georgia, "Times New Roman", serif; }
-.sign-list a { display: flex; align-items: center; min-height: 44px; padding: 0 var(--s4) 0 var(--s2); background: linear-gradient(#a97945, #bb8c56 18% 82%, #8f6236); color: #26130a; text-decoration: none; clip-path: polygon(0 0, calc(100% - 18px) 0, 100% 50%, calc(100% - 18px) 100%, 0 100%); transform-origin: left center; transition: transform 0.3s var(--ease); }
-.sign-list li:nth-child(even) a { padding: 0 var(--s2) 0 var(--s4); clip-path: polygon(18px 0, 100% 0, 100% 100%, 18px 100%, 0 50%); transform-origin: right center; }
-.sign-list a:hover, .sign-list a:focus-visible { transform: rotate(-2deg); }
+/* Without live 3D the same signpost stands in the same place: one post, with wooden boards pointing off either side of it. */
+.sign-list { position: absolute; z-index: 2; top: 110px; right: calc(var(--edge) + 10vw); display: none; flex-direction: column; width: 0; gap: 4px; font: 700 clamp(17px, 1.35vw, 22px)/1 Georgia, "Times New Roman", serif; }
+.sign-list::before { content: ""; position: absolute; left: -8px; top: -24px; bottom: -26px; width: 16px; border-radius: 6px 6px 2px 2px; background: linear-gradient(90deg, #4a2d15, #8a5a30 45%, #5d3a1c); box-shadow: 3px 4px 10px rgb(0 0 0 / 0.35); }
+.sign-list li { position: relative; height: 42px; }
+.sign-list a { --tilt: -1.4deg; position: absolute; top: 0; left: -4px; display: flex; align-items: center; height: 42px; padding: 0 40px 0 var(--s2); color: #26130a; white-space: nowrap; text-decoration: none; background: repeating-linear-gradient(177deg, rgb(70 40 16 / 0.14) 0 2px, transparent 2px 9px), linear-gradient(#8f6236, #bb8c56 16% 80%, #7a5029); clip-path: polygon(0 0, calc(100% - 22px) 0, 100% 50%, calc(100% - 22px) 100%, 0 100%); transform: rotate(var(--tilt)); transform-origin: left center; transition: transform 0.35s var(--ease); }
+.sign-list li:nth-child(even) a { --tilt: 1.6deg; left: auto; right: -4px; padding: 0 var(--s2) 0 40px; clip-path: polygon(22px 0, 100% 0, 100% 100%, 22px 100%, 0 50%); transform-origin: right center; }
+.sign-list li:nth-child(3n) a { --tilt: 1deg; }
+.sign-list a:hover, .sign-list a:focus-visible { transform: rotate(calc(var(--tilt) * -2.4)); }
 html[data-theme="valley"][data-state="still"] .sign-list { display: flex; }
 @media (max-aspect-ratio: 9/10) {
-  html[data-theme="valley"] .sign-list, html[data-theme="valley"][data-state="still"] .sign-list { display: grid; position: absolute; top: auto; inset: auto var(--edge) calc(var(--s7) + var(--s2) + 112px); grid-template-columns: repeat(3, minmax(0, 1fr)); font-size: var(--t-s); }
+  html[data-theme="valley"] .sign-list, html[data-theme="valley"][data-state="still"] .sign-list { display: grid; position: absolute; top: auto; width: auto; inset: auto var(--edge) calc(var(--s7) + var(--s2) + 112px); grid-template-columns: repeat(3, minmax(0, 1fr)); font-size: var(--t-s); }
+  .sign-list::before { display: none; }
+  .sign-list li { height: auto; }
+  .sign-list a, .sign-list li:nth-child(even) a { position: static; height: 44px; min-height: 44px; }
   .sign-link { display: none; }
 }
 
@@ -156,42 +166,13 @@ html[data-theme="valley"][data-state="still"] .sign-list { display: flex; }
 @media (max-aspect-ratio: 9/10) {
   .stage::after { display: block !important; height: 42%; background: linear-gradient(transparent, color-mix(in srgb, var(--page-solid) 92%, transparent) 42%, var(--page-solid)); }
   .portal-label { display: none; }
-  .top { grid-template-columns: 1fr auto; }
-  .top__line { grid-column: 1 / -1; grid-row: 2; padding-top: var(--s2); font-size: var(--t-l); text-align: left; }
+  .top { justify-items: start; }
+  .top__line { font-size: var(--t-l); text-align: left; }
   .team-list { position: absolute; z-index: 2; inset: auto var(--edge) calc(var(--s7) + var(--s2)); display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s1); }
   .team-list a { --c: #fff; display: flex; align-items: center; gap: var(--s1); min-height: 48px; padding: var(--s1); border-left: 2px solid var(--c); background: rgb(6 10 8 / 0.74); font: 500 var(--t-s)/1.2 var(--mono); text-decoration: none; }
   .bottom { flex-direction: column; align-items: stretch; }
   .bottom a { align-self: flex-end; }
   .stage__hint { display: none; }
-}
-
-/* ---------- the menu: opens in place, with the page still there behind it ---------- */
-.menu { position: fixed; z-index: 10; inset: 0; padding: var(--s7) var(--edge) var(--s4); background: rgb(5 10 8 / 0.86); color: var(--chalk); overflow-y: auto; visibility: hidden; clip-path: circle(0 at calc(100% - var(--edge) - 44px) 44px); transition: clip-path 0.42s var(--ease), visibility 0s 0.42s; user-select: text; }
-.menu.open { visibility: visible; clip-path: circle(150vmax at calc(100% - var(--edge) - 44px) 44px); transition: clip-path 0.55s var(--ease), visibility 0s; }
-.menu__grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(240px, 320px); gap: var(--s6); min-height: 100%; }
-.menu__main { display: grid; align-content: start; gap: var(--s5); }
-.menu li, .menu__side { opacity: 0; transform: translateY(var(--s2)); transition: opacity 0.2s, transform 0.2s; }
-.menu.open li, .menu.open .menu__side { opacity: 1; transform: none; transition: opacity 0.4s var(--ease) calc(0.12s + var(--i) * 0.035s), transform 0.5s var(--ease) calc(0.12s + var(--i) * 0.035s); }
-.menu__teams a { display: grid; grid-template-columns: var(--s2) minmax(0, 1fr) auto; align-items: baseline; gap: var(--s2); padding: var(--s1) 0; border-bottom: 1px solid var(--line); text-decoration: none; }
-.menu__teams i { width: 10px; height: 10px; background: var(--c); }
-.menu__teams span { font: 800 clamp(28px, 4vw, 56px)/1.1 var(--display); font-stretch: 112%; text-transform: uppercase; transition: color 0.15s, transform 0.25s var(--ease); }
-.menu__teams small { font-size: var(--t-xs); color: var(--soft); text-align: right; }
-.menu__teams a:hover span, .menu__teams a:focus-visible span { color: var(--c); transform: translateX(var(--s1)); }
-.menu__links { display: flex; flex-wrap: wrap; gap: var(--s1) var(--s4); }
-.menu__links a { font: 700 var(--t-l)/2 var(--display); font-stretch: 105%; text-decoration: none; }
-.menu__links a:hover { text-decoration: underline; }
-.menu__side { --i: 9; display: flex; flex-direction: column; justify-content: end; gap: var(--s3); }
-.menu__facts { display: grid; gap: var(--s2); }
-.menu__facts > div { padding-top: var(--s1); border-top: 1px solid var(--line); }
-.menu__facts dt { font-size: var(--t-xs); color: var(--soft); }
-.menu__facts dd { font: 700 var(--t-xl)/1.2 var(--display); }
-.menu__facts .menu__log { font: 500 var(--t-s)/1.4 var(--mono); }
-.menu__contact { font-size: var(--t-s); }
-@media (max-width: 800px) {
-  .menu { background: rgb(5 10 8 / 0.95); }
-  .menu__grid { grid-template-columns: minmax(0, 1fr); gap: var(--s5); min-height: 0; }
-  .menu__teams a { grid-template-columns: var(--s2) minmax(0, 1fr); }
-  .menu__teams small { grid-column: 2; text-align: left; }
 }
 
 /* ---------- the three beats ---------- */
@@ -236,7 +217,7 @@ html[data-theme="valley"][data-state="still"] .sign-list { display: flex; }
 .partners strong { font: 700 var(--t-l)/1.25 var(--display); }
 .partners span { font-size: var(--t-s); color: var(--text-2); }
 .actions { display: flex; flex-wrap: wrap; gap: var(--s2); margin-top: var(--s4); }
-.button { --fg: var(--text); --bg: var(--page); display: inline-flex; align-items: center; min-height: 48px; padding: 0 var(--s3); border: 1px solid var(--fg); border-radius: 2px; font: 500 var(--t-s)/1 var(--mono); text-decoration: none; transition: background 0.2s, color 0.2s; }
+.button { --fg: var(--text); --bg: var(--page-solid); display: inline-flex; align-items: center; min-height: 48px; padding: 0 var(--s3); border: 1px solid var(--fg); border-radius: 2px; font: 500 var(--t-s)/1 var(--mono); text-decoration: none; transition: background 0.2s, color 0.2s; }
 .ending .button { --fg: var(--chalk); --bg: var(--ink); }
 .button--solid { background: var(--fg); color: var(--bg); }
 .button:hover { background: transparent; color: var(--fg); }
@@ -259,6 +240,3 @@ html[data-theme="valley"][data-state="still"] .sign-list { display: flex; }
 
 .note { padding: var(--s3); }
 
-/* Only the platform stays behind an open menu, so no page text collides with the menu's own. */
-.top, .bottom, .team-list, .portal-label, .stage__hint { transition: opacity 0.25s; }
-html.menu-open .top, html.menu-open .bottom, html.menu-open .team-list, html.menu-open .portal-label, html.menu-open .stage__hint { opacity: 0; animation: none; }

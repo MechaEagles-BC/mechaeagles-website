@@ -1,0 +1,39 @@
+---
+/**
+ * The homepage's world. Every page carries this same empty shell and the router keeps it, so once the scene has started it survives every trip to another page.
+ * The poster and links need no 3D. On other pages it's hidden and its drawing is stopped.
+ */
+import { SIGNS, TEAMS } from "./teams";
+
+const still = (name: string, dir = "") => ({ wide: `/stills/${dir}${name}-wide.webp`, tall: `/stills/${dir}${name}-tall.webp` });
+const WORLDS = [{ dir: "", key: "valley" }, { dir: "space/", key: "space" }];
+const STILLS = ["baja", "aero", "combat", "ai"];
+---
+<div id="stage" transition:persist="stage">
+  <section class="stage" aria-label="The four teams">
+    <div class="stills" aria-hidden="true">
+      {WORLDS.map((w) => (
+        <picture class={`still only-${w.key}`}>
+          <source media="(max-aspect-ratio: 9/10)" srcset={still("idle", w.dir).tall} />
+          <img src={still("idle", w.dir).wide} alt="" width="1920" height="1080" loading="lazy" />
+        </picture>
+      ))}
+      {WORLDS.map((w) => STILLS.map((t, i) => (
+        <picture class="still still--team" data-still-team={i} data-world={w.key}>
+          <source media="(max-aspect-ratio: 9/10)" data-srcset={still(t, w.dir).tall} />
+          <img data-src={still(t, w.dir).wide} alt="" width="1920" height="1080" />
+        </picture>
+      )))}
+    </div>
+    <div id="stage-root" class="stage__live"></div>
+    <div class="top"><p class="top__line">Four student engineering teams at Boston College</p></div>
+    <ul class="team-list">
+      {TEAMS.map((t) => <li><a href={t.href} style={`--c:${t.color}`}>{t.name}</a></li>)}
+    </ul>
+    <nav class="sign-list only-valley" aria-label="Signpost"><ul class="sign-list__row" style="display:contents">{SIGNS.map((sign) => <li><a href={sign.href}>{sign.label}</a></li>)}</ul></nav>
+    <div class="bottom">
+      <p>Card drawings are illustrative. Baldwin-1 is a design model.</p>
+      <a href="#leadership">Meet the people ↓</a>
+    </div>
+  </section>
+</div>

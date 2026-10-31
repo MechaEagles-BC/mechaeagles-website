@@ -1,164 +1,95 @@
 ---
-import "../styles/lab.css";
-import "../styles/cards.css";
-import WorldHead from "../components/WorldHead.astro";
-import WorldBackdrop from "../components/WorldBackdrop.astro";
+import Site from "../layouts/Site.astro";
 import MemberCard from "../components/cards/MemberCard.astro";
-import { cardFor, PEOPLE_COUNT } from "../data/org";
-import Foundation from "../components/Foundation.tsx";
-import { SIGNS, TEAMS } from "../components/teams";
-
-const still = (name: string, dir = "") => ({ wide: `/stills/${dir}${name}-wide.webp`, tall: `/stills/${dir}${name}-tall.webp` });
-const WORLDS = [{ dir: "", key: "valley" }, { dir: "space/", key: "space" }];
-const STILLS = ["baja", "aero", "combat", "ai"];
-
-// From the roster in src/data. Everyone here has consent "photo" on file, which the roster notes still need each member to confirm.
-const LATEST_LOG = { date: "19 Sep 2026", title: "First launch day: three up, two back", href: "/log/" };
-const LEADS = ["sam-kaiser", "jack-tommaney", "carlos-contreras", "ambrose-mccullough"];
-const PROGRAM = ["austin-kinnealey", "vedarsh-mishra", "lucas-dimarco", "ambrose-mccullough", "vladislav-hoila"];
-const LEAD_TEAM: Record<string, string> = { "ambrose-mccullough": "ai-safety" };
-// Carried over from the 2025-26 sponsors page. Confirm each entry with the partner before launch.
-const PARTNERS = [
-  { name: "SolidWorks", provided: "30 software licenses" },
-  { name: "Autodesk Fusion", provided: "CAD software licenses and manufacturing support" },
-  { name: "Boston College Engineering", provided: "Funding and shop access" },
-  { name: "IGOS Welding", provided: "Bolts and welding materials" },
-];
-const NAV = [
-  { label: "Teams", href: "/teams/" },
-  { label: "People", href: "/people/" },
-  { label: "Sponsors", href: "/sponsors/" },
-  { label: "About", href: "/about/" },
-  { label: "Log", href: "/log/" },
-  { label: "Join", href: "/join/" },
-];
+import Sigil from "../components/cards/Sigil.astro";
+import { ENGINEERING, LEADERS, PEOPLE_COUNT, RESPONSIBILITIES, introOf, primaryCard, branchOf } from "../data/org";
+import sponsors from "../data/sponsors.json";
 ---
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="robots" content="noindex" />
-    <meta name="description" content="MechaEagles: four student engineering teams at Boston College." />
-    <title>MechaEagles</title>
-    <WorldHead preloadStills />
-  </head>
-  <body>
-    <WorldBackdrop />
-    <main>
-      <section class="stage" aria-label="The four teams">
-        <div class="stills" aria-hidden="true">
-          {WORLDS.map((w) => (
-            <picture class={`still only-${w.key}`}>
-              <source media="(max-aspect-ratio: 9/10)" srcset={still("idle", w.dir).tall} />
-              <img src={still("idle", w.dir).wide} alt="" width="1920" height="1080" loading="lazy" />
-            </picture>
-          ))}
-          {WORLDS.map((w) => STILLS.map((t, i) => (
-            <picture class="still still--team" data-still-team={i} data-world={w.key}>
-              <source media="(max-aspect-ratio: 9/10)" data-srcset={still(t, w.dir).tall} />
-              <img data-src={still(t, w.dir).wide} alt="" width="1920" height="1080" />
-            </picture>
-          )))}
-        </div>
-        <div class="top">
-          <a class="top__logo logo" href="/" aria-label="MechaEagles home"><img src="/brand/eagle.webp" alt="" width="44" height="28" /><span>MechaEagles</span></a>
-          <h1 class="top__line">Four student engineering teams at Boston College</h1>
-        </div>
-        <Foundation client:only="react" peopleCount={PEOPLE_COUNT} latestLog={LATEST_LOG} />
-        <ul class="team-list">
-          {TEAMS.map((t) => <li><a href={t.href} style={`--c:${t.color}`}>{t.name}</a></li>)}
-        </ul>
-        <nav class="sign-list only-valley" aria-label="Signpost"><ul class="sign-list__row" style="display:contents">{SIGNS.map((sign) => <li><a href={sign.href}>{sign.label}</a></li>)}</ul></nav>
-        <div class="bottom">
-          <p>Card drawings are illustrative. Baldwin-1 is a design model.</p>
-          <a href="#people">Meet the people ↓</a>
-        </div>
-      </section>
+<Site title="Home" page="home" description="MechaEagles: four student engineering teams at Boston College.">
+  <h1 class="sr-only">MechaEagles: four student engineering teams at Boston College</h1>
 
-      <section class="beat" id="people">
-        <div class="wrap">
-          <p class="eyebrow reveal">The people</p>
-          <h2 class="reveal">Who leads the teams</h2>
-          <div class="people__cards">
-            {LEADS.map((slug, i) => {
-              const c = cardFor(slug, "l");
-              const team = LEAD_TEAM[slug];
-              return <MemberCard card={team ? { ...c, team, rank: "Team Lead", role: "AI Safety Lead" } : c} href={`/teams/#${slug}`} style={`--i:${i}`} />;
-            })}
-          </div>
-          <div class="people__second">
-            <h3 class="reveal">Who makes it possible</h3>
-            <p class="lede reveal">Project management, outreach, operations and partnerships. None of the four teams runs without them.</p>
-            <div class="people__cards">
-              {PROGRAM.map((slug, i) => <MemberCard card={cardFor(slug, "m")} href={`/teams/#${slug}`} style={`--i:${i}`} />)}
+  <section class="leaders" id="leadership">
+    <div class="leaders__beam" aria-hidden="true"></div>
+    <div class="wrap">
+      <header class="leaders__head">
+        <p class="eyebrow reveal">The people running MechaEagles</p>
+        <h2 class="reveal">Meet our leadership</h2>
+      </header>
+      <div class="leaders__row">
+        {LEADERS.map((m, i) => (
+          <article class="leader reveal" style={`--i:${i}`}>
+            <MemberCard card={primaryCard(m, "m")} />
+            <div class="leader__text">
+              <p>{introOf(m)}</p>
+              {RESPONSIBILITIES(m).length > 0 && (
+                <ul class="leader__jobs">
+                  {RESPONSIBILITIES(m).map((r) => <li style={`--c:${r.color}`}><Sigil el={r.element} /><span>{r.title}<small>{r.team}</small></span></li>)}
+                </ul>
+              )}
+              <a class="leader__more" data-person={m.id} href={`/people/#${m.id}`}>Full profile<span class="sr-only"> of {m.name}</span></a>
             </div>
-          </div>
-          <a class="people__all reveal" href="/teams/">See how all {PEOPLE_COUNT} people fit together</a>
-        </div>
-      </section>
+          </article>
+        ))}
+      </div>
+      <a class="leaders__all reveal" href="/people/">See how all {PEOPLE_COUNT} people fit together</a>
+    </div>
+  </section>
 
-      <section class="beat beat--support" id="support">
-        <div class="wrap support">
-          <div class="reveal">
-            <p class="eyebrow">For sponsors and faculty</p>
-            <h2>What your support builds</h2>
-            <dl class="support__facts">
-              <div><dt>People</dt><dd>{PEOPLE_COUNT}</dd></div>
-              <div><dt>Teams</dt><dd>{TEAMS.length}</dd></div>
-            </dl>
-            <p class="support__log lede">In September 2026, AeroEagles flew three rockets on its first high-power launch outing. Two were recovered, one was lost after its parachute didn't deploy, and Jack Tommaney earned Level 1 certification.</p>
-            <div class="actions">
-              <a class="button button--solid" href="mailto:mechaeagles@bc.edu?subject=Partnership%20inquiry">Partner with us</a>
-              <a class="button" href="/Mecha_Eagles_Sponsorship_Packet.pdf">Sponsorship packet (PDF)</a>
-            </div>
-          </div>
-          <div class="reveal" style="--i:2">
-            <p class="eyebrow">What partners have provided</p>
-            <ul class="partners">
-              {PARTNERS.map((p) => <li><strong>{p.name}</strong><span>{p.provided}</span></li>)}
-            </ul>
-          </div>
-        </div>
-      </section>
+  <section class="beat" id="teams">
+    <div class="wrap">
+      <p class="eyebrow reveal">What we build</p>
+      <h2 class="reveal">Four engineering teams</h2>
+      <ul class="tstrip">
+        {ENGINEERING.map((t, i) => (
+          <li class="reveal" style={`--c:${t.color};--i:${i}`}>
+            <a href={`/teams/${t.id}/`}>
+              <Sigil el={t.element} />
+              <strong>{t.name}</strong>
+              <span>{t.tagline}</span>
+              <small>{branchOf(t).everyone.length} people</small>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
 
-      <section class="ending" id="join">
-        <picture class="only-valley">
-          <source media="(max-aspect-ratio: 9/10)" srcset="/plate/dusk-tall.webp" />
-          <img class="ending__image" src="/plate/dusk.webp" alt="The MechaEagles platform at dusk with its circuits lit" loading="lazy" width="1920" height="1080" />
-        </picture>
-        <picture class="only-space">
-          <source media="(max-aspect-ratio: 9/10)" srcset="/plate/space-end-tall.webp" />
-          <img class="ending__image" src="/plate/space-end.webp" alt="The MechaEagles platform on a small moon with its circuits lit" loading="lazy" width="1920" height="1080" />
-        </picture>
-        <div class="ending__text wrap">
-          <h2 class="ending__title reveal">Come build with us.</h2>
-          <div class="actions reveal" style="--i:2"><a class="button button--solid" href="/join/">Join MechaEagles</a></div>
-        </div>
-      </section>
-    </main>
-    <footer class="foot">
-      <div class="wrap">
-        <div class="foot__row">
-          <a class="logo" href="/"><img src="/brand/eagle.webp" alt="" width="44" height="28" loading="lazy" /><span>MechaEagles</span></a>
-          <nav aria-label="Footer"><ul>{NAV.map((l) => <li><a href={l.href}>{l.label}</a></li>)}</ul></nav>
-          <a href="mailto:mechaeagles@bc.edu">mechaeagles@bc.edu</a>
+  <section class="beat beat--support" id="support">
+    <div class="wrap support">
+      <div class="reveal">
+        <p class="eyebrow">For sponsors and faculty</p>
+        <h2>What your support builds</h2>
+        <dl class="support__facts">
+          <div><dt>People</dt><dd>{PEOPLE_COUNT}</dd></div>
+          <div><dt>Teams</dt><dd>{ENGINEERING.length}</dd></div>
+        </dl>
+        <p class="support__log lede">In September 2026, AeroEagles flew three rockets on its first high-power launch outing. Two were recovered, one was lost after its parachute didn't deploy, and Jack Tommaney earned Level 1 certification.</p>
+        <div class="actions">
+          <a class="button button--solid" href="/sponsors/">Partner with us</a>
+          <a class="button" href="/Mecha_Eagles_Sponsorship_Packet.pdf" data-astro-reload>Sponsorship packet (PDF)</a>
         </div>
       </div>
-    </footer>
-    <script>
-      import { tiltCards } from "../components/cards/tilt";
-      tiltCards();
-    </script>
-    <script is:inline>
-      (function () {
-        var items = document.querySelectorAll(".reveal");
-        if (!("IntersectionObserver" in window)) { items.forEach(function (el) { el.classList.add("in"); }); return; }
-        var seen = new IntersectionObserver(function (entries) {
-          entries.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add("in"); seen.unobserve(e.target); } });
-        }, { rootMargin: "0px 0px -8% 0px" });
-        items.forEach(function (el) { seen.observe(el); });
-      })();
-    </script>
-  </body>
-</html>
+      <div class="reveal" style="--i:2">
+        <p class="eyebrow">What partners have provided, 2025–26</p>
+        <ul class="partners">
+          {sponsors.partners.map((p) => <li><strong>{p.name}</strong><span>{p.provided}</span></li>)}
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="ending" id="join">
+    <picture class="only-valley">
+      <source media="(max-aspect-ratio: 9/10)" srcset="/plate/dusk-tall.webp" />
+      <img class="ending__image" src="/plate/dusk.webp" alt="The MechaEagles platform at dusk with its circuits lit" loading="lazy" width="1920" height="1080" />
+    </picture>
+    <picture class="only-space">
+      <source media="(max-aspect-ratio: 9/10)" srcset="/plate/space-end-tall.webp" />
+      <img class="ending__image" src="/plate/space-end.webp" alt="The MechaEagles platform on a small moon with its circuits lit" loading="lazy" width="1920" height="1080" />
+    </picture>
+    <div class="ending__text wrap">
+      <h2 class="ending__title reveal">Come build with us.</h2>
+      <div class="actions reveal" style="--i:2"><a class="button button--solid" href="/join/">Join MechaEagles</a></div>
+    </div>
+  </section>
+</Site>

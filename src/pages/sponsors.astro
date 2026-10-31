@@ -1,0 +1,98 @@
+---
+import Site from "../layouts/Site.astro";
+import Sigil from "../components/cards/Sigil.astro";
+import { CURRENT, ENGINEERING, PEOPLE_COUNT, SITE, branchOf } from "../data/org";
+import sponsors from "../data/sponsors.json";
+
+const PICTURES: Record<string, { src: string; alt: string }> = {
+  baja: { src: "/media/baja/welding.webp", alt: "A member welding at a steel fixture table" },
+  aero: { src: "/media/aero/pad-check.webp", alt: "A member checking a rocket on the launch rail" },
+};
+const skills = [...new Set(CURRENT.flatMap((m) => m.specialties))].sort();
+const inquiry = `mailto:${SITE.email}?subject=Partnership%20inquiry`;
+---
+<Site title="Sponsors" page="sponsors" description="Sponsor MechaEagles: four student engineering teams at Boston College building a Baja car, high-power rockets, combat robots and AI safety research.">
+  <section class="shero wrap">
+    <div>
+      <p class="eyebrow reveal">Partner with MechaEagles</p>
+      <h1 class="reveal">Your support, built in.</h1>
+      <p class="lede reveal">Every license, every tube of steel and every dollar ends up in a machine students design, build and test themselves. Here's what we're building, who's building it, and where you'd fit.</p>
+      <div class="actions reveal"><a class="button button--solid" href={inquiry}>Start a conversation</a><a class="button" href="/Mecha_Eagles_Sponsorship_Packet.pdf" target="_blank" rel="noopener" data-astro-reload>Sponsorship packet (PDF, 14 MB)</a></div>
+    </div>
+    <dl class="shero__facts reveal">
+      <div><dt>Founded</dt><dd>2024</dd></div>
+      <div><dt>People</dt><dd>{PEOPLE_COUNT}</dd></div>
+      <div><dt>Engineering teams</dt><dd>{ENGINEERING.length}</dd></div>
+    </dl>
+  </section>
+
+  <section class="tsec wrap">
+    <div class="tsec__head"><p class="eyebrow">What you'd be backing</p><h2>Four engineering teams</h2></div>
+    <ul class="scards">
+      {ENGINEERING.map((t, i) => {
+        const pic = PICTURES[t.id];
+        return (
+          <li class="reveal" style={`--c:${t.color};--i:${i}`}>
+            <a href={`/teams/${t.id}/`}>
+              {pic ? <img src={pic.src} alt={pic.alt} loading="lazy" decoding="async" /> : <span class="scards__art"><Sigil el={t.element} /></span>}
+              <strong>{t.name}</strong>
+              <span>{t.mission}</span>
+              <small>{branchOf(t).everyone.length} people</small>
+            </a>
+          </li>
+        );
+      })}
+    </ul>
+  </section>
+
+  <section class="tsec wrap">
+    <div class="tsec__head"><p class="eyebrow">Why it matters</p><h2>Why industry support matters</h2></div>
+    <div class="overview">
+      <div>
+        <p class="overview__lead">Boston College has launched its first undergraduate engineering degree. Student teams are where that education meets deadlines, budgets and real hardware.</p>
+        <p>Members learn to operate within deadlines, defend technical decisions and collaborate across disciplines, which mirrors what industry expects. Support from working engineers and companies is what lets a young program take on projects at this scale.</p>
+      </div>
+      <div>
+        <h3>What members work on</h3>
+        <ul class="profile__chips sponsors__chips">{skills.map((s) => <li>{s}</li>)}</ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="tsec wrap">
+    <div class="tsec__head"><p class="eyebrow">How to contribute</p><h2>Cash, parts, tools or time</h2></div>
+    <ul class="subgrid subgrid--4">
+      {sponsors.ways.map((w, i) => <li class="reveal" style={`--i:${i}`}><h3>{w.name}</h3><p>{w.detail}</p></li>)}
+    </ul>
+  </section>
+
+  <section class="tsec wrap">
+    <div class="tsec__head"><p class="eyebrow">What sponsors receive</p><h2>Sponsorship levels, 2026–27</h2></div>
+    <p class="lede tiers__note">We're currently prioritizing in-kind relationships with industry leaders. Each level can be met with funding or the equivalent in products or services. Vehicle and pit benefits apply to the Baja SAE program.</p>
+    <ul class="tiers">
+      {sponsors.tiers.map((t, i) => (
+        <li class="reveal" style={`--i:${i}`}>
+          <h3>{t.name}</h3>
+          <p class="tiers__amount">{t.amount}</p>
+          <ul>{t.benefits.map((b) => <li>{b}</li>)}</ul>
+        </li>
+      ))}
+    </ul>
+  </section>
+
+  <section class="tsec wrap">
+    <div class="tsec__head"><p class="eyebrow">Partners</p><h2>Who has supported us</h2></div>
+    <p class="lede tiers__note">Support listed from the 2025–26 season.</p>
+    <ul class="plogos">
+      {sponsors.partners.map((p) => (
+        <li class="reveal"><span class="plogos__mark"><img src={p.logo} alt="" loading="lazy" /></span><div><strong>{p.name}</strong><span>{p.provided}</span></div></li>
+      ))}
+    </ul>
+  </section>
+
+  <section class="tcta wrap">
+    <h2>Let's talk.</h2>
+    <p class="lede">Email us and a project manager will get back to you.</p>
+    <div class="actions"><a class="button button--solid" href={inquiry}>{SITE.email}</a></div>
+  </section>
+</Site>

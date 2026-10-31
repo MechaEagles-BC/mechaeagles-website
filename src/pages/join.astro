@@ -1,0 +1,25 @@
+---
+import Site from "../layouts/Site.astro";
+import Sigil from "../components/cards/Sigil.astro";
+import { ENGINEERING, PROGRAMMATICS, SITE } from "../data/org";
+---
+<Site title="Join" page="join" description="Join MechaEagles at Boston College. No experience needed.">
+  <section class="shero wrap">
+    <div>
+      <p class="eyebrow reveal">Join MechaEagles</p>
+      <h1 class="reveal">No experience required.</h1>
+      <p class="lede reveal">Most of us had never welded, wired an altimeter or written a safety case before joining. Pick a team, show up, and learn by building.</p>
+      <div class="actions reveal"><a class="button button--solid" href={SITE.applyUrl} rel="noopener">Apply now</a></div>
+    </div>
+  </section>
+  <section class="tsec wrap">
+    <div class="tsec__head"><p class="eyebrow">Pick a team</p><h2>Where you could fit</h2></div>
+    <ul class="tstrip tstrip--2">
+      {[...ENGINEERING, PROGRAMMATICS].map((t, i) => (
+        <li class="reveal" style={`--c:${t.color};--i:${i}`}>
+          <a href={t.kind === "engineering" ? `/teams/${t.id}/` : "/people/"}><Sigil el={t.element} /><strong>{t.name}</strong><span>{t.mission}</span></a>
+        </li>
+      ))}
+    </ul>
+  </section>
+</Site>
