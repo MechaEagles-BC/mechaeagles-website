@@ -4,13 +4,15 @@
  */
 import { memo, Suspense, useEffect, useMemo, useRef, useState, type RefObject } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { Environment, PerformanceMonitor, useGLTF, useTexture } from "@react-three/drei";
+import { Environment, PerformanceMonitor, useEnvironment, useGLTF, useTexture } from "@react-three/drei";
 import { Bloom, EffectComposer, ToneMapping } from "@react-three/postprocessing";
 import { ToneMappingMode } from "postprocessing";
 import * as THREE from "three";
 import { ADDITIVE } from "./additive";
 import Grass from "./Grass";
-import { FILM, filmFit, PORTAL, TEAMS, type Fx } from "./teams";
+import { Flyby, HoverBurst, Regolith, Rocket, Sky } from "./Space";
+import { Birds, Seeds, Signpost } from "./Valley";
+import { FILM, filmFit, PORTAL, TEAMS, type Fx, type World } from "./teams";
 import Hologram from "./Hologram";
 import Portal from "./Portal";
 
@@ -631,12 +633,19 @@ function CameraRig({ closeup }: { closeup: number[] | null }) {
   return null;
 }
 
-function Studio() {
+const ENV_FACES = ["px.webp", "nx.webp", "py.webp", "ny.webp", "pz.webp", "nz.webp"];
+
+function Studio({ world }: { world: World }) {
+  // Both maps stay loaded, so a change of world never leaves the metal unlit while one downloads.
+  const valley = useEnvironment({ files: ENV_FACES, path: "/env/" });
+  const space = useEnvironment({ files: ENV_FACES, path: "/env/space/" });
+  const inSpace = world === "space";
   return (
     <>
-      {/* Matches the sun in unreal/land_build.py, so shadows on the live parts fall the same way as in the valley. */}
-      <directionalLight position={[-9.6, 23, 16.7]} intensity={2.6} color="#fff4e6" castShadow shadow-mapSize={[2048, 2048]} shadow-bias={-0.0004} shadow-normalBias={0.02} shadow-camera-left={-16} shadow-camera-right={16} shadow-camera-top={16} shadow-camera-bottom={-16} shadow-camera-far={70} />
-      <Environment files={["px.webp", "nx.webp", "py.webp", "ny.webp", "pz.webp", "nz.webp"]} path="/env/" environmentIntensity={1.5} />
+      {/* Matches the sun in unreal/land_build.py and space_build.py, so shadows on the live parts fall the same way as in the picture. */}
+      <directionalLight position={[-9.6, 23, 16.7]} intensity={inSpace ? 3.2 : 2.6} color={inSpace ? "#eef6ff" : "#fff4e6"} castShadow shadow-mapSize={[2048, 2048]} shadow-bias={-0.0004} shadow-normalBias={0.02} shadow-camera-left={-16} shadow-camera-right={16} shadow-camera-top={16} shadow-camera-bottom={-16} shadow-camera-far={70} />
+      {inSpace && <directionalLight position={[10, 5, -22]} intensity={0.7} color="#dfe4ea" />}
+      <Environment map={inSpace ? space : valley} environmentIntensity={inSpace ? 1.7 : 1.5} />
     </>
   );
 }
@@ -666,7 +675,7 @@ function Inspect() {
   return null;
 }
 
-function Scene({ fx, labelRefs, active, onHover, onSelect, onReady, onGiveUp }: { fx: RefObject<Fx>; labelRefs: RefObject<HTMLAnchorElement | null>[]; active: boolean; onHover: (i: number) => void; onSelect: (i: number) => void; onReady: () => void; onGiveUp: () => void }) {
+function Scene({ world, fx, labelRefs, signRefs, signHover, signPress, active, onHover, onSelect, onReady, onGiveUp }: { world: World; signRefs: RefObject<HTMLAnchorElement | null>[]; signHover: RefObject<number>; signPress: RefObject<number>; fx: RefObject<Fx>; labelRefs: RefObject<HTMLAnchorElement | null>[]; active: boolean; onHover: (i: number) => void; onSelect: (i: number) => void; onReady: () => void; onGiveUp: () => void }) {
   const closeup = useMemo(() => (import.meta.env.DEV ? new URLSearchParams(location.search).get("closeup")?.split(",").map(Number) ?? null : null), []);
   const capture = useMemo(() => import.meta.env.DEV && new URLSearchParams(location.search).has("capture"), []);
   // Cap the buffer near 4 MP: past that, extra pixels cost far more than they show.
@@ -687,14 +696,35 @@ function Scene({ fx, labelRefs, active, onHover, onSelect, onReady, onGiveUp }: 
       {/* Sharpness drops first, under 30 fps. 3D is only given up after sustained failure at low sharpness. */}
       {!capture && <PerformanceMonitor bounds={() => [30, 55]} iterations={8} onDecline={() => setDpr(1)} />}
       {!capture && dpr === 1 && <FrameWatch onGiveUp={onGiveUp} />}
-      <Studio />
       <Suspense fallback={null}>
+        <Studio world={world} />
         <Platform fx={fx} labelRefs={labelRefs} onHover={onHover} onSelect={onSelect} onReady={onReady} />
       </Suspense>
-      <Grass />
+      {world === "valley" && <Grass />}
+      {world === "valley" && !capture && (
+        <>
+          <Birds />
+          <Seeds />
+          <HoverBurst fx={fx} floating />
+          {innerWidth / innerHeight > 0.9 && <Signpost linkRefs={signRefs} hovered={signHover} pressed={signPress} />}
+        </>
+      )}
+      {world === "space" && (
+        <Suspense fallback={null}>
+          <Regolith />
+          {!capture && (
+            <>
+              <Sky />
+              <Rocket />
+              <Flyby />
+              <HoverBurst fx={fx} floating={false} />
+            </>
+          )}
+        </Suspense>
+      )}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.002, 0]} receiveShadow>
         <circleGeometry args={[24, 64]} />
-        <shadowMaterial transparent opacity={0.34} color="#14200c" />
+        <shadowMaterial transparent opacity={world === "space" ? 0.72 : 0.34} color={world === "space" ? "#04060a" : "#14200c"} />
       </mesh>
       <CameraRig closeup={closeup} />
       <Inspect />

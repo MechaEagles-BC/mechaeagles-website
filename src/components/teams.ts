@@ -29,6 +29,16 @@ export const TEAMS = [
 
 export const PORTAL = { radius: 10.3, scale: 0.8 };
 
+/** The boards on the valley's signpost, top to bottom, each pointing its own way. */
+export const SIGNS = [
+  { label: "Home", href: "/", points: 1 as const, yaw: 0.2, tilt: 0.022 },
+  { label: "Teams", href: "/teams/", points: -1 as const, yaw: -0.28, tilt: -0.03 },
+  { label: "Projects", href: "/projects/", points: 1 as const, yaw: -0.16, tilt: -0.018 },
+  { label: "People", href: "#people", points: -1 as const, yaw: 0.2, tilt: 0.026 },
+  { label: "About", href: "/about/", points: 1 as const, yaw: 0.3, tilt: 0.012 },
+  { label: "Sponsors", href: "/sponsors/", points: 1 as const, yaw: -0.26, tilt: -0.02 },
+];
+
 /**
  * The live scene and the rendered valley share one 4:3 film, so they line up. Windows see a band of it: the width always fits,
  * and a window wider than 16:9 fits to the 16:9 band's height, with the sides fading to the page.
@@ -41,15 +51,17 @@ export function filmFit(viewW: number, viewH: number) {
   return { fullW, fullH, offsetX: (fullW - viewW) / 2, offsetY: (fullH - viewH) / 2 };
 }
 
+export type World = "valley" | "space";
+
 /**
- * The rendered valley for a window's shape. All three share the film's lens and aim, so the film is exactly the middle of each.
+ * The rendered world for a window's shape. All three share the film's lens and aim, so the film is exactly the middle of each.
  * x and y are their size in films.
  */
-export function plateFor(viewW: number, viewH: number) {
+export function plateFor(viewW: number, viewH: number, world: World = "valley") {
   const aspect = viewW / viewH;
-  if (aspect > 16 / 9) return { src: "/plate/valley-wide.webp", x: 1.5, y: 1 };
-  if (aspect < 4 / 3) return { src: "/plate/valley-tall.webp", x: 1, y: 10 / 3 };
-  return { src: "/plate/valley.webp", x: 1, y: 1 };
+  if (aspect > 16 / 9) return { src: `/plate/${world}-wide.webp`, x: 1.5, y: 1 };
+  if (aspect < 4 / 3) return { src: `/plate/${world}-tall.webp`, x: 1, y: 10 / 3 };
+  return { src: `/plate/${world}.webp`, x: 1, y: 1 };
 }
 
 /** Where a caption's reference point sits on it. Front captions hang below their panel; back ones sit outboard, clear of the platform. */

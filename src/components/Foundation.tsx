@@ -3,7 +3,9 @@
  * The poster and links need no 3D. Scene.tsx downloads only for capable visitors, and everyone else keeps a still image.
  */
 import { Component, createRef, lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { captionTransform, filmFit, plateFor, TEAMS, type Fx } from "./teams";
+import { flushSync } from "react-dom";
+import { captionTransform, filmFit, plateFor, SIGNS, TEAMS, type Fx, type World } from "./teams";
+import ValleyFx from "./ValleyFx";
 
 const Scene = lazy(() => import("./Scene"));
 
@@ -49,6 +51,8 @@ class GLBoundary extends Component<{ onError: () => void; children: ReactNode },
   }
 }
 
+const OTHER: Record<World, World> = { valley: "space", space: "valley" };
+
 const MENU_LINKS = [
   { label: "People", href: "#people" },
   { label: "Sponsors", href: "/sponsors/" },
@@ -69,11 +73,17 @@ export default function Foundation({ peopleCount, latestLog }: { peopleCount: nu
   const [active, setActive] = useState(true);
   const [turned, setTurned] = useState(false);
   const [menu, setMenu] = useState(false);
+  const [world, setWorld] = useState<World>(() => (document.documentElement.dataset.theme === "space" ? "space" : "valley"));
+  const [painted, setPainted] = useState(world); // the live scene changes only once its picture is ready, so the two never disagree
   const stageRef = useRef<HTMLDivElement>(null);
-  const plateRef = useRef<HTMLImageElement>(null);
+  const plates = useRef<Record<World, HTMLImageElement | null>>({ valley: null, space: null });
   const menuRef = useRef<HTMLDivElement>(null);
   const menuButton = useRef<HTMLButtonElement>(null);
   const labelRefs = useMemo(() => TEAMS.map(() => createRef<HTMLAnchorElement>()), []);
+  const signRefs = useMemo(() => SIGNS.map(() => createRef<HTMLAnchorElement>()), []);
+  const signHover = useRef(-1);
+  const signPress = useRef(-1);
+  const [plateSize, setPlateSize] = useState(() => plateFor(innerWidth, innerHeight, "valley"));
   const showing3D = live && !gaveUp;
   const shown = hovered >= 0 ? hovered : held;
 
@@ -113,16 +123,81 @@ export default function Foundation({ peopleCount, latestLog }: { peopleCount: nu
     return () => removeEventListener("pageshow", onShow);
   }, [select]);
 
+  const loadPlate = useCallback((w: World) => {
+    const img = plates.current[w];
+    const plate = plateFor(innerWidth, innerHeight, w);
+    if (img && img.getAttribute("src") !== plate.src) img.src = plate.src;
+    return img;
+  }, []);
+  // The new world opens as a circle from the button, once its picture is ready, so the change is one clean move.
+  const switchWorld = useCallback((e: React.MouseEvent) => {
+    const next = OTHER[document.documentElement.dataset.theme === "space" ? "space" : "valley"];
+    const apply = () => {
+      document.documentElement.dataset.theme = next;
+      flushSync(() => {
+        setWorld(next);
+        setPainted(next);
+      });
+    };
+    try {
+      localStorage.setItem("mc-world", next);
+    } catch {
+      // private windows can refuse storage; the choice still holds for this page
+    }
+    const button = e.currentTarget.getBoundingClientRect(); // React clears the event before the picture has decoded
+    const img = loadPlate(next);
+    (img ? img.decode().catch(() => undefined) : Promise.resolve()).then(() => {
+      const doc = document as Document & { startViewTransition?: (cb: () => void) => { ready: Promise<void> } };
+      if (!doc.startViewTransition || matchMedia("(prefers-reduced-motion: reduce)").matches) return apply();
+      const x = button.left + button.width / 2;
+      const y = button.top + button.height / 2;
+      const reach = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y));
+      doc.startViewTransition(apply).ready.then(() => {
+        document.documentElement.animate(
+          { clipPath: [`circle(0 at ${x}px ${y}px)`, `circle(${reach}px at ${x}px ${y}px)`] },
+          { duration: 1100, easing: "cubic-bezier(0.5, 0, 0.15, 1)", pseudoElement: "::view-transition-new(root)" },
+        );
+      });
+    });
+  }, [loadPlate]);
+  useEffect(() => {
+    const img = loadPlate(world);
+    if (!img) return;
+    let stale = false;
+    img.decode().catch(() => undefined).then(() => stale || setPainted(world));
+    return () => {
+      stale = true;
+    };
+  }, [world, showing3D, loadPlate]);
+
+  const openSign = useCallback((i: number) => {
+    if (fx.current.dragged) return;
+    signPress.current = i;
+    const delay = matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 320;
+    setTimeout(() => {
+      signPress.current = -1;
+      const href = SIGNS[i].href;
+      if (href.startsWith("#")) document.querySelector(href)?.scrollIntoView();
+      else location.assign(href);
+    }, delay);
+  }, []);
+
   useEffect(() => {
     const place = () => {
       const fit = filmFit(innerWidth, innerHeight);
-      const plate = plateFor(innerWidth, innerHeight);
-      const img = plateRef.current;
-      if (!img) return;
-      if (img.getAttribute("src") !== plate.src) img.src = plate.src;
-      const w = fit.fullW * plate.x;
-      const h = fit.fullH * plate.y;
-      Object.assign(img.style, { width: `${w}px`, height: `${h}px`, left: `${innerWidth / 2 - w / 2}px`, top: `${innerHeight / 2 - h / 2}px` });
+      const valley = plateFor(innerWidth, innerHeight, "valley");
+      setPlateSize((now) => (now.src === valley.src ? now : valley));
+      const fxCanvas = stageRef.current?.querySelector<HTMLCanvasElement>(".stage__plate--fx");
+      if (fxCanvas) Object.assign(fxCanvas.style, { width: `${fit.fullW * valley.x}px`, height: `${fit.fullH * valley.y}px`, left: `${innerWidth / 2 - (fit.fullW * valley.x) / 2}px`, top: `${innerHeight / 2 - (fit.fullH * valley.y) / 2}px` });
+      (Object.keys(plates.current) as World[]).forEach((w) => {
+        const img = plates.current[w];
+        if (!img) return;
+        const plate = plateFor(innerWidth, innerHeight, w);
+        if (img.hasAttribute("src") && img.getAttribute("src") !== plate.src) img.src = plate.src;
+        const pw = fit.fullW * plate.x;
+        const ph = fit.fullH * plate.y;
+        Object.assign(img.style, { width: `${pw}px`, height: `${ph}px`, left: `${innerWidth / 2 - pw / 2}px`, top: `${innerHeight / 2 - ph / 2}px` });
+      });
     };
     place();
     addEventListener("resize", place);
@@ -222,27 +297,38 @@ export default function Foundation({ peopleCount, latestLog }: { peopleCount: nu
   useEffect(() => {
     document.documentElement.dataset.state = showing3D ? (ready ? "live" : "loading") : "still";
     document.querySelectorAll<HTMLElement>("[data-still-team]").forEach((el) => {
-      const on = !showing3D && el.dataset.stillTeam === String(shown);
+      const on = !showing3D && el.dataset.stillTeam === String(shown) && el.dataset.world === world;
       if (on) {
         el.querySelectorAll<HTMLSourceElement>("source[data-srcset]").forEach((s) => (s.srcset = s.dataset.srcset!));
         el.querySelectorAll<HTMLImageElement>("img[data-src]").forEach((img) => (img.src = img.dataset.src!));
       }
       el.classList.toggle("on", on);
     });
-  }, [showing3D, ready, shown]);
+  }, [showing3D, ready, shown, world]);
 
   return (
     <div className="stage__live" ref={stageRef}>
       {showing3D && (
         <div className={`stage__canvas${ready ? " ready" : ""}`} aria-hidden="true">
-          <img ref={plateRef} className="stage__plate" alt="" />
+          {(["valley", "space"] as World[]).map((w) => (
+            <img key={w} ref={(el) => void (plates.current[w] = el)} className={`stage__plate${painted === w ? " on" : ""}`} alt="" />
+          ))}
+          <ValleyFx active={active} on={painted === "valley" && !capture} plate={plateSize} />
           <GLBoundary onError={onGiveUp}>
             <Suspense fallback={null}>
-              <Scene fx={fx} labelRefs={labelRefs} active={active} onHover={hover} onSelect={open} onReady={onReady} onGiveUp={onGiveUp} />
+              <Scene world={painted} fx={fx} labelRefs={labelRefs} signRefs={signRefs} signHover={signHover} signPress={signPress} active={active} onHover={hover} onSelect={open} onReady={onReady} onGiveUp={onGiveUp} />
             </Suspense>
           </GLBoundary>
         </div>
       )}
+
+      <button type="button" className="world-button" aria-label={world === "space" ? "Go back to the valley" : "Go to space"} title={world === "space" ? "Back to the valley" : "Go to space"} onPointerEnter={() => loadPlate(OTHER[world])} onFocus={() => loadPlate(OTHER[world])} onClick={switchWorld}>
+        {world === "space" ? (
+          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="12" cy="12" r="4.2" fill="none" stroke="currentColor" strokeWidth="1.6" /><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M18.7 5.3l-2.1 2.1M7.4 16.6l-2.1 2.1" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /></svg>
+        ) : (
+          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="12" cy="12" r="5" fill="none" stroke="currentColor" strokeWidth="1.6" /><ellipse cx="12" cy="12" rx="10.4" ry="3.2" fill="none" stroke="currentColor" strokeWidth="1.6" transform="rotate(-24 12 12)" /></svg>
+        )}
+      </button>
 
       <button ref={menuButton} type="button" className="menu-button" aria-haspopup="dialog" aria-expanded={menu} onClick={() => setMenu(true)}>
         Menu
@@ -253,7 +339,7 @@ export default function Foundation({ peopleCount, latestLog }: { peopleCount: nu
         <a
           key={t.id}
           ref={labelRefs[i]}
-          className="portal-label"
+          className={`portal-label${shown === i ? " shown" : ""}`}
           href={t.href}
           draggable={false}
           style={{ "--c": t.color } as React.CSSProperties}
@@ -268,12 +354,42 @@ export default function Foundation({ peopleCount, latestLog }: { peopleCount: nu
             open(i);
           }}
         >
-          <span className="portal-label__name">{t.name}</span>
+          {/* Letter by letter on screen, one name to a screen reader. */}
+          <span className="portal-label__name" aria-label={t.name}>
+            {[...t.name].map((ch, n) => (
+              <span key={n} aria-hidden="true" style={{ "--n": n } as React.CSSProperties}>{ch === " " ? "\u00a0" : ch}</span>
+            ))}
+          </span>
           <span className="portal-label__tag">{t.tagline}</span>
         </a>
       ))}
 
-      {showing3D && <p className={`stage__hint${turned ? " gone" : ""}`} aria-hidden="true">Drag to turn</p>}
+      {showing3D && painted === "valley" && (
+        <nav className="signpost" aria-label="Signpost">
+          {SIGNS.map((sign, i) => (
+            <a
+              key={sign.label}
+              ref={signRefs[i]}
+              className="sign-link"
+              href={sign.href}
+              draggable={false}
+              onPointerEnter={() => (signHover.current = i)}
+              onPointerLeave={() => (signHover.current = -1)}
+              onFocus={() => (signHover.current = i)}
+              onBlur={() => (signHover.current = -1)}
+              onClick={(e) => {
+                if (e.ctrlKey || e.metaKey || e.shiftKey || e.button !== 0) return;
+                e.preventDefault();
+                openSign(i);
+              }}
+            >
+              {sign.label}
+            </a>
+          ))}
+        </nav>
+      )}
+
+      {showing3D && <p className={`stage__hint${turned ? " gone" : ""}`} aria-hidden="true">Point at a card · Drag to turn</p>}
 
       <div ref={menuRef} className={`menu${menu ? " open" : ""}`} role="dialog" aria-modal="true" aria-label="Menu" inert={!menu}>
         <button type="button" className="menu-button menu-button--close" onClick={closeMenu}>
