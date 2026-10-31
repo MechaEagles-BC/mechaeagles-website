@@ -1,21 +1,24 @@
 /**
  * One team portal: a shared CAD frame, the team's line drawing on a slow turn, and a light that follows hover and selection.
  * The team text is a real link in the page, placed over the nameplate each frame, so it stays sharp and accessible.
- * Baja's drawing is illustrative, not team CAD.
+ * Only Baldwin-1 is a team model. The other drawings are illustrative, and each caption says what it shows.
  */
 import { useMemo, useRef, type RefObject } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import { useTexture } from "@react-three/drei";
 import * as THREE from "three";
 import { Instanced, machined, usePartGeometry, type SharedLight } from "./Scene";
-import { PORTAL, TEAMS, type Fx } from "./teams";
+import { captionTransform, PORTAL, TEAMS, type Fx } from "./teams";
 
-const DRAWING_SCALE = 2.45;
 const DRAWING_Y = 2.72;
 // mirrors cad/portal.py
 const SCREW_ZS = [1.3, 1.9, 2.5, 3.1, 3.7];
 const SCREW_XS = [-1.65, -1.45, 1.45, 1.65];
-const LABEL_ANCHOR = new THREE.Vector3(0, 0, 0.85); // the caption hangs just in front of the plinth
+const CAPTION_ANCHORS: Record<string, THREE.Vector3> = {
+  below: new THREE.Vector3(0, 0, 0.85), // just in front of the plinth
+  left: new THREE.Vector3(-2.1, 2.5, 0),
+  right: new THREE.Vector3(2.1, 2.5, 0),
+};
 
 function drawingMaterials(color: string, shared: SharedLight, level: { value: number }) {
   const uniforms = { uColor: { value: new THREE.Color(color) }, uLevel: level, uTime: shared.uTime };
@@ -50,9 +53,8 @@ function drawingMaterials(color: string, shared: SharedLight, level: { value: nu
 
 const depthOnly = new THREE.MeshBasicMaterial({ colorWrite: false, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 2 });
 
-export default function Portal({ index, drawing, fx, shared, labelRef, screw, screwMaterial, onHover, onSelect }: {
+export default function Portal({ index, fx, shared, labelRef, screw, screwMaterial, onHover, onSelect }: {
   index: number;
-  drawing: string;
   fx: RefObject<Fx>;
   shared: SharedLight;
   labelRef: RefObject<HTMLAnchorElement | null>;
@@ -63,13 +65,13 @@ export default function Portal({ index, drawing, fx, shared, labelRef, screw, sc
 }) {
   const team = TEAMS[index];
   const frame = usePartGeometry("../portal/frame");
-  const corner = usePartGeometry(`../portal/${drawing}`);
+  const corner = usePartGeometry(`../portal/${team.drawing}`);
   const ao = useTexture("/models/portal/frame.ao.webp");
   const { camera, size } = useThree();
 
   const placement = useMemo(() => {
-    const x = Math.cos(PORTAL.angle) * PORTAL.radius;
-    const z = -Math.sin(PORTAL.angle) * PORTAL.radius;
+    const x = Math.cos(team.portalAngle) * PORTAL.radius;
+    const z = -Math.sin(team.portalAngle) * PORTAL.radius;
     // turned most of the way toward the viewer, so all four panels stay readable
     return { x, z, yaw: Math.atan2(-x, 25 - z) * 0.9 };
   }, []);
@@ -117,14 +119,12 @@ export default function Portal({ index, drawing, fx, shared, labelRef, screw, sc
     const k = parts.level.value;
     parts.lamp.color.set(team.color).multiplyScalar(0.72 + k * 0.5);
     if (light.current) light.current.intensity = THREE.MathUtils.damp(light.current.intensity, on ? 9 : dimmed ? 1.2 : 2.6, 7, dt);
-    if (turn.current) turn.current.rotation.y = -0.62 + Math.sin(state.clock.elapsedTime * 0.22) * 0.2;
+    if (turn.current) turn.current.rotation.y = team.drawingYaw + Math.sin(state.clock.elapsedTime * 0.22 + index * 1.7) * 0.2;
 
     const el = labelRef.current;
     if (el && root.current) {
-      root.current.localToWorld(anchor.copy(LABEL_ANCHOR)).project(camera);
-      const half = el.offsetWidth / 2 + 8; // never let the caption run off a narrow window
-      const px = THREE.MathUtils.clamp(((anchor.x + 1) / 2) * size.width, half, size.width - half);
-      el.style.transform = `translate(${px}px, ${((1 - anchor.y) / 2) * size.height}px) translate(-50%, 0)`;
+      root.current.localToWorld(anchor.copy(CAPTION_ANCHORS[team.caption])).project(camera);
+      el.style.transform = captionTransform(team.caption, ((anchor.x + 1) / 2) * size.width, ((1 - anchor.y) / 2) * size.height, el, size.width);
     }
   });
 
@@ -138,7 +138,7 @@ export default function Portal({ index, drawing, fx, shared, labelRef, screw, sc
       ))}
       <pointLight ref={light} position={[0, 2.7, 2.4]} color={team.color} intensity={2.6} distance={7} decay={1.7} />
 
-      <group position={[0, DRAWING_Y, 0.1]} scale={DRAWING_SCALE}>
+      <group position={[0, DRAWING_Y, 0.5]} scale={team.drawingScale} rotation={[0, 0, team.drawingLean]}>
         <group ref={turn}>
           <mesh geometry={corner} material={depthOnly} renderOrder={1} />
           <mesh geometry={corner} material={parts.drawn.face} renderOrder={2} />

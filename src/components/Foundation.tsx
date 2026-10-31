@@ -2,21 +2,20 @@
  * Page shell for the foundation. The poster and controls need no 3D. Scene.tsx downloads only for capable
  * visitors, and everyone else keeps a still image that still responds to the team controls.
  */
-import { Component, lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { TEAMS, type Fx } from "./teams";
+import { Component, createRef, lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { captionTransform, TEAMS, type Fx } from "./teams";
 
 const Scene = lazy(() => import("./Scene"));
 
-// Where the nameplate sits in the 1920 x 1080 poster, for visitors and moments without live 3D.
-const STILL_ANCHOR = { x: 226, y: 706 };
+// Where each caption sits in the 1920 x 1080 poster, for visitors and moments without live 3D.
+const STILL_ANCHORS = [{ x: 226, y: 706 }, { x: 289, y: 205 }, { x: 1631, y: 205 }, { x: 1694, y: 706 }];
 const STILL = { w: 1920, h: 1080 };
 
-function placeOnStill(el: HTMLElement) {
+function placeOnStill(el: HTMLElement, side: string, anchor: { x: number; y: number }) {
   const scale = Math.max(innerWidth / STILL.w, innerHeight / STILL.h);
-  const half = el.offsetWidth / 2 + 8;
-  const x = Math.min(innerWidth - half, Math.max(half, innerWidth / 2 + (STILL_ANCHOR.x - STILL.w / 2) * scale));
-  const y = innerHeight / 2 + (STILL_ANCHOR.y - STILL.h / 2) * scale;
-  el.style.transform = `translate(${x}px, ${y}px) translate(-50%, 0)`;
+  const x = innerWidth / 2 + (anchor.x - STILL.w / 2) * scale;
+  const y = innerHeight / 2 + (anchor.y - STILL.h / 2) * scale;
+  el.style.transform = captionTransform(side, x, y, el, innerWidth);
 }
 
 function canRun3D() {
@@ -54,7 +53,7 @@ export default function Foundation() {
   const [hovered, setHovered] = useState(-1);
   const [ready, setReady] = useState(false);
   const [gaveUp, setGaveUp] = useState(false);
-  const labelRef = useRef<HTMLAnchorElement>(null);
+  const labelRefs = useMemo(() => TEAMS.map(() => createRef<HTMLAnchorElement>()), []);
   const showing3D = live && !gaveUp;
   const shown = hovered >= 0 ? hovered : held;
 
@@ -78,11 +77,11 @@ export default function Foundation() {
 
   useEffect(() => {
     if (showing3D && ready) return;
-    const place = () => labelRef.current && placeOnStill(labelRef.current);
+    const place = () => labelRefs.forEach((r, i) => r.current && placeOnStill(r.current, TEAMS[i].caption, STILL_ANCHORS[i]));
     place();
     addEventListener("resize", place);
     return () => removeEventListener("resize", place);
-  }, [showing3D, ready]);
+  }, [showing3D, ready, labelRefs]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -110,33 +109,36 @@ export default function Foundation() {
         <div className={`lab__canvas${ready ? " ready" : ""}`} aria-hidden="true">
           <GLBoundary onError={onGiveUp}>
             <Suspense fallback={null}>
-              <Scene fx={fx} labelRef={labelRef} onHover={hover} onSelect={select} onReady={onReady} onGiveUp={onGiveUp} onMiss={clear} />
+              <Scene fx={fx} labelRefs={labelRefs} onHover={hover} onSelect={select} onReady={onReady} onGiveUp={onGiveUp} onMiss={clear} />
             </Suspense>
           </GLBoundary>
         </div>
       )}
 
       {/* A real link: it can be focused, copied and opened in a new tab, and needs no 3D. */}
-      <a
-        ref={labelRef}
-        className="portal-label"
-        href="/teams/baja/"
-        style={{ "--c": TEAMS[0].color } as React.CSSProperties}
-        aria-current={held === 0 ? "true" : undefined}
-        onPointerEnter={() => hover(0)}
-        onPointerLeave={() => hover(-1)}
-        onFocus={() => hover(0)}
-        onBlur={() => hover(-1)}
-        onClick={(e) => {
-          if (e.ctrlKey || e.metaKey || e.shiftKey || e.button !== 0) return;
-          e.preventDefault(); // Stage 6 adds the transition. In this prototype a click selects.
-          select(0);
-        }}
-      >
-        <span className="portal-label__name">{TEAMS[0].name}</span>
-        <span className="portal-label__tag">Off-road vehicle engineering</span>
-        <span className="portal-label__note">Illustrative, not team CAD</span>
-      </a>
+      {TEAMS.map((t, i) => (
+        <a
+          key={t.id}
+          ref={labelRefs[i]}
+          className="portal-label"
+          href={t.href}
+          style={{ "--c": t.color } as React.CSSProperties}
+          aria-current={held === i ? "true" : undefined}
+          onPointerEnter={() => hover(i)}
+          onPointerLeave={() => hover(-1)}
+          onFocus={() => hover(i)}
+          onBlur={() => hover(-1)}
+          onClick={(e) => {
+            if (e.ctrlKey || e.metaKey || e.shiftKey || e.button !== 0) return;
+            e.preventDefault(); // Stage 6 adds the transition. In this prototype a click selects.
+            select(i);
+          }}
+        >
+          <span className="portal-label__name">{t.name}</span>
+          <span className="portal-label__tag">{t.tagline}</span>
+          <span className="portal-label__note">{t.note}</span>
+        </a>
+      ))}
 
       <header className="lab__head">
         <p className="lab__kicker">MechaEagles · Mission Control</p>

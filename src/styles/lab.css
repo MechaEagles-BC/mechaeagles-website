@@ -22,10 +22,10 @@ html, body { height: 100%; margin: 0; background: var(--ink); color: var(--chalk
 .still--team { opacity: 0; transition: opacity 0.25s ease; }
 .still--team.on { opacity: 1; }
 @media (prefers-reduced-motion: reduce) { .lab__canvas, .still--team { transition-duration: 0.01ms; } }
-.lab__head { position: absolute; left: clamp(16px, 3vw, 40px); top: clamp(16px, 3vw, 36px); pointer-events: none; max-width: calc(100vw - 32px); }
-.lab__kicker { margin: 0 0 8px; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--soft); }
-.lab__title { margin: 0; font: 800 clamp(24px, 2.6vw, 36px)/1 var(--display); font-stretch: 118%; letter-spacing: -0.005em; text-transform: uppercase; }
-.lab__note { margin: 10px 0 0; font-size: 12px; color: var(--soft); }
+.lab__head { position: absolute; left: 50%; top: clamp(12px, 2vw, 22px); transform: translateX(-50%); width: min(560px, calc(100vw - 32px)); pointer-events: none; text-align: center; }
+.lab__kicker { margin: 0 0 4px; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--soft); }
+.lab__title { margin: 0; font: 800 clamp(20px, 1.7vw, 26px)/1 var(--display); font-stretch: 118%; letter-spacing: -0.005em; text-transform: uppercase; }
+.lab__note { margin: 4px 0 0; font-size: 12px; color: var(--soft); }
 .lab__foot { position: absolute; inset: auto clamp(16px, 3vw, 40px) clamp(14px, 2.4vw, 28px); display: grid; gap: 10px; }
 .lab__status { margin: 0; min-height: 1.5em; font-size: 12px; letter-spacing: 0.04em; color: var(--soft); }
 .lab__teams { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }

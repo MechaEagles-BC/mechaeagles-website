@@ -1,0 +1,10 @@
+---
+import "../../styles/lab.css";
+export const getStaticPaths = () => ["baja", "aero", "combat-robotics", "ai-safety"].map((id) => ({ params: { id } }));
+const { id } = Astro.params;
+---
+<!doctype html>
+<html lang="en">
+  <head><meta charset="utf-8" /><meta name="robots" content="noindex" /><title>{id} · prototype stub</title></head>
+  <body><p class="note">Prototype stub for "{id}". On the real site this link opens the team page. <a href="/">Back</a></p></body>
+</html>

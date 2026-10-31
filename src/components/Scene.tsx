@@ -28,20 +28,20 @@ const SPAR_IN = 2.7;
 const PULSE_SECONDS = 0.85;
 const RIPPLE_SECONDS = 1.5;
 const TAU = Math.PI * 2;
-const PORTAL_TEAM = 0; // Stage 3 builds Baja first; the other three reuse this once it is approved
 const DUCT_SHARE = 0.22;
 // Portrait screens get stacked team cards in Stage 7, so their poster leaves the panels out rather than cropping them.
 const PORTALS_ON = !(import.meta.env.DEV && new URLSearchParams(location.search).has("noportal"));
-// The duct runs from the coupler's outer end down to the foot of the portal.
-const DUCT_FROM = new THREE.Vector3(Math.cos(TEAMS[PORTAL_TEAM].angle) * 9.2, 0.46, -Math.sin(TEAMS[PORTAL_TEAM].angle) * 9.2);
-const DUCT_TO = (() => {
-  const foot = new THREE.Vector3(Math.cos(PORTAL.angle) * PORTAL.radius, 0.05, -Math.sin(PORTAL.angle) * PORTAL.radius);
-  const back = DUCT_FROM.clone().setY(0.05).sub(foot).normalize().multiplyScalar(1.1);
-  return foot.add(back);
-})();
-const DUCT_LENGTH = DUCT_FROM.distanceTo(DUCT_TO);
-const DUCT_MID = DUCT_FROM.clone().add(DUCT_TO).multiplyScalar(0.5);
-const DUCT_TURN = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(1, 0, 0), DUCT_TO.clone().sub(DUCT_FROM).normalize());
+// Each duct runs from a coupler's outer end down to the foot of its portal.
+const DUCTS = TEAMS.map((t) => {
+  const from = new THREE.Vector3(Math.cos(t.angle) * 9.2, 0.46, -Math.sin(t.angle) * 9.2);
+  const foot = new THREE.Vector3(Math.cos(t.portalAngle) * PORTAL.radius, 0.05, -Math.sin(t.portalAngle) * PORTAL.radius);
+  const to = foot.add(from.clone().setY(0.05).sub(foot).normalize().multiplyScalar(0.95));
+  return {
+    length: from.distanceTo(to),
+    mid: from.clone().add(to).multiplyScalar(0.5),
+    turn: new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(1, 0, 0), to.clone().sub(from).normalize()),
+  };
+});
 const Y = new THREE.Vector3(0, 1, 0);
 
 // ---------- shared light state ----------
@@ -262,14 +262,14 @@ function projectionMaterial() {
   });
 }
 
-function ductLineMaterial(color: string) {
+function ductLineMaterial(color: string, length: number) {
   return new THREE.ShaderMaterial({
     uniforms: { uColor: { value: new THREE.Color(color) }, uHead: { value: -1 }, uLift: { value: 0 }, uHeld: { value: 0 } },
     vertexShader: VERT,
     fragmentShader: `
       uniform float uHead, uLift, uHeld; uniform vec3 uColor; varying vec3 vP;
       void main(){
-        float t = (${(DUCT_LENGTH / 2).toFixed(3)} - vP.x) / ${DUCT_LENGTH.toFixed(3)};
+        float t = (${(length / 2).toFixed(3)} - vP.x) / ${length.toFixed(3)};
         float x = (t - uHead) / 0.09;
         float head = exp(-x * x) * 5.0;
         gl_FragColor = vec4(uColor * (0.22 + uLift * 0.8 + uHeld * 0.5 + head), 1.0);
@@ -383,7 +383,7 @@ function screwRing(plateCount: number, sweepDeg: number, radii: number[], y: num
 }
 
 // ---------- the machine ----------
-function Platform({ fx, labelRef, onHover, onSelect, onReady }: { fx: RefObject<Fx>; labelRef: RefObject<HTMLAnchorElement | null>; onHover: (i: number) => void; onSelect: (i: number) => void; onReady: () => void }) {
+function Platform({ fx, labelRefs, onHover, onSelect, onReady }: { fx: RefObject<Fx>; labelRefs: RefObject<HTMLAnchorElement | null>[]; onHover: (i: number) => void; onSelect: (i: number) => void; onReady: () => void }) {
   const { geo, screw, mats } = useAssets();
 
   const place = useMemo(
@@ -409,7 +409,7 @@ function Platform({ fx, labelRef, onHover, onSelect, onReady }: { fx: RefObject<
       grooves: [grooveMaterial(0.8, 0.7), grooveMaterial(0.6, -0.5), grooveMaterial(0.8, 1.0)],
       surface: projectionMaterial(),
       lines: TEAMS.map((t) => sparLineMaterial(t.color)),
-      duct: ductLineMaterial(TEAMS[PORTAL_TEAM].color),
+      ducts: TEAMS.map((t, i) => ductLineMaterial(t.color, DUCTS[i].length)),
       lamps: TEAMS.map((t) => new THREE.MeshBasicMaterial({ color: new THREE.Color(t.color).multiplyScalar(0.6), toneMapped: false })),
     }),
     [],
@@ -420,8 +420,8 @@ function Platform({ fx, labelRef, onHover, onSelect, onReady }: { fx: RefObject<
       surface: new THREE.CircleGeometry(2.25, 128).rotateX(-Math.PI / 2),
       sparLine: new THREE.BoxGeometry(SPAR_OUT - SPAR_IN - 0.26, 0.004, 0.036).translate((SPAR_OUT + SPAR_IN) / 2, 0, 0),
       lamp: new THREE.BoxGeometry(0.075, 0.012, 0.76),
-      duct: new THREE.BoxGeometry(DUCT_LENGTH, 0.1, 0.28),
-      ductLine: new THREE.BoxGeometry(DUCT_LENGTH - 0.12, 0.004, 0.05),
+      ducts: DUCTS.map((d) => new THREE.BoxGeometry(d.length, 0.1, 0.28)),
+      ductLines: DUCTS.map((d) => new THREE.BoxGeometry(d.length - 0.12, 0.004, 0.05)),
     }),
     [],
   );
@@ -483,15 +483,12 @@ function Platform({ fx, labelRef, onHover, onSelect, onReady }: { fx: RefObject<
       const lift = f.hover === i ? 1 : f.hover >= 0 || f.held >= 0 ? -0.09 : 0;
       u.uLift.value = THREE.MathUtils.damp(u.uLift.value, lift, 9, dt);
       u.uHeld.value = THREE.MathUtils.damp(u.uHeld.value, heldNow, 6, dt);
-      // A team with a portal starts its pulse there: it runs down the duct, then along the spar.
-      const hasDuct = i === PORTAL_TEAM;
-      u.uHead.value = f.pulse === i ? (hasDuct ? (f.pulseT - DUCT_SHARE) / (1 - DUCT_SHARE) : f.pulseT) : -1;
-      if (hasDuct) {
-        const d = emissive.duct.uniforms;
-        d.uHead.value = f.pulse === i ? f.pulseT / DUCT_SHARE : -1;
-        d.uLift.value = u.uLift.value;
-        d.uHeld.value = u.uHeld.value;
-      }
+      // The pulse starts at the portal: it runs down the duct, then along the spar.
+      u.uHead.value = f.pulse === i ? (f.pulseT - DUCT_SHARE) / (1 - DUCT_SHARE) : -1;
+      const d = emissive.ducts[i].uniforms;
+      d.uHead.value = f.pulse === i ? f.pulseT / DUCT_SHARE : -1;
+      d.uLift.value = u.uLift.value;
+      d.uHeld.value = u.uHeld.value;
       emissive.lamps[i].color.set(TEAMS[i].color).multiplyScalar(0.55 + Math.max(0, u.uLift.value) * 0.5 + u.uHeld.value * 0.45);
     });
     const target = f.held >= 0 ? 6 + (f.rippleT >= 0 ? (1 - f.rippleT) * 20 : 0) : 0;
@@ -519,7 +516,9 @@ function Platform({ fx, labelRef, onHover, onSelect, onReady }: { fx: RefObject<
 
   return (
     <>
-    {PORTALS_ON && <Portal index={PORTAL_TEAM} drawing="baja_corner" fx={fx} shared={shared} labelRef={labelRef} screw={screw} screwMaterial={mats.screw} onHover={onHover} onSelect={onSelect} />}
+    {PORTALS_ON && TEAMS.map((t, i) => (
+      <Portal key={t.id} index={i} fx={fx} shared={shared} labelRef={labelRefs[i]} screw={screw} screwMaterial={mats.screw} onHover={onHover} onSelect={onSelect} />
+    ))}
     <group ref={leanRef}>
       {/* fixed structure */}
       <mesh geometry={geo.plinth} material={mats.plinth} castShadow receiveShadow />
@@ -580,12 +579,12 @@ function Platform({ fx, labelRef, onHover, onSelect, onReady }: { fx: RefObject<
           </group>
         </group>
       ))}
-      {PORTALS_ON && (
-        <group position={DUCT_MID} quaternion={DUCT_TURN}>
-          <mesh geometry={shapes.duct} material={mats.spar} castShadow receiveShadow />
-          <mesh geometry={shapes.ductLine} material={emissive.duct} position={[0, 0.052, 0]} />
+      {PORTALS_ON && DUCTS.map((d, i) => (
+        <group key={i} position={d.mid} quaternion={d.turn}>
+          <mesh geometry={shapes.ducts[i]} material={mats.spar} castShadow receiveShadow />
+          <mesh geometry={shapes.ductLines[i]} material={emissive.ducts[i]} position={[0, 0.052, 0]} />
         </group>
-      )}
+      ))}
     </group>
     </>
   );
@@ -660,7 +659,7 @@ function Inspect() {
   return null;
 }
 
-function Scene({ fx, labelRef, onHover, onSelect, onReady, onGiveUp, onMiss }: { fx: RefObject<Fx>; labelRef: RefObject<HTMLAnchorElement | null>; onHover: (i: number) => void; onSelect: (i: number) => void; onReady: () => void; onGiveUp: () => void; onMiss: () => void }) {
+function Scene({ fx, labelRefs, onHover, onSelect, onReady, onGiveUp, onMiss }: { fx: RefObject<Fx>; labelRefs: RefObject<HTMLAnchorElement | null>[]; onHover: (i: number) => void; onSelect: (i: number) => void; onReady: () => void; onGiveUp: () => void; onMiss: () => void }) {
   const closeup = useMemo(() => (import.meta.env.DEV ? new URLSearchParams(location.search).get("closeup")?.split(",").map(Number) ?? null : null), []);
   // Narrow windows widen the lens, so the platform and its portals still fit at the rig's 29 m distance.
   const aspect = innerWidth / innerHeight;
@@ -686,7 +685,7 @@ function Scene({ fx, labelRef, onHover, onSelect, onReady, onGiveUp, onMiss }: {
       {!capture && dpr === 1 && <FrameWatch onGiveUp={onGiveUp} />}
       <Studio />
       <Suspense fallback={null}>
-        <Platform fx={fx} labelRef={labelRef} onHover={onHover} onSelect={onSelect} onReady={onReady} />
+        <Platform fx={fx} labelRefs={labelRefs} onHover={onHover} onSelect={onSelect} onReady={onReady} />
       </Suspense>
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.002, 0]} receiveShadow>
         <circleGeometry args={[60, 64]} />
