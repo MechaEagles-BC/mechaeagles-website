@@ -37,6 +37,10 @@ const heading = page === "home" ? "MechaEagles" : `${title} · MechaEagles`;
           {SITE.nav.map((l) => <li><a href={l.href} class={l.page === "join" ? "bar__join" : undefined} aria-current={l.page === page ? "page" : undefined} data-astro-prefetch="load">{l.label}</a></li>)}
         </ul>
       </nav>
+      <div class="sound">
+        <input class="sound__volume" type="range" min="0" max="100" step="1" aria-label="Music volume" data-sound-volume />
+        <button type="button" class="bar__sound" data-sound-toggle aria-pressed="false" aria-label="Turn music on" title="Turn music on"><span class="sound__bars" aria-hidden="true"><i></i><i></i><i></i><i></i></span></button>
+      </div>
       <button type="button" class="bar__world" data-world-switch aria-label="Change world" title="Change world">
         <svg class="only-valley-icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="12" cy="12" r="5" fill="none" stroke="currentColor" stroke-width="1.6" /><ellipse cx="12" cy="12" rx="10.4" ry="3.2" fill="none" stroke="currentColor" stroke-width="1.6" transform="rotate(-24 12 12)" /></svg>
         <svg class="only-space-icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="12" cy="12" r="4.2" fill="none" stroke="currentColor" stroke-width="1.6" /><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M18.7 5.3l-2.1 2.1M7.4 16.6l-2.1 2.1" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" /></svg>
@@ -46,6 +50,11 @@ const heading = page === "home" ? "MechaEagles" : `${title} · MechaEagles`;
     <dialog class="sheet" id="site-sheet" aria-label="Menu">
       <button type="button" class="sheet__close" data-sheet-close>Close</button>
       <ul>{SITE.nav.map((l) => <li><a href={l.href} aria-current={l.page === page ? "page" : undefined}>{l.label}</a></li>)}</ul>
+      <div class="sheet__sound">
+        <button type="button" class="bar__sound" data-sound-toggle aria-pressed="false" aria-label="Turn music on"><span class="sound__bars" aria-hidden="true"><i></i><i></i><i></i><i></i></span></button>
+        <span>Music: <b data-sound-now>Off</b></span>
+        <input class="sound__volume sound__volume--open" type="range" min="0" max="100" step="1" aria-label="Music volume" data-sound-volume />
+      </div>
     </dialog>
     <main id="content"><slot /></main>
     <footer class="foot">

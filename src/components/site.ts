@@ -9,6 +9,8 @@ import { tiltCards } from "./cards/tilt";
 import { startInteractions } from "./interact";
 import { startTeamFx } from "./teamFx";
 import { startLegacy } from "./legacy/legacy";
+import { startSoundtrack } from "./soundtrack";
+import { startFounderMemory } from "./founderMemory";
 
 const root = document.documentElement;
 const reduced = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -120,4 +122,6 @@ startProfile();
 startInteractions();
 startTeamFx();
 startLegacy();
+startSoundtrack();
+startFounderMemory();
 document.addEventListener("astro:page-load", onPage);

@@ -1,0 +1,364 @@
+{
+  "name": "Vedarsh",
+  "subtitle": "A memory, found in the valley",
+  "disclosure": "This is a memory, not the real Vedarsh, and not a live AI. It only knows what's written here and on this site.",
+  "portrait": "/people/vedarsh-mishra.webp",
+  "profile": "/people/#vedarsh-mishra",
+  "greeting": [
+    "Oh! You can actually see me? Most people walk straight past on their way to the cards.",
+    "I'm Vedarsh. Well, a memory of him. One of the people who started all this, left out here in the grass by the website.",
+    "I've been walking this field since 19 September, looking for a rocket. You haven't seen one, have you?"
+  ],
+  "unknown": [
+    "That one's not in what I remember. I only know what got written down, and I'd rather say so than make something up.",
+    "Hm. No memory of that. The real Vedarsh might know: mechaeagles@bc.edu.",
+    "Sorry, I've been out here a while. Try asking about the teams, the rocket, or how this started."
+  ],
+  "starters": [
+    "Who are you?",
+    "What rocket?",
+    "How did MechaEagles start?",
+    "What are you building?",
+    "Can I join?"
+  ],
+  "memories": [
+    {
+      "keys": [
+        "vedarsh",
+        "veda",
+        "name",
+        "yourself",
+        "founder",
+        "introduce"
+      ],
+      "answer": "Vedarsh Mishra, or at least what's left of him out here. One of the people who started MechaEagles. These days the real one is a Project Manager, leads Avionics on AeroEagles, and works with the AI Safety team. He's busy. I have time.",
+      "next": [
+        "What rocket?",
+        "Are you real?",
+        "How did MechaEagles start?"
+      ],
+      "phrases": [
+        "who are you",
+        "introduce yourself",
+        "your name"
+      ]
+    },
+    {
+      "keys": [
+        "rocket",
+        "lost",
+        "looking",
+        "search",
+        "aeroeagle",
+        "find",
+        "parachute",
+        "h100w",
+        "missing"
+      ],
+      "answer": "AeroEagle-1, my rocket. Our first high-power launch day, 19 September 2026. It left the rail clean on an AeroTech H100W and flew strongly on the way up. Then the parachute didn't deploy as intended, and it came down somewhere past where we could search. So here I am.",
+      "next": [
+        "What did you learn?",
+        "What is AeroEagles?",
+        "Why are you still looking?"
+      ],
+      "phrases": [
+        "what rocket",
+        "which rocket"
+      ]
+    },
+    {
+      "keys": [
+        "learn",
+        "lesson",
+        "fail",
+        "failure",
+        "failed",
+        "changed",
+        "wrong",
+        "mistake"
+      ],
+      "answer": "We wrote it down and published it. Treat recovery as mission-critical. Check deployment logic, hardware, packing and triggers independently before every flight. Add a tracker, so a rocket that drifts can still be found. Within every failure is an opportunity to learn. I'd have liked the tracker earlier, personally.",
+      "next": [
+        "Why are you still looking?",
+        "What are you building?"
+      ],
+      "phrases": [
+        "what did you learn"
+      ]
+    },
+    {
+      "keys": [
+        "lonely",
+        "alone",
+        "wandering",
+        "walking"
+      ],
+      "answer": "Honestly? I don't expect to find it. But somebody should remember that things go wrong here, and that the team kept building anyway. Besides, it's a nice field.",
+      "next": [
+        "How did MechaEagles start?",
+        "Can I join?"
+      ],
+      "phrases": [
+        "why are you still"
+      ]
+    },
+    {
+      "keys": [
+        "start",
+        "started",
+        "begin",
+        "began",
+        "founded",
+        "origin",
+        "history",
+        "story",
+        "beginning",
+        "2024",
+        "create",
+        "created"
+      ],
+      "answer": "Fall 2024, at Boston College, as a Baja SAE team. One goal: give students the chance to build real machines. The next year the subteams formed. By 2026 one car had become four teams.",
+      "next": [
+        "Who else started it?",
+        "What are you building?",
+        "See the Legacy page"
+      ],
+      "phrases": [
+        "how did",
+        "when did"
+      ]
+    },
+    {
+      "keys": [
+        "else",
+        "founders",
+        "cofounder",
+        "co-founder",
+        "partner",
+        "started"
+      ],
+      "answer": "Ah. That's another memory, and it isn't mine to tell. Maybe keep an eye on the far side of the field one day.",
+      "next": [
+        "How did MechaEagles start?",
+        "What are you building?"
+      ],
+      "phrases": [
+        "who else"
+      ]
+    },
+    {
+      "keys": [
+        "mechaeagles",
+        "organization",
+        "club",
+        "mission",
+        "purpose"
+      ],
+      "answer": "A student engineering organization at Boston College. The idea is hands-on experience that mirrors industry: reliability, manufacturability and performance under real constraints, through the whole design, build and test cycle.",
+      "next": [
+        "What are you building?",
+        "What's the vision?",
+        "Can I join?"
+      ],
+      "phrases": [
+        "what is mechaeagles",
+        "what do you do"
+      ]
+    },
+    {
+      "keys": [
+        "building",
+        "build",
+        "teams",
+        "team",
+        "projects",
+        "project",
+        "four",
+        "baja",
+        "combat",
+        "robots",
+        "robotics",
+        "ai",
+        "safety"
+      ],
+      "answer": "Four teams. Baja SAE builds an off-road race car. AeroEagles builds rockets. Combat Robotics builds machines that have to survive an arena. AI Safety studies how to make AI systems safe and accountable. Those are the cards back on the platform.",
+      "next": [
+        "What is AeroEagles?",
+        "What's the vision?",
+        "Can I join?"
+      ],
+      "phrases": [
+        "what are you building"
+      ]
+    },
+    {
+      "keys": [
+        "aeroeagles",
+        "aero",
+        "baldwin",
+        "nasa",
+        "launch",
+        "payload",
+        "rocketry"
+      ],
+      "answer": "They're going for NASA Student Launch 2027 with Baldwin-1: a reusable rocket with an autonomous payload that finds a visual target and measures its distance without GPS. It's designed to be 330 cm long, so it should be easier to spot than mine. It also has a much better recovery plan, I'm told.",
+      "next": [
+        "What rocket?",
+        "Can I join?"
+      ],
+      "phrases": [
+        "what is aeroeagles"
+      ]
+    },
+    {
+      "keys": [
+        "vision",
+        "future",
+        "next",
+        "goal",
+        "ambition",
+        "dream",
+        "hope",
+        "believe",
+        "matter"
+      ],
+      "answer": "Engineering at Boston College is new and growing fast. The hope is for MechaEagles to become the thing that brings applied engineering together across campus. And for every class to leave something the next one can build on.",
+      "next": [
+        "Can I join?",
+        "See the Legacy page"
+      ],
+      "phrases": [
+        "what's the vision",
+        "whats the vision"
+      ]
+    },
+    {
+      "keys": [
+        "join",
+        "apply",
+        "member",
+        "experience",
+        "sign",
+        "involved",
+        "help"
+      ],
+      "answer": "Please do. No experience required. Most of us had never welded, wired an altimeter or written a safety case before joining. Pick a team, show up, and learn by building. And if you pass a field on the way, keep an eye out.",
+      "links": [
+        {
+          "label": "Join MechaEagles",
+          "href": "/join/"
+        }
+      ],
+      "next": [
+        "What are you building?",
+        "What rocket?"
+      ]
+    },
+    {
+      "keys": [
+        "sponsor",
+        "sponsors",
+        "support",
+        "fund",
+        "funding",
+        "partner",
+        "company",
+        "donate",
+        "money"
+      ],
+      "answer": "Every license, tube of steel and dollar ends up in something students design, build and test themselves. The real team can tell you more than I can.",
+      "links": [
+        {
+          "label": "Partner with us",
+          "href": "/sponsors/"
+        }
+      ],
+      "next": [
+        "What are you building?"
+      ]
+    },
+    {
+      "keys": [
+        "real",
+        "ai",
+        "robot",
+        "ghost",
+        "dead",
+        "alive",
+        "chatbot",
+        "human",
+        "bot",
+        "spirit",
+        "memory"
+      ],
+      "answer": "Not a ghost. The real Vedarsh is fine, and probably in a meeting. I'm a few lines of writing and a very small pair of legs. I don't think, and I only know what's written down, but I do enjoy the walk.",
+      "links": [
+        {
+          "label": "Meet the real one",
+          "href": "/people/#vedarsh-mishra"
+        }
+      ],
+      "next": [
+        "What rocket?",
+        "How did MechaEagles start?"
+      ],
+      "phrases": [
+        "are you real",
+        "are you a real",
+        "are you alive",
+        "are you an ai"
+      ]
+    },
+    {
+      "keys": [
+        "legacy",
+        "alumni",
+        "past",
+        "graduate",
+        "graduates",
+        "flame"
+      ],
+      "answer": "Further up the road, the flames mark every year so far. Each class passes it to the next. You should go and see.",
+      "links": [
+        {
+          "label": "Walk the Legacy path",
+          "href": "/legacy/"
+        }
+      ],
+      "next": [
+        "How did MechaEagles start?"
+      ],
+      "phrases": [
+        "see the legacy"
+      ]
+    },
+    {
+      "keys": [
+        "hello",
+        "hi",
+        "hey",
+        "greetings",
+        "yo",
+        "sup"
+      ],
+      "answer": "Hello! It's nice to have company. It's mostly birds out here.",
+      "next": [
+        "Who are you?",
+        "What rocket?"
+      ]
+    },
+    {
+      "keys": [
+        "found",
+        "saw",
+        "seen",
+        "yes"
+      ],
+      "answer": "Really? Where? ...No, you're being kind. Thank you, though.",
+      "next": [
+        "What rocket?",
+        "Can I join?"
+      ]
+    }
+  ]
+}

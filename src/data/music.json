@@ -1,0 +1,16 @@
+{
+  "valley": {
+    "src": "/audio/valley-theme.m4a",
+    "title": "The Shire",
+    "credit": "Background music from the Web_Portfolio site. Rights not yet confirmed: replace or license before public launch.",
+    "cleared": false,
+    "gain": 1.7
+  },
+  "space": {
+    "src": "/audio/ironstorm-oath.mp3",
+    "title": "Ironstorm Oath",
+    "credit": "Made with Suno (file metadata). Check that the account's plan allows public use before launch.",
+    "cleared": false,
+    "gain": 0.55
+  }
+}

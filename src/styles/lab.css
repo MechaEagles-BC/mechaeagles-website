@@ -146,6 +146,12 @@ html[data-state="live"].turning .portal-label { opacity: 0.55; pointer-events: n
 .signpost { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
 .sign-link { position: absolute; left: 0; top: 0; pointer-events: auto; color: transparent; font-size: 1px; will-change: transform; cursor: pointer; }
 .sign-link:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+/* Invisible over the figure on the far path. A small question appears only for someone already looking at him. */
+.founder-link { position: absolute; left: 0; top: 0; z-index: 2; padding: 0; border: 0; border-radius: 40%; background: transparent; cursor: pointer; will-change: transform; }
+.founder-link::after { content: "?"; position: absolute; left: 50%; bottom: 100%; display: grid; place-items: center; width: 22px; height: 22px; margin-bottom: 2px; border-radius: 50%; background: #f4efdd; color: #2b2013; font: 700 13px/1 Georgia, serif; opacity: 0; transform: translate(-50%, 6px); transition: opacity 0.25s, transform 0.35s var(--ease); pointer-events: none; }
+.founder-link:hover::after, .founder-link:focus-visible::after { opacity: 1; transform: translate(-50%, 0); }
+.founder-link:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+@media (max-aspect-ratio: 9/10) { .founder-link { display: none; } }
 /* Without live 3D the same signpost stands in the same place: one post, with wooden boards pointing off either side of it. */
 .sign-list { position: absolute; z-index: 2; top: 110px; right: calc(var(--edge) + 10vw); display: none; flex-direction: column; width: 0; gap: 4px; font: 700 clamp(17px, 1.35vw, 22px)/1 Georgia, "Times New Roman", serif; }
 .sign-list::before { content: ""; position: absolute; left: -8px; top: -24px; bottom: -26px; width: 16px; border-radius: 6px 6px 2px 2px; background: linear-gradient(90deg, #4a2d15, #8a5a30 45%, #5d3a1c); box-shadow: 3px 4px 10px rgb(0 0 0 / 0.35); }

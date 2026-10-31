@@ -12,6 +12,7 @@ import { ADDITIVE } from "./additive";
 import Grass from "./Grass";
 import { Fleet, Regolith } from "./Space";
 import { Birds, FallingLeaves, Signpost, Trees } from "./Valley";
+import { Founder, type FounderState } from "./Founder";
 import { FILM, filmFit, PORTAL, TEAMS, type Fx, type World } from "./teams";
 import Portal from "./Portal";
 
@@ -764,7 +765,7 @@ function Inspect() {
   return null;
 }
 
-function Scene({ world, fx, labelRefs, signRefs, signHover, signPress, active, onHover, onSelect, onReady, onGiveUp }: { world: World; signRefs: RefObject<HTMLAnchorElement | null>[]; signHover: RefObject<number>; signPress: RefObject<number>; fx: RefObject<Fx>; labelRefs: RefObject<HTMLAnchorElement | null>[]; active: boolean; onHover: (i: number) => void; onSelect: (i: number) => void; onReady: () => void; onGiveUp: () => void }) {
+function Scene({ world, fx, labelRefs, signRefs, signHover, signPress, founderRef, founderState, active, onHover, onSelect, onReady, onGiveUp }: { world: World; founderRef: RefObject<HTMLButtonElement | null>; founderState: RefObject<FounderState>; signRefs: RefObject<HTMLAnchorElement | null>[]; signHover: RefObject<number>; signPress: RefObject<number>; fx: RefObject<Fx>; labelRefs: RefObject<HTMLAnchorElement | null>[]; active: boolean; onHover: (i: number) => void; onSelect: (i: number) => void; onReady: () => void; onGiveUp: () => void }) {
   const closeup = useMemo(() => (import.meta.env.DEV ? new URLSearchParams(location.search).get("closeup")?.split(",").map(Number) ?? null : null), []);
   const capture = useMemo(() => import.meta.env.DEV && new URLSearchParams(location.search).has("capture"), []);
   // Cap the buffer near 4 MP: past that, extra pixels cost far more than they show.
@@ -797,6 +798,7 @@ function Scene({ world, fx, labelRefs, signRefs, signHover, signPress, active, o
             <>
               <Birds />
               <FallingLeaves />
+              <Founder linkRef={founderRef} state={founderState} />
             </>
           )}
         </Suspense>

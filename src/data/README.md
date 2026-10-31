@@ -73,6 +73,10 @@ The props come from Quaternius' Fantasy Props MegaKit, CC0 licence. To use a dif
 
 An alumni card can also carry a career journey: `"journey": [{ "when": "2027", "title": "...", "org": "..." }]`.
 
+## Music
+
+Each world's track is listed in `music.json` and lives in `public/audio/`. To change a track, replace the file or its `src`, and adjust `gain` if it's louder or softer than the other. Set `cleared` to `true` only once the rights are confirmed.
+
 ## Rules for content
 
 Only publish what's true and on record. Leave a list empty and the page shows a "Not published yet" state, so there's never a reason to write a placeholder as if it were real. Confirm sponsor relationships with the sponsor before listing them.

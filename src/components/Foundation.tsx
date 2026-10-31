@@ -61,6 +61,8 @@ export default function Foundation() {
   const signRefs = useMemo(() => SIGNS.map(() => createRef<HTMLAnchorElement>()), []);
   const signHover = useRef(-1);
   const signPress = useRef(-1);
+  const founderRef = useRef<HTMLButtonElement>(null);
+  const founderState = useRef({ hover: false, found: false });
   const leaving = useRef(false);
   const leaveTimer = useRef(0);
   const [plateSize, setPlateSize] = useState(() => plateFor(innerWidth, innerHeight, "valley"));
@@ -104,6 +106,8 @@ export default function Foundation() {
       document.documentElement.classList.remove("leaving");
       select(-1);
     };
+    const onMemoryClosed = () => void (founderState.current.found = false);
+    document.addEventListener("mc:founder-closed", onMemoryClosed);
     // Going somewhere else mid-sequence cancels it.
     const onLeave = () => window.clearTimeout(leaveTimer.current);
     document.addEventListener("mc:page", onShow);
@@ -111,6 +115,7 @@ export default function Foundation() {
     return () => {
       document.removeEventListener("mc:page", onShow);
       document.removeEventListener("astro:before-preparation", onLeave);
+      document.removeEventListener("mc:founder-closed", onMemoryClosed);
     };
   }, [select]);
 
@@ -288,7 +293,7 @@ export default function Foundation() {
           <ValleyFx active={active} on={painted === "valley" && !capture} plate={plateSize} />
           <GLBoundary onError={onGiveUp}>
             <Suspense fallback={null}>
-              <Scene world={painted} fx={fx} labelRefs={labelRefs} signRefs={signRefs} signHover={signHover} signPress={signPress} active={active || !ready} onHover={hover} onSelect={open} onReady={onReady} onGiveUp={onGiveUp} />
+              <Scene world={painted} fx={fx} labelRefs={labelRefs} signRefs={signRefs} signHover={signHover} signPress={signPress} founderRef={founderRef} founderState={founderState} active={active || !ready} onHover={hover} onSelect={open} onReady={onReady} onGiveUp={onGiveUp} />
             </Suspense>
           </GLBoundary>
         </div>
@@ -347,6 +352,24 @@ export default function Foundation() {
             </a>
           ))}
         </nav>
+      )}
+
+      {/* The secret in the valley. A real button, so a keyboard can find him too, though nothing announces him until focus lands here. */}
+      {showing3D && painted === "valley" && !capture && (
+        <button
+          ref={founderRef}
+          type="button"
+          className="founder-link"
+          aria-label="Someone is wandering on the far path. Who is that?"
+          onPointerEnter={() => (founderState.current.hover = true)}
+          onPointerLeave={() => (founderState.current.hover = false)}
+          onFocus={() => (founderState.current.hover = true)}
+          onBlur={() => (founderState.current.hover = false)}
+          onClick={() => {
+            founderState.current.found = true;
+            document.dispatchEvent(new CustomEvent("mc:founder-found"));
+          }}
+        />
       )}
 
       {showing3D && <p className={`stage__hint${turned ? " gone" : ""}`} aria-hidden="true">Point at a card · Drag to turn</p>}

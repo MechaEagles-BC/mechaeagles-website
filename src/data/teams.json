@@ -39,7 +39,8 @@
       { "name": "CAD & integration", "detail": "Full-vehicle CAD, drawings and interface checks." },
       { "name": "Avionics", "detail": "Altimeters, tracking, power distribution and the avionics bay." },
       { "name": "Recovery", "detail": "Parachute sizing, dual-deployment sequencing and descent analysis." },
-      { "name": "Payload", "detail": "Camera ring and LiDAR rangefinding on an onboard computer, no GPS." }
+      { "name": "Payload", "detail": "Camera ring and LiDAR rangefinding on an onboard computer, no GPS." },
+      { "name": "Media & documentation", "detail": "Social media, photography and the team's written record." }
     ]
   },
   {

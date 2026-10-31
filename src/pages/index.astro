@@ -8,6 +8,22 @@ import sponsors from "../data/sponsors.json";
 <Site title="Home" page="home" description="MechaEagles: four student engineering teams at Boston College.">
   <h1 class="sr-only">MechaEagles: four student engineering teams at Boston College</h1>
 
+  <dialog class="memory" id="memory" aria-label="A memory of the founder">
+    <header class="memory__head">
+      <img src="/people/vedarsh-mishra.webp" alt="" width="56" height="56" loading="lazy" />
+      <div><h2>Vedarsh</h2><p>A memory, found in the valley</p></div>
+      <button type="button" class="memory__close" data-memory-close>Close</button>
+    </header>
+    <div class="memory__log" data-memory-log aria-live="polite"></div>
+    <div class="memory__chips" data-memory-chips></div>
+    <form class="memory__ask" data-memory-form>
+      <label class="sr-only" for="memory-input">Ask him something</label>
+      <input id="memory-input" type="text" maxlength="200" placeholder="Ask him something" autocomplete="off" />
+      <button type="submit">Ask</button>
+    </form>
+    <p class="memory__note"><span data-memory-disclosure></span> <a href="/people/#vedarsh-mishra">Meet the real one</a></p>
+  </dialog>
+
   <section class="leaders" id="leadership">
     <div class="leaders__beam" aria-hidden="true"></div>
     <div class="wrap">
