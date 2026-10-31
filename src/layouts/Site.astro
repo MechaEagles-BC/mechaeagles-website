@@ -24,6 +24,7 @@ const heading = page === "home" ? "MechaEagles" : `${title} · MechaEagles`;
     <link rel="icon" href="/brand/eagle.webp" />
     <WorldHead />
     <ClientRouter fallback="none" />
+    {import.meta.env.DEV && <script type="module" is:inline set:html={`import R from "/@react-refresh"; R.injectIntoGlobalHook(window); window.$RefreshReg$ = () => {}; window.$RefreshSig$ = () => (t) => t; window.__vite_plugin_react_preamble_installed__ = true;`} />}
   </head>
   <body>
     <a class="skip" href="#content">Skip to content</a>

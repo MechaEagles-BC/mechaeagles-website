@@ -8,6 +8,7 @@ import { useGLTF } from "@react-three/drei";
 import * as THREE from "three";
 import { filmPoint } from "./filmPoint";
 import { SIGNS } from "./teams";
+import { circuitFace, PylonColumn, pylonSide } from "./Pylon";
 
 const seeded = (seed: number) => () => (seed = (seed * 16807) % 2147483647) / 2147483647;
 
@@ -335,9 +336,10 @@ function plankTexture(label: string, direction: 1 | -1, seed: number) {
   return t;
 }
 
-export function Signpost({ linkRefs, hovered, pressed }: { linkRefs: RefObject<HTMLAnchorElement | null>[]; hovered: RefObject<number>; pressed: RefObject<number> }) {
+export function Signpost({ look, linkRefs, hovered, pressed }: { look: "wood" | "circuit"; linkRefs: RefObject<HTMLAnchorElement | null>[]; hovered: RefObject<number>; pressed: RefObject<number> }) {
+  const circuit = look === "circuit";
   const { camera, size } = useThree();
-  const side = useMemo(() => new THREE.MeshStandardMaterial({ color: "#6b4524", roughness: 0.95 }), []);
+  const side = useMemo(() => (circuit ? pylonSide() : new THREE.MeshStandardMaterial({ color: "#6b4524", roughness: 0.95 })), [circuit]);
   const boards = useMemo(
     () =>
       SIGNS.map((s, i) => {
@@ -345,7 +347,10 @@ export function Signpost({ linkRefs, hovered, pressed }: { linkRefs: RefObject<H
         return {
           ...s,
           geometry: arrowGeometry(direction),
-          face: new THREE.MeshStandardMaterial({ map: plankTexture(s.label, direction, i + 1), roughness: 0.88, emissive: "#000000" }),
+          face: circuit ? circuitFace(s.label, direction, i + 1) : new THREE.MeshStandardMaterial({ map: plankTexture(s.label, direction, i + 1), roughness: 0.88, emissive: "#000000" }),
+          // Wood hangs a little crooked. Machined boards sit true.
+          yaw: circuit ? s.yaw * 0.4 : s.yaw,
+          tilt: circuit ? 0 : s.tilt,
           y: FIRST_BOARD - i * BOARD_STEP,
         };
       }),
@@ -366,11 +371,12 @@ export function Signpost({ linkRefs, hovered, pressed }: { linkRefs: RefObject<H
       const goal = (hovered.current === i ? 0.22 * b.points : 0) + (pressed.current === i ? 0.42 * b.points : 0);
       m.speed += (goal - m.swing) * 52 * dt - m.speed * 5.2 * dt;
       m.swing += m.speed * dt;
-      const breeze = Math.sin(time.current * 1.1 + i * 1.9) * 0.012 + Math.sin(time.current * 2.7 + i * 0.7) * 0.006;
-      g.rotation.y = b.yaw + m.swing + breeze;
-      g.rotation.z = b.tilt + Math.sin(time.current * 1.6 + i * 2.3) * 0.006 * b.points;
+      const breeze = circuit ? 0 : Math.sin(time.current * 1.1 + i * 1.9) * 0.012 + Math.sin(time.current * 2.7 + i * 0.7) * 0.006; // no wind on the moon
+      g.rotation.y = b.yaw + m.swing * (circuit ? 0.5 : 1) + breeze;
+      g.rotation.z = b.tilt + (circuit ? 0 : Math.sin(time.current * 1.6 + i * 2.3) * 0.006 * b.points);
       const lit = hovered.current === i ? 1 : 0;
-      b.face.emissive.setRGB(0.1 * lit, 0.055 * lit, 0.015 * lit); // a little warmth, not enough to wash out the burnt letters
+      if (b.face instanceof THREE.ShaderMaterial) b.face.uniforms.uHover.value += (lit - b.face.uniforms.uHover.value) * Math.min(1, dt * 9);
+      else b.face.emissive.setRGB(0.1 * lit, 0.055 * lit, 0.015 * lit); // a little warmth, not enough to wash out the burnt letters
       const el = linkRefs[i]?.current;
       if (!el) return;
       // The link covers the board, wherever it has swung to.
@@ -388,12 +394,16 @@ export function Signpost({ linkRefs, hovered, pressed }: { linkRefs: RefObject<H
   });
   return (
     <group position={POST}>
-      <mesh position={[0, POST_HEIGHT / 2, 0]} castShadow material={side}>
-        <cylinderGeometry args={[0.15, 0.19, POST_HEIGHT, 9]} />
-      </mesh>
-      <mesh position={[0, POST_HEIGHT + 0.06, 0]} material={side}>
-        <coneGeometry args={[0.2, 0.26, 9]} />
-      </mesh>
+      {circuit ? <PylonColumn height={POST_HEIGHT} /> : (
+        <>
+          <mesh position={[0, POST_HEIGHT / 2, 0]} castShadow material={side}>
+            <cylinderGeometry args={[0.15, 0.19, POST_HEIGHT, 9]} />
+          </mesh>
+          <mesh position={[0, POST_HEIGHT + 0.06, 0]} material={side}>
+            <coneGeometry args={[0.2, 0.26, 9]} />
+          </mesh>
+        </>
+      )}
       {boards.map((b, i) => (
         <group key={b.label} ref={(el) => void (refs.current[i] = el)} position={[0, b.y, 0.2]} rotation={[0, b.yaw, b.tilt]}>
           <mesh geometry={b.geometry} material={[b.face, side]} castShadow />

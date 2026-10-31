@@ -30,7 +30,7 @@ const STILLS = ["baja", "aero", "combat", "ai"];
     <ul class="team-list">
       {TEAMS.map((t) => <li><a href={t.href} style={`--c:${t.color}`}>{t.name}</a></li>)}
     </ul>
-    <nav class="sign-list only-valley" aria-label="Signpost"><ul class="sign-list__row" style="display:contents">{SIGNS.map((sign) => <li><a href={sign.href}>{sign.label}</a></li>)}</ul></nav>
+    <nav class="sign-list" aria-label="Signpost"><ul class="sign-list__row" style="display:contents">{SIGNS.map((sign) => <li><a href={sign.href}>{sign.label}</a></li>)}</ul></nav>
     <div class="bottom">
       <p>Card drawings are illustrative. Baldwin-1 is a design model.</p>
       <a href="#leadership">Meet the people ↓</a>

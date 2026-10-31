@@ -26,7 +26,7 @@
     "mission": "AeroEagles will design, manufacture, test, launch and safely recover a reusable high-powered rocket carrying an autonomous payload. After landing, the payload finds a passive visual target and measures its distance without GPS.",
     "overview": "The team is working toward NASA Student Launch 2027 with Baldwin-1, a single-stage vehicle with three sections tethered through descent and one central avionics bay. Every flight feeds a model-to-test loop: predict the flight, fly it, compare, and update the next design.",
     "objectives": ["Launch and safely recover a reusable high-power rocket", "Carry an autonomous payload that ranges a passive visual target without GPS", "Treat recovery as mission-critical, with independent checks before every flight"],
-    "hero": "/media/aero/pad-hold.webp", "heroAlt": "An AeroEagles member holding a black high-power rocket on the launch field under a wide blue sky",
+    "hero": "/media/aero/mission-control.webp", "heroAlt": "AeroEagles members working around a table, under a whiteboard reading AeroEagles Mission Control Center",
     "status": { "text": "Baldwin-1 preliminary design review in revision", "updated": "27 Oct 2026" },
     "facts": [
       { "label": "Program", "value": "NASA Student Launch 2027", "note": "Proposal submitted 14 Sep 2026" },

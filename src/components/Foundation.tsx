@@ -5,6 +5,7 @@
 import { Component, createRef, lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { flushSync } from "react-dom";
 import { navigate } from "astro:transitions/client";
+import { prefetch } from "astro:prefetch";
 import { captionTransform, filmFit, plateFor, SIGNS, TEAMS, type Fx, type World } from "./teams";
 import { canRun3D } from "./capability";
 import ValleyFx from "./ValleyFx";
@@ -15,7 +16,9 @@ const Scene = lazy(() => import("./Scene"));
 const STILL_ANCHORS = [{ x: 278, y: 886 }, { x: 400, y: 558 }, { x: 1520, y: 558 }, { x: 1642, y: 886 }];
 const STILL = { w: 1920, h: 1080 };
 const DRAG_THRESHOLD = 6;
-const OPEN_DELAY = 240; // long enough to see the pulse leave the card, short enough to feel immediate
+// With the live world, a chosen card sends light down to the middle circle, which fills and rises in the team's colour before the page changes. Without it, there's nothing to wait for.
+const OPEN_DELAY = 2750;
+const OPEN_DELAY_STILL = 120;
 
 function placeOnStill(el: HTMLElement, side: string, anchor: { x: number; y: number }) {
   const scale = Math.max(innerWidth / STILL.w, innerHeight / STILL.h);
@@ -58,6 +61,8 @@ export default function Foundation() {
   const signRefs = useMemo(() => SIGNS.map(() => createRef<HTMLAnchorElement>()), []);
   const signHover = useRef(-1);
   const signPress = useRef(-1);
+  const leaving = useRef(false);
+  const leaveTimer = useRef(0);
   const [plateSize, setPlateSize] = useState(() => plateFor(innerWidth, innerHeight, "valley"));
   const showing3D = live && !gaveUp;
   const shown = hovered >= 0 ? hovered : held;
@@ -78,19 +83,35 @@ export default function Foundation() {
   }, []);
   // The card answers first, then the page changes.
   const open = useCallback((i: number) => {
-    if (fx.current.dragged) return;
+    if (fx.current.dragged || leaving.current) return;
+    leaving.current = true;
     select(i);
-    const delay = matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : OPEN_DELAY;
-    setTimeout(() => void navigate(TEAMS[i].href), delay);
+    prefetch(TEAMS[i].href, { ignoreSlowConnection: true });
+    const live = document.documentElement.dataset.state === "live";
+    const go = () => {
+      document.documentElement.classList.add("leaving");
+      void navigate(TEAMS[i].href);
+    };
+    leaveTimer.current = window.setTimeout(go, live ? OPEN_DELAY : OPEN_DELAY_STILL);
   }, [select]);
   const onReady = useCallback(() => setReady(true), []);
   const onGiveUp = useCallback(() => setGaveUp(true), []);
 
   // Coming back to Home finds the stage as it was left, mid-selection.
   useEffect(() => {
-    const onShow = () => select(-1);
+    const onShow = () => {
+      leaving.current = false;
+      document.documentElement.classList.remove("leaving");
+      select(-1);
+    };
+    // Going somewhere else mid-sequence cancels it.
+    const onLeave = () => window.clearTimeout(leaveTimer.current);
     document.addEventListener("mc:page", onShow);
-    return () => document.removeEventListener("mc:page", onShow);
+    document.addEventListener("astro:before-preparation", onLeave);
+    return () => {
+      document.removeEventListener("mc:page", onShow);
+      document.removeEventListener("astro:before-preparation", onLeave);
+    };
   }, [select]);
 
   const loadPlate = useCallback((w: World) => {
@@ -303,7 +324,7 @@ export default function Foundation() {
         </a>
       ))}
 
-      {showing3D && painted === "valley" && (
+      {showing3D && (
         <nav className="signpost" aria-label="Signpost">
           {SIGNS.map((sign, i) => (
             <a

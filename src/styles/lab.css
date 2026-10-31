@@ -95,6 +95,8 @@ html[data-state="live"] .stills { pointer-events: none; }
 html.world-change::view-transition-old(root), html.world-change::view-transition-new(root) { animation-duration: 0.9s; }
 /* Moving between pages is a quick dissolve. */
 ::view-transition-old(root), ::view-transition-new(root) { animation-duration: 0.16s; }
+/* Arriving at a team after its sequence takes a little longer, so it lands. */
+html.leaving::view-transition-old(root), html.leaving::view-transition-new(root) { animation-duration: 0.45s; }
 .stage::before, .stage::after { content: ""; position: absolute; inset-inline: 0; z-index: 1; pointer-events: none; }
 .stage::before { top: 0; height: 144px; background: linear-gradient(rgb(5 12 9 / 0.74), rgb(5 12 9 / 0.62) 44%, transparent); }
 .stage::after { bottom: 0; height: 120px; background: linear-gradient(transparent, var(--page-solid)); }
@@ -152,9 +154,12 @@ html[data-state="live"].turning .portal-label { opacity: 0.55; pointer-events: n
 .sign-list li:nth-child(even) a { --tilt: 1.6deg; left: auto; right: -4px; padding: 0 var(--s2) 0 40px; clip-path: polygon(22px 0, 100% 0, 100% 100%, 22px 100%, 0 50%); transform-origin: right center; }
 .sign-list li:nth-child(3n) a { --tilt: 1deg; }
 .sign-list a:hover, .sign-list a:focus-visible { transform: rotate(calc(var(--tilt) * -2.4)); }
-html[data-theme="valley"][data-state="still"] .sign-list { display: flex; }
+html[data-state="still"] .sign-list { display: flex; }
+/* The same post in space: dark metal, with a line of light down its middle and traces along each board. */
+html[data-theme="space"] .sign-list::before { border-radius: 2px; background: linear-gradient(90deg, #1b2028, #2b3038 42%, #6fd2ff 47% 53%, #2b3038 58%, #1b2028); box-shadow: 0 0 14px rgb(111 210 255 / 0.35); }
+html[data-theme="space"] .sign-list a { color: #e9f6ff; font: 800 var(--t-s)/1 var(--display); font-stretch: 112%; letter-spacing: 0.04em; text-transform: uppercase; text-shadow: 0 0 10px #6fd2ff; background: linear-gradient(#6fd2ff, #6fd2ff) 0 7px / 100% 1.5px no-repeat, linear-gradient(#6fd2ff, #6fd2ff) 0 calc(100% - 7px) / 100% 1.5px no-repeat, linear-gradient(#161e2a, #0b1018); }
 @media (max-aspect-ratio: 9/10) {
-  html[data-theme="valley"] .sign-list, html[data-theme="valley"][data-state="still"] .sign-list { display: grid; position: absolute; top: auto; width: auto; inset: auto var(--edge) calc(var(--s7) + var(--s2) + 112px); grid-template-columns: repeat(3, minmax(0, 1fr)); font-size: var(--t-s); }
+  .sign-list, html[data-state="still"] .sign-list { display: grid; position: absolute; top: auto; width: auto; inset: auto var(--edge) calc(var(--s7) + var(--s2) + 112px); grid-template-columns: repeat(3, minmax(0, 1fr)); font-size: var(--t-s); }
   .sign-list::before { display: none; }
   .sign-list li { height: auto; }
   .sign-list a, .sign-list li:nth-child(even) a { position: static; height: 44px; min-height: 44px; }

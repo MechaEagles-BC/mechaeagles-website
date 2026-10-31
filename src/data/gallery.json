@@ -1,4 +1,9 @@
 [
+  {"team": "aero", "src": "/media/aero/mission-control.webp", "alt": "AeroEagles members working around a table, under a whiteboard reading AeroEagles Mission Control Center", "caption": "Mission Control", "date": "28 Oct 2026", "kind": "Photo", "term": "2026-27"},
+  {"team": "aero", "src": "/media/aero/baldwin-lettering.webp", "alt": "A member in a beanie lettering the name Baldwin on a whiteboard", "caption": "Lettering Baldwin", "date": "28 Oct 2026", "kind": "Photo", "term": "2026-27"},
+  {"team": "aero", "src": "/media/aero/work-session.webp", "alt": "Members working on laptops around a long table", "caption": "Late session", "date": "28 Oct 2026", "kind": "Photo", "term": "2026-27"},
+  {"team": "aero", "src": "/media/aero/work-session-2.webp", "alt": "A member thinking at a laptop, with the team working behind", "caption": "Heads down", "date": "28 Oct 2026", "kind": "Photo", "term": "2026-27"},
+  {"team": "aero", "src": "/media/aero/pad-hold.webp", "alt": "An AeroEagles member holding a black high-power rocket on the launch field", "caption": "Launch field", "date": "19 Sep 2026", "kind": "Photo", "term": "2026-27"},
   {"team": "aero", "src": "/media/aero/pad-check.webp", "alt": "A member checking a rocket on the launch rail under a streaked sky", "caption": "Pre-flight check", "date": "19 Sep 2026", "kind": "Photo", "term": "2026-27"},
   {"team": "aero", "src": "/media/aero/crew.webp", "alt": "Three AeroEagles members on the launch field with their rockets", "caption": "The launch crew", "date": "19 Sep 2026", "kind": "Photo", "term": "2026-27"},
   {"team": "aero", "src": "/media/aero/pad.webp", "alt": "A rocket standing on its rail in a green field", "caption": "On the rail", "date": "19 Sep 2026", "kind": "Photo", "term": "2026-27"},

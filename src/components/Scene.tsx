@@ -13,7 +13,6 @@ import Grass from "./Grass";
 import { Fleet, Regolith } from "./Space";
 import { Birds, FallingLeaves, Signpost, Trees } from "./Valley";
 import { FILM, filmFit, PORTAL, TEAMS, type Fx, type World } from "./teams";
-import Hologram from "./Hologram";
 import Portal from "./Portal";
 
 const BASE = "/models/foundation/";
@@ -29,7 +28,7 @@ const PINION_ANGLES = [0, Math.PI / 2, Math.PI, Math.PI * 1.5];
 const GROOVES: [number, number][] = [[7.07, 7.02], [5.68, 5.63], [3.07, 3.04]];
 const SPAR_OUT = 8.1;
 const SPAR_IN = 2.7;
-const PULSE_SECONDS = 0.85;
+const PULSE_SECONDS = 1.05;
 const RIPPLE_SECONDS = 1.5;
 const TAU = Math.PI * 2;
 const DUCT_SHARE = 0.22;
@@ -55,6 +54,7 @@ const shared = {
   uWave: { value: -1 },
   uWaveAmp: { value: 0 },
   uAccent: { value: new THREE.Color("#ffffff") },
+  uFill: { value: 0 },
 };
 
 // ---------- machined metal ----------
@@ -250,7 +250,7 @@ function projectionMaterial() {
     uniforms: { ...shared, uColor: { value: new THREE.Color("#8fbdf0") } },
     vertexShader: VERT,
     fragmentShader: `
-      uniform float uTime, uWave, uWaveAmp; uniform vec3 uColor, uAccent; varying vec3 vP;
+      uniform float uTime, uWave, uWaveAmp, uFill; uniform vec3 uColor, uAccent; varying vec3 vP;
       void main(){
         float r = length(vP.xz), a = atan(vP.z, vP.x);
         float w = fwidth(r * 7.0);
@@ -260,7 +260,12 @@ function projectionMaterial() {
         float falloff = mix(0.5, 1.0, smoothstep(0.0, 2.2, r));
         float scan = exp(-pow((r - mod(uTime * 0.28, 2.6)) / 0.12, 2.0)) * 0.3;
         float ripple = exp(-pow((r - uWave) / 0.38, 2.0)) * uWaveAmp * 3.0;
-        vec3 c = uColor * (0.018 + (lines + spokes) * falloff * 1.7 + scan * 0.6) + uAccent * ripple;
+        float arcs = (1.0 - smoothstep(0.018, 0.04, abs(r - 1.45))) * smoothstep(0.2, 0.9, sin(a * 3.0 + uTime * 0.35)) * 0.5;
+        float edge = 2.25 * (1.0 - uFill);
+        float iris = smoothstep(edge - 0.16, edge + 0.16, r) * step(0.001, uFill);
+        float rim = exp(-pow((r - edge) / 0.14, 2.0)) * step(0.001, uFill) * step(uFill, 0.995) * 3.0;
+        vec3 c = uColor * (0.03 + (lines + spokes) * falloff * 1.7 + scan * 0.6 + arcs * 0.5);
+        c = mix(c, uAccent * (0.42 + lines * 1.6 + arcs), iris) + uAccent * (ripple + rim);
         gl_FragColor = vec4(c, 1.0);
       }`,
   });
@@ -386,6 +391,89 @@ function screwRing(plateCount: number, sweepDeg: number, radii: number[], y: num
   return out;
 }
 
+// ---------- the moment a team is chosen ----------
+const SIGIL_PATHS: Record<number, { path?: string; circles?: [number, number, number][] }> = {
+  0: { path: "M2.5 19.5 9 8l4 6 2.5-3.5L21.5 19.5Z" },
+  1: { path: "M2.5 9h11a3 3 0 1 0-3-3M2.5 14h15.5a2.8 2.8 0 1 1-2.8 2.8M5 18.5h6" },
+  2: { path: "M12 21.5c-4 0-6.8-2.8-6.8-6.4 0-3.4 2.6-5 3.6-8 .4 1.6 1.2 2.4 2.2 3 .2-3.2 1.4-5.8 3.6-7.6-.2 3 3.6 5.8 3.6 11 0 4-2.4 8-6.2 8Z" },
+  3: { path: "m6.5 7.4 3.8 3.9M17.5 7.4l-3.8 3.9M10.6 14.9l-3.4 3.6M13.4 14.9l3.4 3.6", circles: [[5, 6, 2], [19, 6, 2], [12, 13, 2.4], [6, 20, 2], [18, 20, 2]] },
+};
+
+function sigilTexture(i: number) {
+  const c = document.createElement("canvas");
+  c.width = c.height = 384;
+  const g = c.getContext("2d")!;
+  g.scale(16, 16);
+  g.strokeStyle = "#fff";
+  g.lineWidth = 0.62;
+  g.lineJoin = g.lineCap = "round";
+  g.shadowColor = "#fff";
+  g.shadowBlur = 8;
+  const s = SIGIL_PATHS[i];
+  if (s.path) g.stroke(new Path2D(s.path));
+  s.circles?.forEach(([x, y, r]) => {
+    g.beginPath();
+    g.arc(x, y, r, 0, TAU);
+    g.stroke();
+  });
+  return new THREE.CanvasTexture(c);
+}
+
+/** A column of the team's light rises out of the middle circle, with the team's mark inside it. */
+function Arrival({ fx }: { fx: RefObject<Fx> }) {
+  const beam = useRef<THREE.Mesh>(null);
+  const mark = useRef<THREE.Mesh>(null);
+  const textures = useMemo(() => TEAMS.map((_, i) => sigilTexture(i)), []);
+  const beamMat = useMemo(() => new THREE.ShaderMaterial({
+    uniforms: { uFill: shared.uFill, uAccent: shared.uAccent, uTime: shared.uTime },
+    vertexShader: `varying float vH; varying vec3 vN; varying vec3 vView;
+      void main(){ vH = uv.y; vec4 w = modelMatrix * vec4(position, 1.0); vN = normalize(mat3(modelMatrix) * normal); vView = cameraPosition - w.xyz; gl_Position = projectionMatrix * viewMatrix * w; }`,
+    fragmentShader: `varying float vH; varying vec3 vN; varying vec3 vView; uniform float uFill, uTime; uniform vec3 uAccent;
+      void main(){
+        float edge = pow(clamp(abs(dot(normalize(vN), normalize(vView))), 0.0, 1.0), 3.0);
+        float fall = pow(clamp(1.0 - vH, 0.0, 1.0), 2.2);
+        float bands = 0.82 + 0.18 * sin(vH * 46.0 - uTime * 5.0);
+        float up = smoothstep(0.0, 0.08, uFill * 1.2 - vH);
+        gl_FragColor = vec4(uAccent * edge * fall * bands * up * 0.46, 1.0);
+      }`,
+    transparent: true,
+    ...ADDITIVE,
+    depthWrite: false,
+    side: THREE.DoubleSide,
+    toneMapped: false,
+  }), []);
+  const markMat = useMemo(() => new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false, toneMapped: false, ...ADDITIVE }), []);
+  useFrame(({ camera }, dt) => {
+    const f = fx.current!;
+    const on = f.held >= 0;
+    if (beam.current) beam.current.visible = shared.uFill.value > 0;
+    if (!mark.current) return;
+    mark.current.visible = on && shared.uFill.value > 0.25;
+    if (!mark.current.visible) {
+      markMat.opacity = 0;
+      return;
+    }
+    markMat.map = textures[f.held];
+    markMat.color.set(TEAMS[f.held].color).multiplyScalar(1.5);
+    markMat.needsUpdate = true;
+    markMat.opacity = Math.min(1, markMat.opacity + dt / 0.45);
+    const grow = 0.72 + markMat.opacity * 0.28;
+    mark.current.scale.setScalar(grow);
+    mark.current.position.y = 2.7 + markMat.opacity * 0.5;
+    mark.current.lookAt(camera.position);
+  });
+  return (
+    <>
+      <mesh ref={beam} position={[0, 4.8, 0]} material={beamMat} renderOrder={4} visible={false}>
+        <cylinderGeometry args={[1.5, 2.05, 8.6, 64, 1, true]} />
+      </mesh>
+      <mesh ref={mark} position={[0, 2.7, 0]} material={markMat} renderOrder={5} visible={false}>
+        <planeGeometry args={[3.1, 3.1]} />
+      </mesh>
+    </>
+  );
+}
+
 // ---------- the machine ----------
 function Platform({ fx, labelRefs, onHover, onSelect, onReady }: { fx: RefObject<Fx>; labelRefs: RefObject<HTMLAnchorElement | null>[]; onHover: (i: number) => void; onSelect: (i: number) => void; onReady: () => void }) {
   const { geo, screw, mats } = useAssets();
@@ -435,7 +523,6 @@ function Platform({ fx, labelRefs, onHover, onSelect, onReady }: { fx: RefObject
   const finRef = useRef<THREE.Group>(null);
   const leanRef = useRef<THREE.Group>(null);
   const spinRef = useRef<THREE.Group>(null);
-  const holoRef = useRef<THREE.Group>(null);
   const pinionRefs = useRef<(THREE.Group | null)[]>([]);
   const glow = useRef<THREE.PointLight>(null);
   const rot = useRef({ outer: 0, gear: 0, fin: 0 });
@@ -483,10 +570,12 @@ function Platform({ fx, labelRefs, onHover, onSelect, onReady }: { fx: RefObject
       }
     }
     if (f.held >= 0) shared.uAccent.value.set(TEAMS[f.held].color);
+    // The middle circle fills once the light reaches it. Back on Home, it's simply empty again.
+    if (f.held < 0) shared.uFill.value = 0;
+    else if (f.pulse !== f.held) shared.uFill.value = Math.min(1, shared.uFill.value + dt / 0.55);
     // Follows a drag closely, and settles home slowly.
     f.spin = THREE.MathUtils.damp(f.spin, f.spinGoal, f.dragging ? 16 : 2.4, dt);
     spinRef.current!.rotation.y = f.spin;
-    holoRef.current!.rotation.copy(leanRef.current!.rotation);
     emissive.lines.forEach((mat, i) => {
       const u = mat.uniforms;
       const heldNow = f.held === i && f.pulse !== i ? 1 : 0;
@@ -526,10 +615,7 @@ function Platform({ fx, labelRefs, onHover, onSelect, onReady }: { fx: RefObject
 
   return (
     <>
-    {/* The hologram is a projection, so it stays still while the machine turns beneath it. */}
-    <group ref={holoRef}>
-      <Hologram fx={fx} shared={shared} />
-    </group>
+    <Arrival fx={fx} />
     <group ref={spinRef}>
     {PORTALS_ON && TEAMS.map((t, i) => (
       <Portal key={t.id} index={i} fx={fx} shared={shared} labelRef={labelRefs[i]} screw={screw} screwMaterial={mats.screw} onHover={onHover} onSelect={onSelect} />
@@ -711,11 +797,11 @@ function Scene({ world, fx, labelRefs, signRefs, signHover, signPress, active, o
             <>
               <Birds />
               <FallingLeaves />
-              {innerWidth / innerHeight > 0.9 && <Signpost linkRefs={signRefs} hovered={signHover} pressed={signPress} />}
             </>
           )}
         </Suspense>
       )}
+      {!capture && innerWidth / innerHeight > 0.9 && <Signpost key={world} look={world === "space" ? "circuit" : "wood"} linkRefs={signRefs} hovered={signHover} pressed={signPress} />}
       {world === "space" && (
         <Suspense fallback={null}>
           <Regolith />

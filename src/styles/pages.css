@@ -46,7 +46,7 @@ h2, h3, h4 { margin: 0; }
 /* ---------- Home: the people, rising out of the world ---------- */
 .leaders { position: relative; padding-block: var(--s8) var(--s7); background: linear-gradient(transparent, color-mix(in srgb, var(--page-solid) 92%, transparent) 180px, var(--page-solid) 320px); }
 html[data-theme="space"] .leaders { background: linear-gradient(transparent, rgb(5 7 12 / 0.5) 240px, transparent); }
-/* A thread of the hologram's light runs down from the platform and becomes the line that joins the four of them. */
+/* A thread of light runs down from the platform's middle circle and becomes the line that joins the four of them. */
 .leaders__beam { position: absolute; left: calc(50% - 1px); top: 0; width: 2px; height: calc(var(--s8) - var(--s1)); background: linear-gradient(transparent, #7ee0ff 40%, #7ee0ff); box-shadow: 0 0 14px rgb(126 224 255 / 0.6); }
 .leaders__head { position: relative; display: grid; justify-items: center; text-align: center; padding-bottom: var(--s4); }
 .leaders__head::after { content: ""; position: absolute; left: calc(50% - 1px); bottom: 0; width: 2px; height: var(--s3); background: linear-gradient(#7ee0ff, var(--rule)); }

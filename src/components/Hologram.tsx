@@ -2,6 +2,7 @@
  * The Gasson Hall hologram. A hidden depth pass stops overlapping CAD parts and far faces from showing through,
  * so what reads is crisp near-side edges over very faint faces. Everything clips to a height that rises on load.
  * Geometry is a first-pass model from photographs; see gasson/ for what is measured and what is assumed.
+ * Saved, not in use: it came off the homepage platform, and could return on the About page. Its models stay in public/models/gasson.
  */
 import { useEffect, useMemo, useRef, type RefObject } from "react";
 import { useFrame } from "@react-three/fiber";
