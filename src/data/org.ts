@@ -13,7 +13,7 @@ export const TERM = siteJson.currentTerm;
 
 export type RoleKind = "pm" | "dpm" | "team-lead" | "group-lead" | "subsystem-lead" | "member";
 export type Role = { term: string; org: string; kind: RoleKind; title?: string | null; subsystem?: string | null };
-export type Alumni = { graduated: number; company?: string; title?: string; field?: string; contributions?: string[]; published: boolean };
+export type Alumni = { graduated: number; company?: string; title?: string; field?: string; contributions?: string[]; journey?: { when: string; title: string; org?: string }[]; published: boolean };
 export type Member = {
   id: string; name: string; status: "current" | "alumni"; consent: "roster" | "photo" | "profile"; photo: string | null; links: { linkedin?: string; site?: string };
   bio: string | null; major: string | null; gradYear: number | null; specialties: string[]; roles: Role[]; achievements: string[]; alumni: Alumni | null;
@@ -139,7 +139,9 @@ export function cohortRoster(term: string) {
 export const COHORTS = cohortsJson.map((c) => {
   const roster = c.term === TERM ? CURRENT.map((m) => ({ member: m, roles: now(m) })) : cohortRoster(c.term);
   const lead = roster.filter((r) => r.roles.some((x) => x.kind === "pm" || x.kind === "dpm"));
-  return { ...c, current: c.term === TERM, roster, leadership: lead };
+  // A class belongs to the academic year it finished: the class of 2027 is part of 2026-27.
+  const graduates = MEMBERS.filter((m) => m.alumni?.published && m.alumni.graduated === Number(c.term.split("-")[0]) + 1);
+  return { ...c, teams: c.teamIds.map((id) => TEAM[id].name), current: c.term === TERM, roster, leadership: lead, graduates };
 });
 
 export const ALUMNI = MEMBERS.filter((m) => m.status === "alumni" && m.alumni?.published);

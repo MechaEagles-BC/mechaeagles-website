@@ -6,7 +6,7 @@ type Place = { title: string; team: string; href: string | null; element: string
 type Profile = {
   id: string; name: string; status: string; photo: string | null; links: { linkedin?: string; site?: string }; bio: string | null; major: string | null; gradYear: number | null;
   specialties: string[]; achievements: string[]; main: Place; roles: Place[]; history: Place[]; projects: { name: string; href: string }[];
-  alumni: { graduated: number; company?: string; title?: string; field?: string; contributions?: string[] } | null;
+  alumni: { graduated: number; company?: string; title?: string; field?: string; contributions?: string[]; journey?: { when: string; title: string; org?: string }[] } | null;
 };
 
 const still = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -94,6 +94,7 @@ function fill(body: HTMLElement, p: Profile, close: () => void) {
   const first = p.name.split(" ")[0];
   section("About", (box) => box.append(el("p", p.bio ? "" : "profile__empty", p.bio ?? `${first} hasn't added a bio yet.`)));
   if (p.alumni?.company || p.alumni?.title || p.alumni?.field) section("Now", (box) => box.append(el("p", "", [p.alumni!.title, p.alumni!.company, p.alumni!.field].filter(Boolean).join(", "))));
+  if (p.alumni?.journey?.length) section("Career journey", (box) => box.append(list(p.alumni!.journey!.map((j) => `${j.when}: ${[j.title, j.org].filter(Boolean).join(", ")}`))));
   if (p.major || p.gradYear) section("Studies", (box) => box.append(el("p", "", [p.major, p.gradYear && `Class of ${p.gradYear}`].filter(Boolean).join(", "))));
   if (p.specialties.length) section("Technical specialties", (box) => {
     const chips = el("ul", "profile__chips");

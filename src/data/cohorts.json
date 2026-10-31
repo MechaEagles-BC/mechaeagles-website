@@ -1,14 +1,40 @@
 [
   {
     "term": "2024-25", "label": "2024–25", "epitaph": "Where it all started: one team and one car.",
-    "teams": ["Baja SAE"], "accomplishments": ["MechaEagles founded at Boston College in fall 2024"], "competitions": [], "projects": [], "photo": null
+    "story": ["MechaEagles was founded at Boston College in fall 2024 as a Baja SAE racing and engineering team, with one goal: give students the chance to build real machines."],
+    "teamIds": ["baja"], "structure": null,
+    "achievements": [], "competitions": [], "projects": [], "support": [],
+    "monument": [
+      { "prop": "Anvil_Log", "at": [2.1, 0.7], "height": 0.95, "yaw": 0.5 },
+      { "prop": "Workbench", "at": [-2.7, -0.4], "height": 1.05, "yaw": 0.9 },
+      { "prop": "Bucket_Metal", "at": [1.7, 1.8], "height": 0.42, "yaw": 1.2 }
+    ]
   },
   {
     "term": "2025-26", "label": "2025–26", "epitaph": "The year the subteams got their own tables.",
-    "teams": ["Baja SAE"], "accomplishments": ["Organized into Science, Programmatics and Engineering divisions", "Subteams formed for suspension, steering, roll cage, drivetrain and fabrication"], "competitions": [], "projects": [], "photo": { "src": "/media/org/group.webp", "alt": "MechaEagles members in a group photo", "caption": "The team, 2025–26" }
+    "story": ["The team organized into Science, Programmatics and Engineering divisions, with subteams for suspension, steering, roll cage, drivetrain and fabrication."],
+    "teamIds": ["baja"], "structure": "Divisions that year: Science, Programmatics and Engineering.",
+    "achievements": [], "competitions": [], "projects": [],
+    "support": ["SolidWorks: 30 software licenses", "Autodesk Fusion: CAD software licenses and manufacturing support", "Boston College Engineering: funding and shop access", "IGOS Welding: bolts and welding materials"],
+    "monument": [
+      { "prop": "Table_Large", "at": [2.5, 0.5], "height": 0.82, "yaw": 1.2 },
+      { "prop": "Bench", "at": [1.5, 1.6], "height": 0.46, "yaw": 1.2 },
+      { "prop": "Book_Stack_1", "at": [-2.1, 1.1], "height": 0.34, "yaw": 0.4 },
+      { "prop": "Stool", "at": [-2.7, 0.1], "height": 0.5, "yaw": 0 }
+    ]
   },
   {
     "term": "2026-27", "label": "2026–27", "epitaph": "One car became four teams. Still being written.",
-    "teams": ["Baja SAE", "AeroEagles", "Combat Robotics", "AI Safety"], "accomplishments": ["MechaEagles becomes four engineering teams", "NASA Student Launch 2027 proposal submitted", "First high-power launch day: three flown, two recovered, one Level 1 certification"], "competitions": ["NASA Student Launch 2027 (proposal submitted)"], "projects": ["Baldwin-1", "ME-B26"], "photo": null
+    "story": ["MechaEagles became four engineering teams: Baja SAE, AeroEagles, Combat Robotics and AI Safety, with Programmatics keeping all of them running.", "AeroEagles submitted its NASA Student Launch 2027 proposal and flew three rockets on its first high-power launch day. Two came back, and one didn't. The team published that alongside the wins, and changed how it verifies recovery."],
+    "teamIds": ["baja", "aero", "combat-robotics", "ai-safety", "programmatics"], "structure": null,
+    "achievements": ["Three rockets flown and two recovered on AeroEagles' first high-power launch day", "Jack Tommaney earned high-power rocketry Level 1 certification"],
+    "competitions": ["NASA Student Launch 2027: proposal submitted"],
+    "projects": [{ "name": "Baldwin-1", "href": "/teams/aero/#projects" }, { "name": "ME-B26", "href": "/teams/baja/#projects" }],
+    "support": [],
+    "monument": [
+      { "prop": "Workbench_Drawers", "at": [2.3, 1.1], "height": 0.95, "yaw": -0.5 },
+      { "prop": "Crate_Metal", "at": [-2.4, 1.3], "height": 0.62, "yaw": 0.5 },
+      { "prop": "Scroll_2", "at": [-1.6, 1.8], "height": 0.2, "yaw": 0.7 }
+    ]
   }
 ]

@@ -60,6 +60,19 @@ An alumni profile appears only when its record says `"published": true`, so noth
 "alumni": { "graduated": 2027, "published": true, "company": "...", "title": "...", "field": "...", "contributions": ["..."] }
 ```
 
+## The Legacy page
+
+Each year in `cohorts.json` gets a flame, a monument and a story, with no code to change:
+
+- **`epitaph`** and **`story`** are the year's words. **`teamIds`** are its teams: each engineering team also gets a banner in its colour at the monument.
+- **`monument`** is what stands around the flame: `prop` is a name from `PROPS` in `unreal/prep_legacy.py`, `at` is `[x, z]` in metres from the flame, `height` is in metres. Keep props within about 3 metres.
+- Milestones, photos and videos join a year through their `"term"` field. Rosters, leadership and graduating classes are worked out from `members.json`.
+- A class belongs to the year it finished: the class of 2027 appears in 2026-27.
+
+The props come from Quaternius' Fantasy Props MegaKit, CC0 licence. To use a different prop, add it to `PROPS` and rerun that script.
+
+An alumni card can also carry a career journey: `"journey": [{ "when": "2027", "title": "...", "org": "..." }]`.
+
 ## Rules for content
 
 Only publish what's true and on record. Leave a list empty and the page shows a "Not published yet" state, so there's never a reason to write a placeholder as if it were real. Confirm sponsor relationships with the sponsor before listing them.

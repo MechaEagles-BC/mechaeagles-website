@@ -13,7 +13,7 @@
       root.dataset.theme = window.__mcWorld || (window.__mcWorld = pick());
       root.classList.add("js");
       if (window.__mcState) root.dataset.state = window.__mcState;
-      root.classList.toggle("past-hero", page !== "home" || scrollY > innerHeight * 0.4);
+      root.classList.toggle("past-hero", !/^(home|legacy)$/.test(page) || scrollY > innerHeight * 0.4);
     }
     stamp(root.dataset.page);
     if (window.__mcStamp) return;
@@ -27,7 +27,7 @@
       next.dataset.theme = root.dataset.theme;
       next.classList.add("js");
       if (root.dataset.state) next.dataset.state = root.dataset.state;
-      next.classList.toggle("past-hero", next.dataset.page !== "home");
+      next.classList.toggle("past-hero", !/^(home|legacy)$/.test(next.dataset.page));
     });
     if (root.dataset.page === "home") {
       var dir = root.dataset.theme === "space" ? "/stills/space/" : "/stills/";

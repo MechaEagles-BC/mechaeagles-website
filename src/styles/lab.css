@@ -53,8 +53,8 @@ body { margin: 0; background: var(--page); color: var(--text); font: 400 var(--t
 img { display: block; max-width: 100%; }
 a { color: inherit; }
 :focus-visible { outline: 2px solid currentColor; outline-offset: 3px; }
-h1, h2, h3, p, ul, dl, dd { margin: 0; padding: 0; }
-ul { list-style: none; }
+h1, h2, h3, p, ul, ol, dl, dd { margin: 0; padding: 0; }
+ul, ol { list-style: none; }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
@@ -69,7 +69,7 @@ html:not([data-page="home"]) .stills { display: none; } /* so its pictures don't
 .stage__live, .stills { transform-origin: 50% 46%; transform: scale(calc(1 + var(--p) * 0.14)); opacity: calc(1 - var(--p) * 1.3); }
 .top, .bottom, .team-list, .sign-list, .stage::before { opacity: calc(1 - var(--p) * 4); }
 main { position: relative; z-index: 1; display: block; }
-html:not([data-page="home"]) main { padding-top: 72px; }
+html:not([data-page="home"]):not([data-page="legacy"]) main { padding-top: 72px; }
 .foot { position: relative; z-index: 1; }
 .stage { color: var(--chalk); position: relative; height: 100vh; height: 100svh; min-height: 480px; overflow: hidden; touch-action: pan-y; user-select: none; }
 html.turning { cursor: grabbing; }

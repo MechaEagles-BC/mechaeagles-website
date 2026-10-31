@@ -8,6 +8,7 @@ import { startProfile } from "./cards/profile";
 import { tiltCards } from "./cards/tilt";
 import { startInteractions } from "./interact";
 import { startTeamFx } from "./teamFx";
+import { startLegacy } from "./legacy/legacy";
 
 const root = document.documentElement;
 const reduced = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -29,7 +30,7 @@ function follow() {
     ticking = false;
     const p = root.dataset.page === "home" ? Math.min(scrollY / Math.max(innerHeight, 1), 1.2) : 0;
     stage?.style.setProperty("--p", p.toFixed(4));
-    root.classList.toggle("past-hero", root.dataset.page !== "home" || scrollY > innerHeight * 0.4);
+    root.classList.toggle("past-hero", !/^(home|legacy)$/.test(root.dataset.page ?? "") || scrollY > innerHeight * 0.4);
     root.classList.toggle("hero-gone", p >= 1.05);
   };
   addEventListener("scroll", () => {
@@ -118,4 +119,5 @@ sheet();
 startProfile();
 startInteractions();
 startTeamFx();
+startLegacy();
 document.addEventListener("astro:page-load", onPage);

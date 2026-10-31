@@ -1,0 +1,39 @@
+---
+/**
+ * An alumni card: the premium edition of a member card, with a foil edge and a flame. Only ever built from a published alumni record.
+ * It opens the same profile as everywhere else, which carries the whole career journey.
+ */
+import Sigil from "../cards/Sigil.astro";
+import { TEAM, type Member } from "../../data/org";
+
+const { member } = Astro.props as { member: Member };
+const a = member.alumni!;
+const initials = member.name.split(/\s+/).map((w) => w[0]).slice(0, 2).join("");
+const seen = new Set<string>();
+const roles = member.roles.filter((r) => {
+  const key = `${r.org}|${r.title ?? r.kind}`;
+  if (seen.has(key)) return false;
+  seen.add(key);
+  return true;
+});
+const place = [a.title, a.company].filter(Boolean).join(" · ");
+const find = [member.name, a.company, a.title, a.field, a.graduated, ...roles.map((r) => `${r.title ?? ""} ${TEAM[r.org].name}`)].filter(Boolean).join(" ").toLowerCase();
+---
+<li data-find={find} data-class={a.graduated}>
+  <a class="mcard legend" data-person={member.id} data-el="fire" href={`/people/#${member.id}`} aria-label={`${member.name}, class of ${a.graduated}${place ? `, ${place}` : ""}. Open profile`}>
+    <span class="mcard__tilt legend__tilt">
+      <span class="legend__ember" aria-hidden="true"></span>
+      {member.photo ? <img class="legend__photo" src={member.photo} alt="" loading="lazy" decoding="async" /> : <span class="legend__mono" aria-hidden="true">{initials}</span>}
+      <span class="legend__class"><small>Class of</small>{a.graduated}</span>
+      <span class="legend__plate">
+        <span class="legend__name">{member.name}</span>
+        {place && <span class="legend__now">{place}</span>}
+        {!place && a.field && <span class="legend__now">{a.field}</span>}
+        <span class="legend__roles">
+          {roles.slice(0, 3).map((r) => <span style={`--c:${TEAM[r.org].color}`}><Sigil el={TEAM[r.org].element} />{r.title ?? `${TEAM[r.org].short} member`}</span>)}
+        </span>
+      </span>
+      <span class="mcard__sheen legend__sheen"></span>
+    </span>
+  </a>
+</li>
