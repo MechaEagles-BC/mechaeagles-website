@@ -1,9 +1,42 @@
 ---
 import "../styles/lab.css";
 import Foundation from "../components/Foundation.tsx";
+import { TEAMS } from "../components/teams";
 
 const still = (name: string) => ({ wide: `/stills/${name}-wide.webp`, tall: `/stills/${name}-tall.webp` });
-const TEAMS = ["baja", "aero", "combat", "ai"];
+const STILLS = ["baja", "aero", "combat", "ai"];
+
+// Copied from site/src/content for this prototype. Everyone here has consent "photo" on file, which the roster notes still need each member to confirm.
+const PEOPLE_COUNT = 48;
+const LATEST_LOG = { date: "19 Sep 2026", title: "First launch day: three up, two back", href: "/log/" };
+const LEADS = [
+  { name: "Sam Kaiser", title: "Baja Lead", photo: "sam-kaiser", color: TEAMS[0].color },
+  { name: "Jack Tommaney", title: "Aero Lead · Payload Lead", photo: "jack-tommaney", color: TEAMS[1].color },
+  { name: "Carlos Contreras", title: "Combat Robotics Lead", photo: "carlos-contreras", color: TEAMS[2].color },
+  { name: "Ambrose McCullough", title: "AI Safety Lead", photo: "ambrose-mccullough", color: TEAMS[3].color },
+];
+const PROGRAM = [
+  { name: "Austin Kinnealey", title: "Project Manager", photo: "austin-kinnealey" },
+  { name: "Vedarsh Mishra", title: "Project Manager", photo: "vedarsh-mishra" },
+  { name: "Lucas DiMarco", title: "DPM", photo: "lucas-dimarco" },
+  { name: "Ambrose McCullough", title: "DPM / Programmatics", photo: "ambrose-mccullough" },
+  { name: "Vladislav Hoila", title: "CS Lead", photo: "vladislav-hoila" },
+];
+// Carried over from the 2025-26 sponsors page. Confirm each entry with the partner before launch.
+const PARTNERS = [
+  { name: "SolidWorks", provided: "30 software licenses" },
+  { name: "Autodesk Fusion", provided: "CAD software licenses and manufacturing support" },
+  { name: "Boston College Engineering", provided: "Funding and shop access" },
+  { name: "IGOS Welding", provided: "Bolts and welding materials" },
+];
+const NAV = [
+  { label: "Teams", href: "/teams/" },
+  { label: "People", href: "/people/" },
+  { label: "Sponsors", href: "/sponsors/" },
+  { label: "About", href: "/about/" },
+  { label: "Log", href: "/log/" },
+  { label: "Join", href: "/join/" },
+];
 ---
 <!doctype html>
 <html lang="en">
@@ -11,26 +44,113 @@ const TEAMS = ["baja", "aero", "combat", "ai"];
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="robots" content="noindex" />
-    <title>Foundation prototype · MechaEagles</title>
+    <meta name="description" content="MechaEagles: four student engineering teams at Boston College." />
+    <title>MechaEagles</title>
     <link rel="preload" as="image" href={still("idle").wide} media="(min-aspect-ratio: 9/10)" fetchpriority="high" />
     <link rel="preload" as="image" href={still("idle").tall} media="(max-aspect-ratio: 9/10)" fetchpriority="high" />
   </head>
   <body>
-    <div class="stills" aria-hidden="true">
-      <picture class="still">
-        <source media="(max-aspect-ratio: 9/10)" srcset={still("idle").tall} />
-        <img src={still("idle").wide} alt="" width="1920" height="1080" fetchpriority="high" />
-      </picture>
-      {TEAMS.map((t, i) => (
-        <picture class="still still--team" data-still-team={i}>
-          <source media="(max-aspect-ratio: 9/10)" data-srcset={still(t).tall} />
-          <img data-src={still(t).wide} alt="" width="1920" height="1080" />
-        </picture>
-      ))}
-    </div>
     <main>
-      <Foundation client:only="react" />
-      <noscript><p class="note">This prototype's team controls need JavaScript. In the site, these are plain links.</p></noscript>
+      <section class="stage" aria-label="The four teams">
+        <div class="stills" aria-hidden="true">
+          <picture class="still">
+            <source media="(max-aspect-ratio: 9/10)" srcset={still("idle").tall} />
+            <img src={still("idle").wide} alt="" width="1920" height="1080" fetchpriority="high" />
+          </picture>
+          {STILLS.map((t, i) => (
+            <picture class="still still--team" data-still-team={i}>
+              <source media="(max-aspect-ratio: 9/10)" data-srcset={still(t).tall} />
+              <img data-src={still(t).wide} alt="" width="1920" height="1080" />
+            </picture>
+          ))}
+        </div>
+        <div class="top">
+          <a class="top__logo logo" href="/" aria-label="MechaEagles home"><img src="/brand/eagle.webp" alt="" width="44" height="28" /><span>MechaEagles</span></a>
+          <h1 class="top__line">Four student engineering teams at Boston College</h1>
+        </div>
+        <Foundation client:only="react" peopleCount={PEOPLE_COUNT} latestLog={LATEST_LOG} />
+        <ul class="team-list">
+          {TEAMS.map((t) => <li><a href={t.href} style={`--c:${t.color}`}>{t.name}</a></li>)}
+        </ul>
+        <div class="bottom">
+          <p>Card drawings are illustrative. Baldwin-1 is a design model with conceptual fins and nose.</p>
+          <a href="#people">Meet the people ↓</a>
+        </div>
+      </section>
+
+      <section class="beat" id="people">
+        <div class="wrap">
+          <p class="eyebrow">The people</p>
+          <h2>Who leads the teams</h2>
+          <div class="people__row people__row--4">
+            {LEADS.map((p) => (
+              <article class="person" style={`--c:${p.color}`}>
+                <img class="person__photo" src={`/people/${p.photo}.webp`} alt={`Portrait of ${p.name}`} loading="lazy" width="640" height="800" />
+                <span class="person__name">{p.name}</span>
+                <span class="person__title">{p.title}</span>
+              </article>
+            ))}
+          </div>
+          <div class="people__second">
+            <h3>Who makes it possible</h3>
+            <p class="lede">Project management, outreach, operations and partnerships. None of the four teams runs without them.</p>
+            <div class="people__row people__row--5">
+              {PROGRAM.map((p) => (
+                <article class="person">
+                  <img class="person__photo" src={`/people/${p.photo}.webp`} alt={`Portrait of ${p.name}`} loading="lazy" width="640" height="800" />
+                  <span class="person__name">{p.name}</span>
+                  <span class="person__title">{p.title}</span>
+                </article>
+              ))}
+            </div>
+          </div>
+          <a class="people__all" href="/people/">See all {PEOPLE_COUNT} people</a>
+        </div>
+      </section>
+
+      <section class="beat beat--support" id="support">
+        <div class="wrap support">
+          <div>
+            <p class="eyebrow">For sponsors and faculty</p>
+            <h2>What your support builds</h2>
+            <dl class="support__facts">
+              <div><dt>People</dt><dd>{PEOPLE_COUNT}</dd></div>
+              <div><dt>Teams</dt><dd>{TEAMS.length}</dd></div>
+            </dl>
+            <p class="support__log lede">In September 2026, AeroEagles flew three rockets on its first high-power launch outing. Two were recovered, one was lost after its parachute didn't deploy, and Jack Tommaney earned Level 1 certification.</p>
+            <div class="actions">
+              <a class="button button--solid" href="mailto:mechaeagles@bc.edu?subject=Partnership%20inquiry">Partner with us</a>
+              <a class="button" href="/Mecha_Eagles_Sponsorship_Packet.pdf">Sponsorship packet (PDF)</a>
+            </div>
+          </div>
+          <div>
+            <p class="eyebrow">What partners have provided</p>
+            <ul class="partners">
+              {PARTNERS.map((p) => <li><strong>{p.name}</strong><span>{p.provided}</span></li>)}
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="ending" id="join">
+        <picture>
+          <source media="(max-aspect-ratio: 9/10)" srcset="/plate/dusk-tall.webp" />
+          <img class="ending__image" src="/plate/dusk.webp" alt="The MechaEagles platform at dusk with its circuits lit" loading="lazy" width="1920" height="1080" />
+        </picture>
+        <div class="ending__text wrap">
+          <h2 class="ending__title">Come build with us.</h2>
+          <div class="actions"><a class="button button--solid" href="/join/">Join MechaEagles</a></div>
+        </div>
+      </section>
     </main>
+    <footer class="foot">
+      <div class="wrap">
+        <div class="foot__row">
+          <a class="logo" href="/"><img src="/brand/eagle.webp" alt="" width="44" height="28" loading="lazy" /><span>MechaEagles</span></a>
+          <nav aria-label="Footer"><ul>{NAV.map((l) => <li><a href={l.href}>{l.label}</a></li>)}</ul></nav>
+          <a href="mailto:mechaeagles@bc.edu">mechaeagles@bc.edu</a>
+        </div>
+      </div>
+    </footer>
   </body>
 </html>

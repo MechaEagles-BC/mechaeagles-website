@@ -6,6 +6,7 @@
 import { useEffect, useMemo, useRef, type RefObject } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
+import { ADDITIVE, GLASS } from "./additive";
 import { usePartGeometry, type SharedLight } from "./Scene";
 import type { Fx } from "./teams";
 
@@ -56,10 +57,12 @@ function faceMaterial(gain: number) {
         float lines = smoothstep(0.34, 0.5, abs(fract(vWorld.y * 26.0 - uTime * 0.25) - 0.5)) * 0.35;
         float up = mix(1.0, 0.72, vH);
         float i = (0.018 + fres * 0.13 + lines * 0.055) * up + sweep(vH) * 0.1 + front(vH) * 0.55;
-        gl_FragColor = vec4(tint() * i * (1.0 - min(uBoost, 1.0) * 0.3) * uGain, 1.0);
+        // Dark glass: over a bright valley, added light alone would burn to white.
+        vec3 glass = vec3(0.012, 0.03, 0.06) * 0.58;
+        gl_FragColor = vec4(glass + tint() * i * (1.0 - min(uBoost, 1.0) * 0.3) * uGain, 0.58);
       }`,
     transparent: true,
-    blending: THREE.AdditiveBlending,
+    ...GLASS,
     depthWrite: false,
     side: THREE.FrontSide,
     toneMapped: false,
@@ -86,7 +89,7 @@ function edgeMaterial(gain: number) {
         gl_FragColor = vec4(tint() * i * (1.0 - min(uBoost, 1.0) * 0.45) * uGain, 1.0);
       }`,
     transparent: true,
-    blending: THREE.AdditiveBlending,
+    ...ADDITIVE,
     depthWrite: false,
     toneMapped: false,
   });
@@ -137,7 +140,7 @@ function Cone() {
             gl_FragColor = vec4(uColor * i, 1.0);
           }`,
         transparent: true,
-        blending: THREE.AdditiveBlending,
+        ...ADDITIVE,
         depthWrite: false,
         side: THREE.DoubleSide,
         toneMapped: false,
@@ -152,15 +155,15 @@ function Cone() {
 }
 
 export default function Hologram({ fx, shared, onRiseEnd }: { fx: RefObject<Fx>; shared: SharedLight; onRiseEnd?: () => void }) {
-  const started = useRef<number | null>(null);
+  const elapsed = useRef(0); // counted here, because the render clock restarts whenever the stage is paused off screen
   useEffect(() => {
     // the time and accent uniforms are shared with the platform, so ripples and selection colour stay in step
     holo.uRise.value = 0;
-    started.current = null;
+    elapsed.current = 0;
   }, []);
-  useFrame(({ clock }, dt) => {
-    if (started.current === null) started.current = clock.elapsedTime;
-    const k = Math.min(1, (clock.elapsedTime - started.current) / RISE_SECONDS);
+  useFrame((_, dt) => {
+    elapsed.current += Math.min(dt, 0.1);
+    const k = Math.min(1, elapsed.current / RISE_SECONDS);
     holo.uRise.value = k === 1 ? 1.2 : 1 - Math.pow(1 - k, 2.2);
     if (k === 1) onRiseEnd?.();
     const target = fx.current!.held >= 0 ? (fx.current!.rippleT >= 0 ? 1.0 : 0.6) : fx.current!.hover >= 0 ? 0.18 : 0;

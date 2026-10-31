@@ -4,3 +4,7 @@ dist/
 cad/parts/
 reference/gasson/*.jpg
 gasson/parts/
+unreal/parts/
+unreal/render/
+unreal/assets/
+__pycache__/

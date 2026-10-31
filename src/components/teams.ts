@@ -7,27 +7,50 @@ const deg = (d: number) => (d * Math.PI) / 180;
 export const TEAMS = [
   {
     id: "baja", name: "Baja SAE", color: "#f2a33a", angle: deg(-135), portalAngle: deg(-150), href: "/teams/baja/",
-    tagline: "Off-road vehicle engineering", note: "Illustrative, not team CAD",
+    tagline: "Earth · Off-road vehicle engineering", note: "Illustrative, not team CAD",
     caption: "below", drawing: "baja_corner", drawingScale: 2.45, drawingYaw: -0.62, drawingLean: 0,
   },
   {
     id: "aero", name: "AeroEagles", color: "#6fb7ff", angle: deg(135), portalAngle: deg(150), href: "/teams/aero/",
-    tagline: "High-power rocketry", note: "Baldwin-1 design model. Fins and nose conceptual",
+    tagline: "Wind · High-power rocketry", note: "Baldwin-1 design model. Fins and nose conceptual",
     caption: "left", drawing: "aero_baldwin", drawingScale: 1.02, drawingYaw: 0, drawingLean: -0.6,
   },
   {
     id: "combat", name: "Combat Robotics", color: "#ff3d1f", angle: deg(45), portalAngle: deg(30), href: "/teams/combat-robotics/",
-    tagline: "Arena robots", note: "Illustrative, not a team robot",
+    tagline: "Fire · Arena robots", note: "Illustrative, not a team robot",
     caption: "right", drawing: "combat_robot", drawingScale: 3.7, drawingYaw: -0.7, drawingLean: 0,
   },
   {
     id: "ai", name: "AI Safety", color: "#9b8cff", angle: deg(-45), portalAngle: deg(-30), href: "/teams/ai-safety/",
-    tagline: "Research and governance", note: "Abstract diagram, not a product",
+    tagline: "Mind · Research and governance", note: "Abstract diagram, not a product",
     caption: "below", drawing: "ai_lattice", drawingScale: 2.2, drawingYaw: 0, drawingLean: 0,
   },
 ];
 
 export const PORTAL = { radius: 10.3, scale: 0.8 };
+
+/**
+ * The live scene and the rendered valley share one 4:3 film, so they line up. Windows see a band of it: the width always fits,
+ * and a window wider than 16:9 fits to the 16:9 band's height, with the sides fading to the page.
+ */
+export const FILM = { w: 1600, h: 1200, fov: 48.06, position: [0, 8.4, 25] as const, look: [0, 3.3, 0] as const };
+export function filmFit(viewW: number, viewH: number) {
+  const scale = Math.min(viewW / FILM.w, viewH / (FILM.w * (9 / 16)));
+  const fullW = FILM.w * scale;
+  const fullH = FILM.h * scale;
+  return { fullW, fullH, offsetX: (fullW - viewW) / 2, offsetY: (fullH - viewH) / 2 };
+}
+
+/**
+ * The rendered valley for a window's shape. All three share the film's lens and aim, so the film is exactly the middle of each.
+ * x and y are their size in films.
+ */
+export function plateFor(viewW: number, viewH: number) {
+  const aspect = viewW / viewH;
+  if (aspect > 16 / 9) return { src: "/plate/valley-wide.webp", x: 1.5, y: 1 };
+  if (aspect < 4 / 3) return { src: "/plate/valley-tall.webp", x: 1, y: 10 / 3 };
+  return { src: "/plate/valley.webp", x: 1, y: 1 };
+}
 
 /** Where a caption's reference point sits on it. Front captions hang below their panel; back ones sit outboard, clear of the platform. */
 export function captionTransform(side: string, x: number, y: number, el: HTMLElement, viewWidth: number) {
@@ -39,4 +62,4 @@ export function captionTransform(side: string, x: number, y: number, el: HTMLEle
   return `translate(${clamped}px, ${y}px) translate(-50%, 0)`;
 }
 
-export type Fx = { hover: number; held: number; pulse: number; pulseT: number; rippleT: number; boost: number };
+export type Fx = { hover: number; held: number; pulse: number; pulseT: number; rippleT: number; boost: number; spin: number; spinGoal: number; dragging: boolean; dragged: boolean; lit: boolean };

@@ -4,11 +4,13 @@
  */
 import { memo, Suspense, useEffect, useMemo, useRef, useState, type RefObject } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { Environment, Lightformer, PerformanceMonitor, useGLTF, useTexture } from "@react-three/drei";
-import { Bloom, EffectComposer, Noise, ToneMapping, Vignette } from "@react-three/postprocessing";
-import { BlendFunction, ToneMappingMode } from "postprocessing";
+import { Environment, PerformanceMonitor, useGLTF, useTexture } from "@react-three/drei";
+import { Bloom, EffectComposer, ToneMapping } from "@react-three/postprocessing";
+import { ToneMappingMode } from "postprocessing";
 import * as THREE from "three";
-import { PORTAL, TEAMS, type Fx } from "./teams";
+import { ADDITIVE } from "./additive";
+import Grass from "./Grass";
+import { FILM, filmFit, PORTAL, TEAMS, type Fx } from "./teams";
 import Hologram from "./Hologram";
 import Portal from "./Portal";
 
@@ -430,6 +432,8 @@ function Platform({ fx, labelRefs, onHover, onSelect, onReady }: { fx: RefObject
   const gearRef = useRef<THREE.Group>(null);
   const finRef = useRef<THREE.Group>(null);
   const leanRef = useRef<THREE.Group>(null);
+  const spinRef = useRef<THREE.Group>(null);
+  const holoRef = useRef<THREE.Group>(null);
   const pinionRefs = useRef<(THREE.Group | null)[]>([]);
   const glow = useRef<THREE.PointLight>(null);
   const rot = useRef({ outer: 0, gear: 0, fin: 0 });
@@ -477,10 +481,14 @@ function Platform({ fx, labelRefs, onHover, onSelect, onReady }: { fx: RefObject
       }
     }
     if (f.held >= 0) shared.uAccent.value.set(TEAMS[f.held].color);
+    // Follows a drag closely, and settles home slowly.
+    f.spin = THREE.MathUtils.damp(f.spin, f.spinGoal, f.dragging ? 16 : 2.4, dt);
+    spinRef.current!.rotation.y = f.spin;
+    holoRef.current!.rotation.copy(leanRef.current!.rotation);
     emissive.lines.forEach((mat, i) => {
       const u = mat.uniforms;
       const heldNow = f.held === i && f.pulse !== i ? 1 : 0;
-      const lift = f.hover === i ? 1 : f.hover >= 0 || f.held >= 0 ? -0.09 : 0;
+      const lift = f.lit || f.hover === i ? 1 : f.hover >= 0 || f.held >= 0 ? -0.09 : 0;
       u.uLift.value = THREE.MathUtils.damp(u.uLift.value, lift, 9, dt);
       u.uHeld.value = THREE.MathUtils.damp(u.uHeld.value, heldNow, 6, dt);
       // The pulse starts at the portal: it runs down the duct, then along the spar.
@@ -516,6 +524,11 @@ function Platform({ fx, labelRefs, onHover, onSelect, onReady }: { fx: RefObject
 
   return (
     <>
+    {/* The hologram is a projection, so it stays still while the machine turns beneath it. */}
+    <group ref={holoRef}>
+      <Hologram fx={fx} shared={shared} />
+    </group>
+    <group ref={spinRef}>
     {PORTALS_ON && TEAMS.map((t, i) => (
       <Portal key={t.id} index={i} fx={fx} shared={shared} labelRef={labelRefs[i]} screw={screw} screwMaterial={mats.screw} onHover={onHover} onSelect={onSelect} />
     ))}
@@ -560,7 +573,6 @@ function Platform({ fx, labelRefs, onHover, onSelect, onReady }: { fx: RefObject
       <Instanced geometry={screw} material={mats.screw} matrices={place.collarScrews} receive={false} />
       <mesh geometry={shapes.surface} material={emissive.surface} position={[0, 0.502, 0]} />
       <pointLight ref={glow} position={[0, 1.6, 0]} intensity={0} distance={11} decay={1.6} />
-      <Hologram fx={fx} shared={shared} />
 
       {/* fixed spars and team couplers */}
       <Instanced geometry={screw} material={mats.screw} matrices={place.couplerScrews} receive={false} />
@@ -586,13 +598,23 @@ function Platform({ fx, labelRefs, onHover, onSelect, onReady }: { fx: RefObject
         </group>
       ))}
     </group>
+    </group>
     </>
   );
 }
 
 function CameraRig({ closeup }: { closeup: number[] | null }) {
-  const home = useMemo(() => new THREE.Vector3(0, 14.2, 25), []);
-  const look = useMemo(() => new THREE.Vector3(0, -0.9, 0.6), []);
+  const home = useMemo(() => new THREE.Vector3(...FILM.position), []);
+  const look = useMemo(() => new THREE.Vector3(...FILM.look), []);
+  const size = useThree((state) => state.size);
+  const camera = useThree((state) => state.camera) as THREE.PerspectiveCamera;
+  useEffect(() => {
+    const fit = filmFit(size.width, size.height);
+    camera.fov = FILM.fov;
+    camera.aspect = FILM.w / FILM.h;
+    camera.setViewOffset(fit.fullW, fit.fullH, fit.offsetX, fit.offsetY, size.width, size.height);
+    camera.updateProjectionMatrix();
+  }, [camera, size]);
   useFrame((state, rawDt) => {
     const dt = Math.min(rawDt, 0.05);
     const cam = state.camera;
@@ -601,8 +623,9 @@ function CameraRig({ closeup }: { closeup: number[] | null }) {
       cam.lookAt(closeup[3], closeup[4], closeup[5]);
       return;
     }
-    cam.position.x = THREE.MathUtils.damp(cam.position.x, home.x + state.pointer.x * 1.5, 2.4, dt);
-    cam.position.y = THREE.MathUtils.damp(cam.position.y, home.y - state.pointer.y * 0.7, 2.4, dt);
+    // The valley behind is a flat image, so the camera may only drift a little before the two visibly slip.
+    cam.position.x = THREE.MathUtils.damp(cam.position.x, home.x + state.pointer.x * 0.22, 2.4, dt);
+    cam.position.y = THREE.MathUtils.damp(cam.position.y, home.y - state.pointer.y * 0.1, 2.4, dt);
     cam.lookAt(look);
   });
   return null;
@@ -611,25 +634,9 @@ function CameraRig({ closeup }: { closeup: number[] | null }) {
 function Studio() {
   return (
     <>
-      <ambientLight intensity={0.02} />
-      <spotLight position={[6, 17, 8]} angle={0.68} penumbra={0.85} intensity={460} decay={2} color="#e4ebf6" castShadow shadow-mapSize={[2048, 2048]} shadow-bias={-0.0004} shadow-normalBias={0.02} />
-      <spotLight position={[-10, 8, -10]} angle={0.8} penumbra={1} intensity={80} decay={2} color="#ffd6a8" />
-      <Environment resolution={512} frames={1} environmentIntensity={1.12}>
-        <color attach="background" args={["#05070a"]} />
-        {/* a large soft ceiling panel is what top-facing metal actually reflects from this camera */}
-        <Lightformer form="rect" intensity={1.5} color="#c9d6e8" position={[0, 16, -10]} rotation-x={Math.PI / 2.4} scale={[34, 16, 1]} />
-        <Lightformer form="rect" intensity={7} color="#f1f5fb" position={[0, 15, -18]} rotation-x={Math.PI / 2.6} scale={[26, 1.1, 1]} />
-        <Lightformer form="rect" intensity={5} color="#e6eefb" position={[-9, 14, -6]} rotation-x={Math.PI / 2} scale={[1, 22, 1]} />
-        <Lightformer form="rect" intensity={5} color="#e6eefb" position={[9, 14, -6]} rotation-x={Math.PI / 2} scale={[1, 22, 1]} />
-        <Lightformer form="rect" intensity={3} color="#ffd2a0" position={[16, 3, -6]} rotation-y={-Math.PI / 2} scale={[14, 2.2, 1]} />
-        <Lightformer form="rect" intensity={3} color="#a9c6f0" position={[-16, 3, 4]} rotation-y={Math.PI / 2} scale={[14, 2.2, 1]} />
-        <Lightformer form="rect" intensity={1.2} color="#ffffff" position={[0, 2, 18]} rotation-y={Math.PI} scale={[26, 1, 1]} />
-        {/* a low horizon band, so vertical walls have something to reflect */}
-        <Lightformer form="rect" intensity={0.55} color="#a9b6c8" position={[0, 1, 20]} rotation-y={Math.PI} scale={[44, 7, 1]} />
-        <Lightformer form="rect" intensity={0.55} color="#a9b6c8" position={[0, 1, -20]} scale={[44, 7, 1]} />
-        <Lightformer form="rect" intensity={0.55} color="#a9b6c8" position={[20, 1, 0]} rotation-y={-Math.PI / 2} scale={[44, 7, 1]} />
-        <Lightformer form="rect" intensity={0.55} color="#a9b6c8" position={[-20, 1, 0]} rotation-y={Math.PI / 2} scale={[44, 7, 1]} />
-      </Environment>
+      {/* Matches the sun in unreal/land_build.py, so shadows on the live parts fall the same way as in the valley. */}
+      <directionalLight position={[-9.6, 23, 16.7]} intensity={2.6} color="#fff4e6" castShadow shadow-mapSize={[2048, 2048]} shadow-bias={-0.0004} shadow-normalBias={0.02} shadow-camera-left={-16} shadow-camera-right={16} shadow-camera-top={16} shadow-camera-bottom={-16} shadow-camera-far={70} />
+      <Environment files={["px.webp", "nx.webp", "py.webp", "ny.webp", "pz.webp", "nz.webp"]} path="/env/" environmentIntensity={1.5} />
     </>
   );
 }
@@ -659,12 +666,8 @@ function Inspect() {
   return null;
 }
 
-function Scene({ fx, labelRefs, onHover, onSelect, onReady, onGiveUp, onMiss }: { fx: RefObject<Fx>; labelRefs: RefObject<HTMLAnchorElement | null>[]; onHover: (i: number) => void; onSelect: (i: number) => void; onReady: () => void; onGiveUp: () => void; onMiss: () => void }) {
+function Scene({ fx, labelRefs, active, onHover, onSelect, onReady, onGiveUp }: { fx: RefObject<Fx>; labelRefs: RefObject<HTMLAnchorElement | null>[]; active: boolean; onHover: (i: number) => void; onSelect: (i: number) => void; onReady: () => void; onGiveUp: () => void }) {
   const closeup = useMemo(() => (import.meta.env.DEV ? new URLSearchParams(location.search).get("closeup")?.split(",").map(Number) ?? null : null), []);
-  // Narrow windows widen the lens, so the platform and its portals still fit at the rig's 29 m distance.
-  const aspect = innerWidth / innerHeight;
-  const halfWidth = aspect < 0.9 ? 10.8 : 13.6;
-  const fov = Math.max(30, THREE.MathUtils.radToDeg(2 * Math.atan(halfWidth / (29 * aspect))));
   const capture = useMemo(() => import.meta.env.DEV && new URLSearchParams(location.search).has("capture"), []);
   // Cap the buffer near 4 MP: past that, extra pixels cost far more than they show.
   const [dpr, setDpr] = useState(() => Math.max(1, Math.min(1.75, Math.sqrt(4e6 / (innerWidth * innerHeight)))));
@@ -673,13 +676,14 @@ function Scene({ fx, labelRefs, onHover, onSelect, onReady, onGiveUp, onMiss }: 
       flat
       shadows
       dpr={dpr}
-      camera={{ position: [0, 14.2, 25], fov, near: 0.1, far: 160 }}
-      gl={{ antialias: false, powerPreference: "high-performance" }}
-      onPointerMissed={onMiss}
-      onCreated={({ gl }) => gl.domElement.addEventListener("webglcontextlost", onGiveUp)}
+      frameloop={active ? "always" : "never"}
+      camera={{ position: [...FILM.position], fov: FILM.fov, near: 0.1, far: 160, manual: true }}
+      gl={{ antialias: false, alpha: true, premultipliedAlpha: true, powerPreference: "high-performance" }}
+      onCreated={({ gl }) => {
+        gl.setClearColor(0x000000, 0);
+        gl.domElement.addEventListener("webglcontextlost", onGiveUp);
+      }}
     >
-      <color attach="background" args={["#030406"]} />
-      <fog attach="fog" args={["#030406", 26, 56]} />
       {/* Sharpness drops first, under 30 fps. 3D is only given up after sustained failure at low sharpness. */}
       {!capture && <PerformanceMonitor bounds={() => [30, 55]} iterations={8} onDecline={() => setDpr(1)} />}
       {!capture && dpr === 1 && <FrameWatch onGiveUp={onGiveUp} />}
@@ -687,17 +691,16 @@ function Scene({ fx, labelRefs, onHover, onSelect, onReady, onGiveUp, onMiss }: 
       <Suspense fallback={null}>
         <Platform fx={fx} labelRefs={labelRefs} onHover={onHover} onSelect={onSelect} onReady={onReady} />
       </Suspense>
+      <Grass />
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.002, 0]} receiveShadow>
-        <circleGeometry args={[60, 64]} />
-        <meshStandardMaterial color="#0a0b0e" metalness={0.6} roughness={0.62} />
+        <circleGeometry args={[24, 64]} />
+        <shadowMaterial transparent opacity={0.34} color="#14200c" />
       </mesh>
       <CameraRig closeup={closeup} />
       <Inspect />
       <EffectComposer multisampling={4} enableNormalPass={false}>
         <Bloom mipmapBlur luminanceThreshold={1} luminanceSmoothing={0.2} intensity={0.32} radius={0.5} />
         <ToneMapping mode={ToneMappingMode.ACES_FILMIC} />
-        <Vignette eskil={false} offset={0.34} darkness={0.5} />
-        <Noise premultiply blendFunction={BlendFunction.SOFT_LIGHT} opacity={0.12} />
       </EffectComposer>
     </Canvas>
   );

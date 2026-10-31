@@ -7,6 +7,7 @@ import { useMemo, useRef, type RefObject } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import { useTexture } from "@react-three/drei";
 import * as THREE from "three";
+import { ADDITIVE } from "./additive";
 import { Instanced, machined, usePartGeometry, type SharedLight } from "./Scene";
 import { captionTransform, PORTAL, TEAMS, type Fx } from "./teams";
 
@@ -24,7 +25,7 @@ function drawingMaterials(color: string, shared: SharedLight, level: { value: nu
   const uniforms = { uColor: { value: new THREE.Color(color) }, uLevel: level, uTime: shared.uTime };
   const vert = `varying vec3 vWorld; varying vec3 vN; varying vec3 vView;
     void main(){ vec4 w = modelMatrix * vec4(position, 1.0); vWorld = w.xyz; vN = mat3(modelMatrix) * NORMAL_EXPR; vView = cameraPosition - w.xyz; gl_Position = projectionMatrix * viewMatrix * w; }`;
-  const common = { transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false };
+  const common = { transparent: true, ...ADDITIVE, depthWrite: false, toneMapped: false };
   const face = new THREE.ShaderMaterial({
     uniforms,
     vertexShader: vert.replace("NORMAL_EXPR", "normal"),
@@ -73,7 +74,7 @@ export default function Portal({ index, fx, shared, labelRef, screw, screwMateri
     const x = Math.cos(team.portalAngle) * PORTAL.radius;
     const z = -Math.sin(team.portalAngle) * PORTAL.radius;
     // turned most of the way toward the viewer, so all four panels stay readable
-    return { x, z, yaw: Math.atan2(-x, 25 - z) * 0.9 };
+    return { x, z };
   }, []);
 
   const parts = useMemo(() => {
@@ -113,8 +114,16 @@ export default function Portal({ index, fx, shared, labelRef, screw, screwMateri
   useFrame((state, rawDt) => {
     const dt = Math.min(rawDt, 0.05);
     const f = fx.current!;
-    const on = f.hover === index || f.held === index;
+    const on = f.lit || f.hover === index || f.held === index;
     const dimmed = !on && (f.hover >= 0 || f.held >= 0);
+    // The card rides on the turning platform, and keeps facing the viewer as it goes.
+    if (root.current) {
+      const c = Math.cos(f.spin);
+      const s = Math.sin(f.spin);
+      const wx = placement.x * c + placement.z * s;
+      const wz = placement.z * c - placement.x * s;
+      root.current.rotation.y = Math.atan2(-wx, 25 - wz) * 0.9 - f.spin;
+    }
     parts.level.value = THREE.MathUtils.damp(parts.level.value, on ? 1 : dimmed ? -0.35 : 0, 9, dt);
     const k = parts.level.value;
     parts.lamp.color.set(team.color).multiplyScalar(0.72 + k * 0.5);
@@ -129,7 +138,7 @@ export default function Portal({ index, fx, shared, labelRef, screw, screwMateri
   });
 
   return (
-    <group ref={root} position={[placement.x, 0, placement.z]} rotation={[0, placement.yaw, 0]} scale={PORTAL.scale}>
+    <group ref={root} position={[placement.x, 0, placement.z]} scale={PORTAL.scale}>
       <mesh geometry={frame} material={parts.frameMat} castShadow receiveShadow />
       <Instanced geometry={screw} material={screwMaterial} matrices={parts.screws} receive={false} />
       <mesh geometry={parts.head} material={parts.lamp} position={[0, 4.465, 0.21]} />
