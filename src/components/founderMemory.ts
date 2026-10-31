@@ -1,7 +1,7 @@
 /**
  * What opens when someone finds the figure in the valley: a short conversation with a memory of the founder.
- * It isn't a live AI. It picks the closest answer from data/founder.json and says so plainly when it has none, so it can't invent anything about a real person.
- * Answering is one function, ask(), so a real model could stand behind it later without changing the rest.
+ * The suggested questions have written answers in data/founder.json. Anything else goes to an AI through /api/memory, which holds the key.
+ * If that's unavailable, it falls back to the closest written answer, and says plainly when it has none.
  */
 type Memory = { keys: string[]; phrases?: string[]; answer: string; next?: string[]; links?: { label: string; href: string }[] };
 type Script = { name: string; subtitle: string; disclosure: string; portrait: string; profile: string; greeting: string[]; unknown: string[]; starters: string[]; memories: Memory[] };
@@ -11,6 +11,25 @@ const words = (s: string) => s.toLowerCase().replace(/[^a-z0-9\s-]/g, " ").split
 
 let script: Script | null = null;
 let missed = 0;
+let history: { role: "user" | "assistant"; content: string }[] = [];
+const SESSION_LIMIT = 30;
+let asked = 0;
+
+/** The AI's answer, or nothing if it can't answer right now. */
+async function brain(): Promise<string | null> {
+  if (++asked > SESSION_LIMIT) return null;
+  try {
+    const r = await fetch("/api/memory", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ messages: history.slice(-8) }), signal: AbortSignal.timeout(18000) });
+    if (!r.ok) return null;
+    return (await r.json()).text ?? null;
+  } catch {
+    return null;
+  }
+}
+const isPhrase = (q: string, m: Memory | null) => {
+  const plain = q.toLowerCase().replace(/[^a-z0-9\s'-]/g, " ").replace(/\s+/g, " ").trim();
+  return !!m?.phrases?.some((p) => plain.includes(p));
+};
 
 /** The closest memory to what was asked, or nothing. */
 function ask(question: string): Memory | null {
@@ -85,9 +104,26 @@ async function reply(question: string) {
   log.append(el("p", "memory__line memory__line--you", question));
   chips([]);
   log.scrollTop = log.scrollHeight;
-  await new Promise((r) => setTimeout(r, still() ? 0 : 420));
+  history.push({ role: "user", content: question.slice(0, 200) });
   const found = ask(question);
-  if (found) {
+  let answer: string | null = null;
+  if (isPhrase(question, found)) {
+    await new Promise((r) => setTimeout(r, still() ? 0 : 420));
+  } else {
+    const wait = el("p", "memory__line memory__wait", "...");
+    wait.setAttribute("aria-label", "He's thinking");
+    log.append(wait);
+    log.scrollTop = log.scrollHeight;
+    answer = await brain();
+    wait.remove();
+    if (mine !== token) return;
+  }
+  if (answer) {
+    history.push({ role: "assistant", content: answer });
+    await say(answer, mine);
+    if (mine === token) chips(found?.next ?? script!.starters);
+  } else if (found) {
+    history.push({ role: "assistant", content: found.answer });
     await say(found.answer, mine);
     if (mine !== token) return;
     if (found.links?.length) {
@@ -113,6 +149,7 @@ async function open() {
   script ??= (await import("../data/founder.json")).default as Script;
   dialog.querySelector<HTMLElement>("[data-memory-disclosure]")!.textContent = script.disclosure;
   log.replaceChildren();
+  history = [];
   chips([]);
   dialog.showModal();
   document.documentElement.classList.add("profile-open");

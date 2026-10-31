@@ -1,7 +1,7 @@
 {
   "name": "Vedarsh",
   "subtitle": "A memory, found in the valley",
-  "disclosure": "This is a memory, not the real Vedarsh, and not a live AI. It only knows what's written here and on this site.",
+  "disclosure": "This is an AI playing a memory of Vedarsh, not the real him, and it can get things wrong. What you type goes to OpenRouter and an AI provider, so please don't share anything private.",
   "portrait": "/people/vedarsh-mishra.webp",
   "profile": "/people/#vedarsh-mishra",
   "greeting": [
@@ -291,7 +291,7 @@
         "spirit",
         "memory"
       ],
-      "answer": "Not a ghost. The real Vedarsh is fine, and probably in a meeting. I'm a few lines of writing and a very small pair of legs. I don't think, and I only know what's written down, but I do enjoy the walk.",
+      "answer": "Not a ghost. The real Vedarsh is fine, and probably in a meeting. I'm an AI working from what's written down about MechaEagles, plus a very small pair of legs. I can get things wrong, but I do enjoy the walk.",
       "links": [
         {
           "label": "Meet the real one",
