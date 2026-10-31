@@ -2,49 +2,17 @@
  * The path of flames: one monument for each academic year, newest nearest, with history receding into the distance and one unlit torch waiting for the next class.
  * What stands at each monument comes from data/cohorts.json, so a new year needs no code. Valley at dusk or the moon, like the rest of the site.
  */
-import { memo, Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { memo, Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { useGLTF } from "@react-three/drei";
 import * as THREE from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
+import { Prop, spot, SPACING, URL, useProp, type Piece, type World } from "./path";
+import { LegacyLand, masonry } from "./LegacyLand";
 
-export type Piece = { prop: string; at: [number, number]; height: number; yaw?: number };
 export type Year = { term: string; label: string; banners: string[]; monument: Piece[] };
-type World = "valley" | "space";
 
-const URL = "/legacy/props.glb";
-const SPACING = 13;
 const WIND = { value: 0 };
-
-const spot = (i: number, count: number) => new THREE.Vector3(Math.sin(i * 1.35) * 2.6, 0, (i - (count - 1)) * SPACING);
-
-/** A clone of one kit prop, stood on the ground at a chosen height, whatever the kit's own scale was. */
-function useProp(name: string, height: number) {
-  const { scene } = useGLTF(URL, false, true);
-  return useMemo(() => {
-    const source = scene.getObjectByName(`P_${name}`);
-    if (!source) return new THREE.Group();
-    const copy = source.clone(true);
-    copy.position.set(0, 0, 0);
-    copy.rotation.set(0, 0, 0);
-    copy.scale.set(1, 1, 1);
-    copy.updateMatrixWorld(true);
-    const box = new THREE.Box3().setFromObject(copy);
-    const size = box.getSize(new THREE.Vector3());
-    const scale = height / Math.max(size.y, 0.001);
-    const centre = box.getCenter(new THREE.Vector3());
-    copy.scale.setScalar(scale);
-    copy.position.set(-centre.x * scale, -box.min.y * scale, -centre.z * scale);
-    const holder = new THREE.Group();
-    holder.add(copy);
-    return holder;
-  }, [scene, name, height]);
-}
-
-function Prop({ piece }: { piece: Piece }) {
-  const object = useProp(piece.prop, piece.height);
-  return <primitive object={object} position={[piece.at[0], 0, piece.at[1]]} rotation={[0, piece.yaw ?? 0, 0]} />;
-}
 
 /** A team's banner, in its colour. In the valley the cloth moves in the wind. On the moon it hangs dead still. */
 function Banner({ color, at, yaw, stirs, tall }: { color: string; at: [number, number]; yaw: number; stirs: boolean; tall: boolean }) {
@@ -189,7 +157,7 @@ function Monument({ year, index, count, world, active, pick, lit }: { year: Year
     <group position={where}>
       <mesh position={[0, 0.16, 0]} material={stone}><cylinderGeometry args={[1.25, 1.42, 0.32, 8]} /></mesh>
       <mesh position={[0, 0.42, 0]} material={stone}><cylinderGeometry args={[0.92, 1.04, 0.22, 8]} /></mesh>
-      <mesh position={[0, 1.06, 0]} material={stone}><boxGeometry args={[0.9, 1.08, 0.9]} /></mesh>
+      <mesh position={[0, 1.06, 0]} material={masonry(world)}><boxGeometry args={[0.9, 1.08, 0.9]} /></mesh>
       <mesh position={[0, 1.64, 0]} material={stone}><cylinderGeometry args={[0.58, 0.5, 0.08, 8]} /></mesh>
       {plate && (
         <mesh position={[0, 1.08, 0.455]}>
@@ -214,36 +182,13 @@ function Monument({ year, index, count, world, active, pick, lit }: { year: Year
 }
 
 /** The path, and the line of fire running along it: it comes from the first flame and stops at the newest one. */
-function Path({ count, lit, world }: { count: number; lit: number; world: World }) {
-  const { slabs, geometry, stone, tube, line } = useMemo(() => {
-    const pts: THREE.Vector3[] = [];
-    for (let i = -0.35; i <= count - 1 + 0.5; i += 0.12) pts.push(spot(i, count));
-    const curve = new THREE.CatmullRomCurve3(pts);
-    const n = (count + 1) * 13;
-    const dummy = new THREE.Object3D();
-    const matrices: THREE.Matrix4[] = [];
-    let seed = 11;
-    const rand = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
-    for (let i = 0; i < n; i++) {
-      for (const side of [-1, 1]) {
-        const t = (i + rand() * 0.4) / n;
-        const p = curve.getPointAt(t);
-        const d = curve.getTangentAt(t);
-        dummy.position.set(p.x + d.z * side * (0.72 + rand() * 0.16), 0.015, p.z - d.x * side * 0.72);
-        dummy.rotation.set(0, Math.atan2(d.x, d.z) + (rand() - 0.5) * 0.25, 0);
-        dummy.scale.set(0.58 + rand() * 0.3, 0.05, 0.42 + rand() * 0.25);
-        dummy.updateMatrix();
-        matrices.push(dummy.matrix.clone());
-      }
-    }
+function FireLine({ count, lit, world }: { count: number; lit: number; world: World }) {
+  const { tube, line } = useMemo(() => {
     const litPts: THREE.Vector3[] = [];
     for (let i = 0; i <= lit; i += 0.1) litPts.push(spot(i, count));
     const lineCurve = litPts.length > 1 ? new THREE.CatmullRomCurve3(litPts) : null;
     return {
-      slabs: matrices,
-      geometry: new THREE.BoxGeometry(1, 1, 1),
-      stone: new THREE.MeshStandardMaterial({ color: world === "space" ? "#6a6e76" : "#8a8272", roughness: 0.95 }),
-      tube: lineCurve ? new THREE.TubeGeometry(lineCurve, 200, 0.04, 5, false) : null,
+      tube: lineCurve ? new THREE.TubeGeometry(lineCurve, 240, 0.045, 5, false) : null,
       line: new THREE.ShaderMaterial({
         transparent: true,
         blending: THREE.AdditiveBlending,
@@ -255,18 +200,8 @@ function Path({ count, lit, world }: { count: number; lit: number; world: World 
       }),
     };
   }, [count, lit, world]);
-  const instanced = useRef<THREE.InstancedMesh>(null);
-  useEffect(() => {
-    slabs.forEach((m, i) => instanced.current?.setMatrixAt(i, m));
-    if (instanced.current) instanced.current.instanceMatrix.needsUpdate = true;
-  }, [slabs]);
   useFrame((_, dt) => void (line.uniforms.uTime.value += dt));
-  return (
-    <>
-      <instancedMesh ref={instanced} args={[geometry, stone, slabs.length]} />
-      {tube && <mesh geometry={tube} material={line} position={[0, 0.03, 0]} />}
-    </>
-  );
+  return tube ? <mesh geometry={tube} material={line} position={[0, 0.11, 0]} /> : null;
 }
 
 // Three tiers on a trunk, so a tree reads as a tree at any distance.
@@ -289,7 +224,7 @@ function Setting({ world, length }: { world: World; length: number }) {
     for (let i = 0; i < (valley ? 110 : 150); i++) {
       const side = rand() > 0.5 ? 1 : -1;
       const z = 12 - rand() * (length + 60);
-      const x = side * ((valley ? 17 : 10) + Math.pow(rand(), 1.3) * 46);
+      const x = side * ((valley ? 25 : 10) + Math.pow(rand(), 1.3) * 46);
       d.position.set(x, valley ? 0 : -0.1, z);
       d.rotation.set(valley ? 0 : rand() * 3, rand() * 6, valley ? 0 : rand() * 3);
       const s = valley ? 1.6 + rand() * 1.5 : 0.3 + Math.pow(rand(), 3) * 2.4;
@@ -304,13 +239,13 @@ function Setting({ world, length }: { world: World; length: number }) {
     };
   }, [valley, length]);
   const instanced = useRef<THREE.InstancedMesh>(null);
-  useEffect(() => {
+  useLayoutEffect(() => {
     matrices.forEach((m, i) => instanced.current?.setMatrixAt(i, m));
     if (instanced.current) instanced.current.instanceMatrix.needsUpdate = true;
   }, [matrices]);
   const horizon = valley ? "#a9786c" : "#05070c";
   useEffect(() => {
-    scene.fog = new THREE.Fog(horizon, valley ? 24 : 20, valley ? 105 : 70);
+    scene.fog = new THREE.Fog(horizon, valley ? 26 : 26, valley ? 120 : 100);
     return () => void (scene.fog = null);
   }, [scene, horizon, valley]);
   const dome = useMemo(() => new THREE.ShaderMaterial({
@@ -319,7 +254,7 @@ function Setting({ world, length }: { world: World; length: number }) {
     fog: false,
     toneMapped: false,
     vertexShader: "varying vec3 vP; void main(){ vP = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }",
-    fragmentShader: `varying vec3 vP; void main(){ float h = max(vP.y, 0.0); vec3 c = mix(vec3(0.66, 0.47, 0.42), vec3(0.42, 0.26, 0.38), smoothstep(0.0, 0.16, h)); c = mix(c, vec3(0.09, 0.11, 0.24), smoothstep(0.12, 0.5, h)); gl_FragColor = vec4(c, 1.0); }`,
+    fragmentShader: `varying vec3 vP; void main(){ float h = max(vP.y, 0.0); vec3 c = mix(vec3(0.66, 0.47, 0.42), vec3(0.42, 0.26, 0.38), smoothstep(0.0, 0.16, h)); c = mix(c, vec3(0.09, 0.11, 0.24), smoothstep(0.12, 0.5, h)); vec3 q = floor(vP * 170.0); float st = fract(sin(dot(q, vec3(12.9, 78.2, 37.7))) * 43758.5); c += vec3(0.8, 0.85, 1.0) * step(0.9965, st) * smoothstep(0.18, 0.5, h); gl_FragColor = vec4(c, 1.0); }`,
   }), []);
   const camera = useThree((s) => s.camera);
   const domeRef = useRef<THREE.Mesh>(null);
@@ -328,10 +263,10 @@ function Setting({ world, length }: { world: World; length: number }) {
     <>
       {valley && <mesh ref={domeRef} material={dome} renderOrder={-1}><sphereGeometry args={[150, 24, 12]} /></mesh>}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, -length / 2]}>
-        <planeGeometry args={[320, length + 260]} />
+        <planeGeometry args={[900, length + 900]} />
         <meshStandardMaterial color={valley ? "#2e3a22" : "#34363c"} roughness={1} />
       </mesh>
-      <instancedMesh ref={instanced} args={[geometry, material, matrices.length]} />
+      <instancedMesh ref={instanced} args={[geometry, material, matrices.length]} frustumCulled={false} />
       <hemisphereLight args={[valley ? "#7d6f96" : "#7f90b0", valley ? "#2c2f1e" : "#18191d", valley ? 0.85 : 0.5]} />
       <directionalLight position={valley ? [-14, 9, -30] : [12, 16, 10]} intensity={valley ? 0.8 : 0.75} color={valley ? "#ffb27a" : "#dfe8ff"} />
       {/* A soft fill from where the visitor stands, so the near side of each monument never goes black. */}
@@ -398,18 +333,22 @@ function Journey({ target, count, onArrive }: { target: number; count: number; o
   useFrame((_, dt) => {
     const distance = Math.max(Math.abs(to.current - from.current), 0.5);
     const was = t.current;
-    t.current = Math.min(1, t.current + dt / (1.5 + distance * 0.55));
+    t.current = Math.min(1, t.current + dt / (2.4 + distance * 0.9));
     if (was < 1 && t.current === 1) onArrive();
     const e = ease(t.current);
     const at = from.current + (to.current - from.current) * e;
     const here = spot(at, count);
-    const lift = Math.sin(t.current * Math.PI) * 1.5;
+    const back = (wide: boolean) => (wide ? 8.4 : 10.5) / SPACING;
     const wide = size.width / size.height > 1.1;
     const p = pointer.current;
     p.x += (p.gx - p.x) * (1 - Math.exp(-dt * 1.6));
     p.y += (p.gy - p.y) * (1 - Math.exp(-dt * 1.6));
-    camera.position.set(here.x + (wide ? -0.6 : 0) + p.x * 0.35, 2.5 + lift - p.y * 0.14, here.z + (wide ? 8.4 : 10.5));
-    look.set(here.x + (wide ? -2.0 : 0), 1.95 + lift * 0.3, here.z - 1);
+    const eye = spot(at + back(wide), count);
+    // The view rises to pass over each flame and its banners, then comes down to go through the gate.
+    const toFlame = Math.abs((at + back(wide) - Math.round(at + back(wide))) * SPACING);
+    const lift = Math.exp(-((toFlame / 5.2) ** 2)) * 3;
+    camera.position.set(eye.x + (wide ? -0.5 : 0) + p.x * 0.3, 2.35 + lift - p.y * 0.14, eye.z);
+    look.set(here.x + (wide ? -2.0 : 0), 1.95 + lift * 0.15, here.z - 1);
     camera.lookAt(look);
     if (spark.current) {
       const moving = t.current < 1;
@@ -468,7 +407,7 @@ function LegacyWorld({ years, start, pick, onArrive, onReady, onLost }: { years:
         flat={false}
         dpr={dpr}
         frameloop={visible ? "always" : "never"}
-        camera={{ fov: 44, near: 0.1, far: 400, position: [0, 3, 12] }}
+        camera={{ fov: 44, near: 0.1, far: 620, position: [0, 3, 12] }}
         gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
         onCreated={({ gl }) => {
           gl.setClearColor(0x000000, 0);
@@ -477,7 +416,8 @@ function LegacyWorld({ years, start, pick, onArrive, onReady, onLost }: { years:
       >
         <Suspense fallback={null}>
           <Setting world={world} length={length} />
-          <Path count={count} lit={years.length - 1} world={world} />
+          <LegacyLand count={count} world={world} />
+          <FireLine count={count} lit={years.length - 1} world={world} />
           <Motes world={world} length={length} />
           {years.map((y, i) => <Monument key={y.term} year={y} index={i} count={count} world={world} active={target === i} pick={pick} lit />)}
           <Monument year={null} index={years.length} count={count} world={world} active={target === years.length} pick={pick} lit={false} />

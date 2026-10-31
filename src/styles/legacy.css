@@ -3,8 +3,8 @@ html[data-page="legacy"] { --flame: #ffb45a; --flame-ink: #8a4a10; }
 html[data-page="legacy"][data-theme="space"] { --flame: #9fd0ff; --flame-ink: #9fd0ff; }
 
 .lw { position: relative; height: 100vh; height: 100svh; min-height: 560px; overflow: hidden; color: var(--chalk); isolation: isolate; }
-.lw__still { position: absolute; inset: 0; z-index: -2; background: url("/legacy/still-valley.webp") center 60% / cover, #2a2238; transition: opacity 0.9s; }
-html[data-theme="space"] .lw__still { background: url("/legacy/still-space.webp") center 60% / cover, #05070c; }
+.lw__still { position: absolute; inset: 0; z-index: -2; background: url("/legacy/still-valley.webp") 68% 60% / cover, #2a2238; transition: opacity 0.9s; }
+html[data-theme="space"] .lw__still { background: url("/legacy/still-space.webp") 68% 60% / cover, #05070c; }
 .lw.ready .lw__still { opacity: 0; }
 .lw__canvas { position: absolute; inset: 0; z-index: -1; opacity: 0; transition: opacity 1s; }
 .lw.ready .lw__canvas { opacity: 1; }

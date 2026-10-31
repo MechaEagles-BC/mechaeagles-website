@@ -8,7 +8,7 @@ import bpy
 HERE = os.path.dirname(os.path.abspath(__file__))
 KIT = os.path.join(HERE, "assets", "fantasy", "Exports", "glTF")
 OUT = os.path.join(os.path.dirname(HERE), "public", "legacy", "props.glb")
-PROPS = ["Torch_Metal", "Anvil", "Anvil_Log", "Workbench", "Workbench_Drawers", "Banner_1", "Banner_1_Cloth", "Banner_2", "Banner_2_Cloth", "Scroll_1", "Scroll_2", "Book_Stack_1", "Book_Stack_2", "BookStand", "Chest_Wood", "CandleStick_Stand", "CandleStick_Triple", "Table_Large", "Bench", "Stool", "Chain_Coil", "Crate_Wooden", "Crate_Metal", "Bucket_Metal", "Rope_1", "Coin_Pile", "Lantern_Wall", "Whetstone"]
+PROPS = ["Torch_Metal", "Anvil", "Anvil_Log", "Workbench", "Workbench_Drawers", "Banner_1", "Banner_1_Cloth", "Banner_2", "Banner_2_Cloth", "Scroll_1", "Scroll_2", "Book_Stack_1", "Book_Stack_2", "BookStand", "Chest_Wood", "CandleStick_Stand", "CandleStick_Triple", "Table_Large", "Bench", "Stool", "Chain_Coil", "Crate_Wooden", "Crate_Metal", "Bucket_Metal", "Rope_1", "Coin_Pile", "Lantern_Wall", "Whetstone", "Barrel", "Barrel_Holder"]
 SIZE = 1024
 
 bpy.ops.wm.read_factory_settings(use_empty=True)

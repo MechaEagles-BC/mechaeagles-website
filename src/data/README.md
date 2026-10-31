@@ -69,7 +69,7 @@ Each year in `cohorts.json` gets a flame, a monument and a story, with no code t
 - Milestones, photos and videos join a year through their `"term"` field. Rosters, leadership and graduating classes are worked out from `members.json`.
 - A class belongs to the year it finished: the class of 2027 appears in 2026-27.
 
-The props come from Quaternius' Fantasy Props MegaKit, CC0 licence. To use a different prop, add it to `PROPS` and rerun that script.
+The props come from Quaternius' Fantasy Props MegaKit, CC0 licence. To use a different prop, add it to `PROPS` and rerun that script. The free kit has no buildings, so the road, gates, doors, village and castle are drawn in `src/components/legacy/LegacyLand.tsx`. They need no changes for a new year: another flame simply adds more road and another gate.
 
 An alumni card can also carry a career journey: `"journey": [{ "when": "2027", "title": "...", "org": "..." }]`.
 
