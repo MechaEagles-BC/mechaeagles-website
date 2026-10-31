@@ -6,4 +6,7 @@ export const TEAMS = [
   { id: "ai", name: "AI Safety", color: "#9b8cff", angle: -Math.PI / 4 },
 ];
 
+/** Portals sit wider than their couplers, so the four panels frame the platform rather than cover it. */
+export const PORTAL = { angle: (-Math.PI * 5) / 6, radius: 10.3, scale: 0.8 };
+
 export type Fx = { hover: number; held: number; pulse: number; pulseT: number; rippleT: number; boost: number };

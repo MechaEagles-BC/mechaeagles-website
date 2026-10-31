@@ -7,6 +7,18 @@ import { TEAMS, type Fx } from "./teams";
 
 const Scene = lazy(() => import("./Scene"));
 
+// Where the nameplate sits in the 1920 x 1080 poster, for visitors and moments without live 3D.
+const STILL_ANCHOR = { x: 226, y: 706 };
+const STILL = { w: 1920, h: 1080 };
+
+function placeOnStill(el: HTMLElement) {
+  const scale = Math.max(innerWidth / STILL.w, innerHeight / STILL.h);
+  const half = el.offsetWidth / 2 + 8;
+  const x = Math.min(innerWidth - half, Math.max(half, innerWidth / 2 + (STILL_ANCHOR.x - STILL.w / 2) * scale));
+  const y = innerHeight / 2 + (STILL_ANCHOR.y - STILL.h / 2) * scale;
+  el.style.transform = `translate(${x}px, ${y}px) translate(-50%, 0)`;
+}
+
 function canRun3D() {
   const q = new URLSearchParams(location.search);
   if (q.has("3d")) return true;
@@ -42,6 +54,7 @@ export default function Foundation() {
   const [hovered, setHovered] = useState(-1);
   const [ready, setReady] = useState(false);
   const [gaveUp, setGaveUp] = useState(false);
+  const labelRef = useRef<HTMLAnchorElement>(null);
   const showing3D = live && !gaveUp;
   const shown = hovered >= 0 ? hovered : held;
 
@@ -62,6 +75,14 @@ export default function Foundation() {
   const clear = useCallback(() => select(-1), [select]);
   const onReady = useCallback(() => setReady(true), []);
   const onGiveUp = useCallback(() => setGaveUp(true), []);
+
+  useEffect(() => {
+    if (showing3D && ready) return;
+    const place = () => labelRef.current && placeOnStill(labelRef.current);
+    place();
+    addEventListener("resize", place);
+    return () => removeEventListener("resize", place);
+  }, [showing3D, ready]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -89,11 +110,33 @@ export default function Foundation() {
         <div className={`lab__canvas${ready ? " ready" : ""}`} aria-hidden="true">
           <GLBoundary onError={onGiveUp}>
             <Suspense fallback={null}>
-              <Scene fx={fx} onHover={hover} onSelect={select} onReady={onReady} onGiveUp={onGiveUp} onMiss={clear} />
+              <Scene fx={fx} labelRef={labelRef} onHover={hover} onSelect={select} onReady={onReady} onGiveUp={onGiveUp} onMiss={clear} />
             </Suspense>
           </GLBoundary>
         </div>
       )}
+
+      {/* A real link: it can be focused, copied and opened in a new tab, and needs no 3D. */}
+      <a
+        ref={labelRef}
+        className="portal-label"
+        href="/teams/baja/"
+        style={{ "--c": TEAMS[0].color } as React.CSSProperties}
+        aria-current={held === 0 ? "true" : undefined}
+        onPointerEnter={() => hover(0)}
+        onPointerLeave={() => hover(-1)}
+        onFocus={() => hover(0)}
+        onBlur={() => hover(-1)}
+        onClick={(e) => {
+          if (e.ctrlKey || e.metaKey || e.shiftKey || e.button !== 0) return;
+          e.preventDefault(); // Stage 6 adds the transition. In this prototype a click selects.
+          select(0);
+        }}
+      >
+        <span className="portal-label__name">{TEAMS[0].name}</span>
+        <span className="portal-label__tag">Off-road vehicle engineering</span>
+        <span className="portal-label__note">Illustrative, not team CAD</span>
+      </a>
 
       <header className="lab__head">
         <p className="lab__kicker">MechaEagles · Mission Control</p>

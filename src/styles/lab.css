@@ -40,3 +40,11 @@ html, body { height: 100%; margin: 0; background: var(--ink); color: var(--chalk
   .lab__teams { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .lab__team { font-size: 12px; padding: 8px 10px; }
 }
+
+.portal-label { --c: #fff; position: absolute; left: 0; top: 0; z-index: 2; display: grid; gap: 3px; width: clamp(190px, 14vw, 270px); padding: 7px 10px; border-left: 2px solid var(--c); background: rgb(5 7 10 / 0.72); color: var(--chalk); text-decoration: none; will-change: transform; }
+.portal-label:focus-visible { outline: 2px solid var(--c); outline-offset: 3px; }
+.portal-label__name { font: 800 clamp(16px, 1.35vw, 25px)/1.05 var(--display); font-stretch: 112%; text-transform: uppercase; }
+.portal-label__tag { font-size: clamp(11px, 0.72vw, 13px); line-height: 1.25; color: var(--chalk); }
+.portal-label__note { font-size: 10px; line-height: 1.25; color: var(--soft); }
+.portal-label[aria-current="true"] { background: color-mix(in srgb, var(--c) 20%, rgb(5 7 10 / 0.82)); }
+@media (max-aspect-ratio: 9/10) { .portal-label { display: none; } }
