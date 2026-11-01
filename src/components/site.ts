@@ -11,6 +11,7 @@ import { startTeamFx } from "./teamFx";
 import { startLegacy } from "./legacy/legacy";
 import { startSoundtrack } from "./soundtrack";
 import { startFounderMemory } from "./founderMemory";
+import { startEnding } from "./ending/ending";
 
 const root = document.documentElement;
 const reduced = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -124,4 +125,5 @@ startTeamFx();
 startLegacy();
 startSoundtrack();
 startFounderMemory();
+startEnding();
 document.addEventListener("astro:page-load", onPage);

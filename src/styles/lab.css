@@ -249,6 +249,16 @@ html[data-theme="space"] .sign-list a { color: #e9f6ff; font: 800 var(--t-s)/1 v
 /* A slow push in, the way a film holds its last shot. */
 @keyframes push { from { transform: scale(1); } to { transform: scale(1.07) translateY(-1%); } }
 .ending::before { content: ""; position: absolute; z-index: 1; inset: 0; pointer-events: none; background: linear-gradient(transparent 50%, rgb(5 8 7 / 0.62) 76%, transparent); }
+/* The living map, over the still picture once it's ready. Each world keeps the mood of its own picture: dusk over the valley, deep space over the moon. */
+.ending__live { position: absolute; z-index: 0; inset: 0; opacity: 0; transition: opacity 1.4s ease; background: radial-gradient(90% 55% at 66% 66%, #4b4a23, transparent 70%), linear-gradient(#1b2a1b, #0f1a10 58%, #070d08); -webkit-mask-image: linear-gradient(transparent, #000 12%, #000 90%, transparent); mask-image: linear-gradient(transparent, #000 12%, #000 90%, transparent); }
+html[data-theme="space"] .ending__live { background: radial-gradient(80% 55% at 66% 62%, #123244, transparent 70%), linear-gradient(#050a12, #03060c 60%, #020409); -webkit-mask-image: linear-gradient(transparent, #000 10%, #000 90%, transparent); mask-image: linear-gradient(transparent, #000 10%, #000 90%, transparent); }
+.ending.live .ending__live { opacity: 1; }
+/* Once it's ready, the page's own colour replaces the world behind, so the hero doesn't show through the fade at the top. */
+.ending { transition: background-color 1.4s ease; }
+.ending.live { background-color: var(--page-solid); }
+.ending picture { transition: opacity 1.4s ease; }
+.ending.live picture { opacity: 0; }
+.ending__live canvas { position: absolute; inset: 0; }
 .ending__text { position: relative; z-index: 2; width: 100%; padding-block: var(--s7) var(--s7); }
 
 .foot { padding-block: var(--s5); font-size: var(--t-xs); color: var(--text-2); }

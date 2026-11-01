@@ -35,6 +35,8 @@ const save = () => {
 let ctx: AudioContext | null = null;
 let master: GainNode | null = null;
 let duck: GainNode | null = null;
+let listener: AnalyserNode | null = null;
+let heard: Uint8Array<ArrayBuffer> | null = null;
 const tracks: Partial<Record<World, Track>> = {};
 let current: World | null = null;
 let failed = false;
@@ -117,6 +119,12 @@ function ensureAudio() {
   duck = ctx.createGain();
   master.gain.value = level();
   duck.connect(master);
+  // Listens before the volume control, so visuals follow the music whatever the volume is. It isn't connected to the speakers.
+  listener = ctx.createAnalyser();
+  listener.fftSize = 1024;
+  listener.smoothingTimeConstant = 0.3;
+  heard = new Uint8Array(listener.frequencyBinCount);
+  duck.connect(listener);
   master.connect(ctx.destination);
   window.setInterval(() => (Object.values(tracks) as Track[]).forEach((t) => t.tick()), 300);
 }
@@ -149,6 +157,18 @@ function end() {
   current = null;
   waiting = false;
   paint();
+}
+
+/** How the music sounds right now, each from 0 to 1. All zero while it isn't playing. */
+export function soundLevels() {
+  if (!listener || !heard || !current || ctx?.state !== "running") return { playing: false, low: 0, high: 0 };
+  listener.getByteFrequencyData(heard);
+  const band = (from: number, to: number) => {
+    let sum = 0;
+    for (let i = from; i < to; i++) sum += heard![i];
+    return sum / (to - from) / 255;
+  };
+  return { playing: true, low: band(1, 8), high: Math.min(band(60, 180) * 2.4, 1) };
 }
 
 /** Keeps every control on the page in step. The bar is replaced on each page change, so this runs again then. */
