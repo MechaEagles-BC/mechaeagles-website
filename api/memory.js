@@ -91,8 +91,12 @@ export async function POST(request) {
       console.error("openrouter", reply.status, (await reply.text()).slice(0, 400));
       return json({ error: "unavailable" }, 503);
     }
-    const text = (await reply.json()).choices?.[0]?.message?.content?.trim();
-    if (!text) return json({ error: "unavailable" }, 503);
+    const data = await reply.json();
+    const choice = data.choices?.[0];
+    const text = choice?.message?.content?.trim();
+    console.log("openrouter", data.model, choice?.finish_reason, data.usage?.completion_tokens);
+    // Half a sentence is worse than a written answer.
+    if (!text || choice.finish_reason !== "stop") return json({ error: "unavailable" }, 503);
     return json({ text: text.replace(/[*_#`]/g, "").slice(0, 700) }, 200);
   } catch (error) {
     console.error("openrouter", error?.name);
