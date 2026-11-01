@@ -1,5 +1,5 @@
 /**
- * What opens when someone finds the figure in the valley: a short conversation with a memory of the founder.
+ * What opens when someone finds the figure in the valley: a short conversation with Ash, a fictional fragment of the founder.
  * The suggested questions have written answers in data/founder.json. Anything else goes to an AI through /api/memory, which holds the key.
  * If that's unavailable, it falls back to the closest written answer, and says plainly when it has none.
  */
@@ -111,7 +111,7 @@ async function reply(question: string) {
     await new Promise((r) => setTimeout(r, still() ? 0 : 420));
   } else {
     const wait = el("p", "memory__line memory__wait", "...");
-    wait.setAttribute("aria-label", "He's thinking");
+    wait.setAttribute("aria-label", "Ash is thinking");
     log.append(wait);
     log.scrollTop = log.scrollHeight;
     answer = await brain();
