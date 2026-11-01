@@ -40,9 +40,9 @@ const organization = {
     <meta property="og:image:height" content="630" />
     <meta name="twitter:card" content="summary_large_image" />
     {page === "home" && <script type="application/ld+json" set:html={JSON.stringify(organization)} />}
-    <link rel="preload" href={archivo} as="font" type="font/woff2" crossorigin />
-    <link rel="preload" href={plex400} as="font" type="font/woff2" crossorigin />
-    <link rel="preload" href={plex500} as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href={archivo} as="font" type="font/woff2" media="(min-width: 901px)" crossorigin />
+    <link rel="preload" href={plex400} as="font" type="font/woff2" media="(min-width: 901px)" crossorigin />
+    <link rel="preload" href={plex500} as="font" type="font/woff2" media="(min-width: 901px)" crossorigin />
     <link rel="icon" href="/favicon.ico" sizes="48x48" />
     <link rel="icon" href="/brand/eagle.webp" type="image/webp" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
