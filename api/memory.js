@@ -85,7 +85,7 @@ export async function POST(request) {
       method: "POST",
       signal: AbortSignal.timeout(22000),
       headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json", "HTTP-Referer": "https://mechaeagles.com", "X-Title": "MechaEagles founder memory" },
-      body: JSON.stringify({ models: MODELS, max_tokens: 400, temperature: 0.5, reasoning: { exclude: true }, messages: [{ role: "system", content: SYSTEM }, ...messages] }),
+      body: JSON.stringify({ models: MODELS, max_tokens: 1200, temperature: 0.5, reasoning: { exclude: true }, messages: [{ role: "system", content: SYSTEM }, ...messages] }),
     });
     if (!reply.ok) {
       console.error("openrouter", reply.status, (await reply.text()).slice(0, 400));
