@@ -35,6 +35,53 @@ export function warmReflections(gl: THREE.WebGLRenderer, camera: THREE.Camera, s
   }
 }
 
+/**
+ * The two worlds' reflections differ in size, which needs a different version of every metal shader, and a first change of world used to freeze the page while they compiled.
+ * Once the world is running, the other world's versions are prepared in the background on stand-in copies that are never drawn, so what's on screen isn't touched.
+ */
+export async function warmOtherWorld(gl: THREE.WebGLRenderer, camera: THREE.Camera, scene: THREE.Scene, faceSize: number) {
+  try {
+    await warmReflections(gl, camera, scene, faceSize);
+    // The shaders only need to know how big the reflections will be, so this stands in for them.
+    const light = new THREE.Texture();
+    light.mapping = THREE.CubeUVReflectionMapping;
+    light.image = { width: 3 * Math.max(faceSize, 112), height: 4 * faceSize };
+    // One shader version per tick, so getting ready never interrupts the moving scene.
+    const seen = new Set<string>();
+    const waiting: THREE.Object3D[] = [];
+    scene.traverse((o) => {
+      const mesh = o as THREE.Mesh;
+      const material = mesh.material as THREE.MeshStandardMaterial;
+      if (!mesh.isMesh || (mesh as THREE.SkinnedMesh).isSkinnedMesh || !material?.isMeshStandardMaterial) return;
+      const instanced = !!(mesh as THREE.InstancedMesh).isInstancedMesh;
+      const kind = [material.type, material.customProgramCacheKey(), instanced, !!material.map, !!material.normalMap, !!material.aoMap, material.transparent, material.side, !!mesh.geometry.getAttribute("uv"), !!mesh.geometry.getAttribute("normal")].join();
+      if (seen.has(kind)) return;
+      seen.add(kind);
+      const copy = material.clone();
+      copy.onBeforeCompile = material.onBeforeCompile;
+      copy.customProgramCacheKey = material.customProgramCacheKey;
+      waiting.push(instanced ? new THREE.InstancedMesh(mesh.geometry, copy, 1) : new THREE.Mesh(mesh.geometry, copy));
+    });
+    keepCompiled.push(waiting);
+    const buffer = new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType });
+    const next = () => {
+      const stand = waiting[stood++];
+      if (!stand) return buffer.dispose();
+      const had = scene.environment;
+      scene.environment = light;
+      gl.setRenderTarget(buffer);
+      void gl.compileAsync(stand, camera, scene);
+      gl.setRenderTarget(null);
+      scene.environment = had;
+      setTimeout(next, 80);
+    };
+    let stood = 0;
+    next();
+  } catch {
+    // the first change of world just takes a moment, as it used to
+  }
+}
+
 function useCompile(through: boolean) {
   const { gl, camera, scene } = useThree();
   return (what: THREE.Object3D) => {

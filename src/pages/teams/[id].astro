@@ -28,7 +28,7 @@ const roleHere = (m: Member) => now(m).filter((x) => x.org === id).map((x) => (x
 const SECTIONS = [["overview", "Overview"], ["projects", "Projects"], ["gallery", "Gallery"], ["videos", "Videos"], ["documents", "Documents"], ["progress", "Progress"], ["team", "Team"]];
 const STATE: Record<string, string> = { done: "Done", now: "In progress", next: "Upcoming" };
 ---
-<Site title={team.name} page="team" description={team.mission}>
+<Site title={team.name} page="team" description={team.mission} share={team.hero ? id : "home"}>
   <div class="team" data-el={team.element} style={`--c:${team.color}`}>
     <section class={`thero${team.hero ? " thero--photo" : ""}`}>
       {team.hero && <Photo class="thero__image" src={team.hero} alt={team.heroAlt ?? ""} loading="eager" fetchpriority="high" sizes="100vw" />}

@@ -73,6 +73,12 @@ The props come from Quaternius' Fantasy Props MegaKit, CC0 licence. To use a dif
 
 An alumni card can also carry a career journey: `"journey": [{ "when": "2027", "title": "...", "org": "..." }]`.
 
+## Photos
+
+Put new photos in `public/media/` or `public/people/` as usual and refer to them by that path. `npm run build` runs `scripts/images.mjs`, which makes the smaller copies in `public/img/` and the blurred previews in `images.json`, for new or changed photos only. Commit those files with the photo. Run `npm run images` to make them without a full build. Never edit `images.json` or `public/img/` by hand.
+
+A copy's name includes a hash of its photo, so replacing a photo gives it a new address and nobody sees the old one. Pictures shown when a link is shared and the browser icons come from `scripts/share-images.mjs`, which is run by hand if the logo or those photos change.
+
 ## Music
 
 Each world's track is listed in `music.json` and lives in `public/audio/`. To change a track, replace the file or its `src`, and adjust `gain` if it's louder or softer than the other. Set `cleared` to `true` only once the rights are confirmed.

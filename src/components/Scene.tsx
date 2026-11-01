@@ -8,7 +8,7 @@ import { Environment, PerformanceMonitor, useEnvironment, useGLTF, useTexture } 
 import { Bloom, EffectComposer, ToneMapping } from "@react-three/postprocessing";
 import { ToneMappingMode } from "postprocessing";
 import * as THREE from "three";
-import { Warm, warmReflections, Warmup } from "./warm";
+import { Warm, warmOtherWorld, warmReflections, Warmup } from "./warm";
 import { ADDITIVE } from "./additive";
 import Grass from "./Grass";
 import { Fleet, Regolith } from "./Space";
@@ -723,6 +723,7 @@ function CameraRig({ closeup }: { closeup: number[] | null }) {
 }
 
 // Full paths: drei caches a map by its file names alone, so two folders of same-named files would come back as one map.
+const FACE_SIZE: Record<World, number> = { valley: 512, space: 256 }; // the size of the pictures in /env/ and /env/space/
 const envFaces = (dir: string) => ["px", "nx", "py", "ny", "pz", "nz"].map((f) => `${dir}${f}.webp`);
 
 function Studio({ world }: { world: World }) {
@@ -780,6 +781,16 @@ function Scene({ world, fx, labelRefs, signRefs, signHover, signPress, founderRe
   const [drawn, setDrawn] = useState(false);
   const [sceneryIn, setSceneryIn] = useState(false);
   // The scenery usually arrives moments later, so the world appears whole. On a slow connection the platform doesn't wait long for it.
+  // Once the world is up, the other world's reflections get ready in the background too, so a first change of world doesn't freeze the page.
+  const canvas = useRef<{ gl: THREE.WebGLRenderer; camera: THREE.Camera; scene: THREE.Scene } | null>(null);
+  useEffect(() => {
+    if (!drawn || !canvas.current) return;
+    const { gl, camera, scene } = canvas.current;
+    const other = world === "space" ? "valley" : "space";
+    void warmOtherWorld(gl, camera, scene, FACE_SIZE[other]);
+    // once
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [drawn]);
   useEffect(() => {
     if (!drawn) return;
     if (sceneryIn) return onReady();
@@ -798,7 +809,8 @@ function Scene({ world, fx, labelRefs, signRefs, signHover, signPress, founderRe
       onCreated={({ gl, camera, scene }) => {
         gl.setClearColor(0x000000, 0);
         useEnvironment.preload({ files: envFaces(world === "space" ? "/env/space/" : "/env/") });
-        void warmReflections(gl, camera, scene, world === "space" ? 256 : 512).then(() => setReflected(true));
+        void warmReflections(gl, camera, scene, FACE_SIZE[world]).then(() => setReflected(true));
+        canvas.current = { gl, camera, scene };
         gl.domElement.addEventListener("webglcontextlost", onGiveUp);
       }}
     >

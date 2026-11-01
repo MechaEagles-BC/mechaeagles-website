@@ -9,9 +9,18 @@ import WorldBackdrop from "../components/WorldBackdrop.astro";
 import Stage from "../components/Stage.astro";
 import ElementArt from "../components/cards/ElementArt.astro";
 import { SITE } from "../data/org";
+import archivo from "@fontsource-variable/archivo/files/archivo-latin-wdth-normal.woff2?url";
+import plex400 from "@fontsource/ibm-plex-mono/files/ibm-plex-mono-latin-400-normal.woff2?url";
+import plex500 from "@fontsource/ibm-plex-mono/files/ibm-plex-mono-latin-500-normal.woff2?url";
 
-const { title, description, page } = Astro.props as { title: string; description: string; page: string };
+const { title, description, page, share = "home", noindex = false } = Astro.props as { title: string; description: string; page: string; share?: string; noindex?: boolean };
 const heading = page === "home" ? "MechaEagles" : `${title} · MechaEagles`;
+const canonical = new URL(Astro.url.pathname, Astro.site).href;
+const shareImage = new URL(`/og/${share}.jpg`, Astro.site).href;
+const organization = {
+  "@context": "https://schema.org", "@type": "Organization", name: "MechaEagles", url: Astro.site!.href, logo: new URL("/apple-touch-icon.png", Astro.site).href,
+  email: SITE.email, sameAs: [SITE.instagram], description: "A student-run engineering organization at Boston College.", foundingDate: "2024",
+};
 ---
 <!doctype html>
 <html lang="en" data-page={page}>
@@ -20,7 +29,23 @@ const heading = page === "home" ? "MechaEagles" : `${title} · MechaEagles`;
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content={description} />
     <title>{heading}</title>
-    <link rel="icon" href="/brand/eagle.webp" />
+    {noindex ? <meta name="robots" content="noindex" /> : <link rel="canonical" href={canonical} />}
+    <meta property="og:site_name" content="MechaEagles" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={heading} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={shareImage} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    {page === "home" && <script type="application/ld+json" set:html={JSON.stringify(organization)} />}
+    <link rel="preload" href={archivo} as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href={plex400} as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href={plex500} as="font" type="font/woff2" crossorigin />
+    <link rel="icon" href="/favicon.ico" sizes="48x48" />
+    <link rel="icon" href="/brand/eagle.webp" type="image/webp" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <WorldHead />
     <ClientRouter fallback="none" />
     {import.meta.env.DEV && <script type="module" is:inline set:html={`import R from "/@react-refresh"; R.injectIntoGlobalHook(window); window.$RefreshReg$ = () => {}; window.$RefreshSig$ = () => (t) => t; window.__vite_plugin_react_preamble_installed__ = true;`} />}
