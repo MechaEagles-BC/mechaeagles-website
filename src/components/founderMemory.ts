@@ -19,7 +19,7 @@ let asked = 0;
 async function brain(): Promise<string | null> {
   if (++asked > SESSION_LIMIT) return null;
   try {
-    const r = await fetch("/api/memory", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ messages: history.slice(-8) }), signal: AbortSignal.timeout(18000) });
+    const r = await fetch("/api/memory", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ messages: history.slice(-8) }), signal: AbortSignal.timeout(25000) });
     if (!r.ok) return null;
     return (await r.json()).text ?? null;
   } catch {
