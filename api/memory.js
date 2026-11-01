@@ -88,7 +88,7 @@ export async function POST(request) {
       body: JSON.stringify({ models: MODELS, max_tokens: 400, temperature: 0.5, reasoning: { exclude: true }, provider: { data_collection: "deny" }, messages: [{ role: "system", content: SYSTEM }, ...messages] }),
     });
     if (!reply.ok) {
-      console.error("openrouter", reply.status);
+      console.error("openrouter", reply.status, (await reply.text()).slice(0, 400));
       return json({ error: "unavailable" }, 503);
     }
     const text = (await reply.json()).choices?.[0]?.message?.content?.trim();
