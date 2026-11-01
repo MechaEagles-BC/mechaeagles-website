@@ -1,6 +1,7 @@
 ---
 import Site from "../layouts/Site.astro";
 import Sigil from "../components/cards/Sigil.astro";
+import Photo from "../components/Photo.astro";
 import { ENGINEERING, PEOPLE_COUNT, SITE } from "../data/org";
 import milestones from "../data/milestones.json";
 
@@ -27,7 +28,7 @@ const SHOP = [
       <h1 class="reveal">Built by people. For people.</h1>
       <p class="lede reveal">MechaEagles is a student-run engineering organization at Boston College. We started in fall 2024 with one goal: give students the chance to build real machines. Today that's a race car, rockets, combat robots and AI safety research, and {PEOPLE_COUNT} people working on them.</p>
     </div>
-    <figure class="reveal"><img src="/media/org/group.webp" alt="MechaEagles members in a group photo" fetchpriority="high" /><figcaption>The team, 2025–26</figcaption></figure>
+    <figure class="reveal"><Photo src="/media/org/group.webp" alt="MechaEagles members in a group photo" loading="eager" fetchpriority="high" sizes="(max-width: 900px) 100vw, 50vw" /><figcaption>The team, 2025–26</figcaption></figure>
   </section>
 
   <section class="chapter wrap">
@@ -91,7 +92,7 @@ const SHOP = [
   <section class="shopreel" aria-labelledby="hands-on">
     <div class="wrap"><p class="eyebrow reveal">Student leadership, hands-on engineering</p><h2 id="hands-on" class="reveal">Students run it, and students build it</h2></div>
     <ul class="shopreel__track" tabindex="0" aria-label="Photos of members at work">
-      {SHOP.map((s) => <li><img src={s.src} alt={s.alt} loading="lazy" decoding="async" /><span>{s.cap}</span></li>)}
+      {SHOP.map((s) => <li><Photo src={s.src} alt={s.alt} sizes="(max-width: 860px) 240px, 28vw" /><span>{s.cap}</span></li>)}
     </ul>
   </section>
 

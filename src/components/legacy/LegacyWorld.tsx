@@ -5,6 +5,7 @@
 import { memo, Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { useGLTF } from "@react-three/drei";
+import { Warmup } from "../warm";
 import * as THREE from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { Prop, spot, SPACING, URL, useProp, type Piece, type World } from "./path";
@@ -401,12 +402,13 @@ function LegacyWorld({ years, start, pick, onArrive, onReady, onLost }: { years:
     };
   }, []);
   const [dpr] = useState(() => Math.max(1, Math.min(1.5, devicePixelRatio || 1)));
+  const [warm, setWarm] = useState(false);
   return (
     <div ref={host} className="lw__canvas">
       <Canvas
         flat={false}
         dpr={dpr}
-        frameloop={visible ? "always" : "never"}
+        frameloop={warm && visible ? "always" : "never"}
         camera={{ fov: 44, near: 0.1, far: 620, position: [0, 3, 12] }}
         gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
         onCreated={({ gl }) => {
@@ -424,6 +426,7 @@ function LegacyWorld({ years, start, pick, onArrive, onReady, onLost }: { years:
           <Journey target={target} count={count} onArrive={onArrive} />
           <Wind />
           <Ready onReady={onReady} />
+          <Warmup onDone={() => setWarm(true)} />
         </Suspense>
       </Canvas>
     </div>

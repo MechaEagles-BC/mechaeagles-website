@@ -20,6 +20,13 @@
     window.__mcStamp = true;
     // Registered ahead of the router, so going back from a profile can close it without reloading the page behind it.
     addEventListener("popstate", function (e) { if (window.__mcPop) window.__mcPop(e); });
+    // Registered before any picture can arrive. One that had to download comes into focus over its preview, and one already in the browser's cache just appears.
+    document.addEventListener("load", function (e) {
+      var img = e.target;
+      if (img.tagName !== "IMG" || img.dataset.ph !== "in") return;
+      var seen = performance.getEntriesByName(img.currentSrc).pop();
+      if (!seen || seen.duration > 40) img.classList.add("ph-in");
+    }, true);
     new MutationObserver(function () { window.__mcWorld = root.dataset.theme || window.__mcWorld; }).observe(root, { attributes: true, attributeFilter: ["data-theme"] });
     document.addEventListener("astro:before-swap", function (e) {
       // Done on the incoming page, before it's shown, so the swap never paints the wrong world.

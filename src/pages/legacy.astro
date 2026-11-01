@@ -4,6 +4,7 @@ import "../styles/legacy.css";
 import PersonRef from "../components/cards/PersonRef.astro";
 import Sigil from "../components/cards/Sigil.astro";
 import Empty from "../components/Empty.astro";
+import Photo from "../components/Photo.astro";
 import LegendCard from "../components/legacy/LegendCard.astro";
 import { ALUMNI, COHORTS, CURRENT, MEMBERS, TEAM, roleName, type Role } from "../data/org";
 import galleryJson from "../data/gallery.json";
@@ -142,7 +143,7 @@ const classes = [...new Set(ALUMNI.map((m) => m.alumni!.graduated))].sort((a, b)
               <ul class="ymedia">
                 {videos.map((v) => <li class="ymedia__video"><video controls preload="none" poster={v.poster} playsinline>{v.webm && <source src={v.webm} type="video/webm" />}<source src={v.mp4} type="video/mp4" /></video><p>{v.title}</p></li>)}
                 {photos.map((g) => (
-                  <li><button type="button" data-view={g.src} data-alt={g.alt} data-caption={[g.caption, g.date].filter(Boolean).join(" · ")} aria-label={`View larger: ${g.caption}`}><img src={g.src} alt={g.alt} loading="lazy" decoding="async" /></button><p>{g.caption}</p></li>
+                  <li><button type="button" data-view={g.src} data-alt={g.alt} data-caption={[g.caption, g.date].filter(Boolean).join(" · ")} aria-label={`View larger: ${g.caption}`}><Photo src={g.src} alt={g.alt} sizes="(max-width: 560px) 100vw, 300px" /></button><p>{g.caption}</p></li>
                 ))}
               </ul>
             ) : <Empty what={`No photos from ${c.label} are in the archive yet.`} />}

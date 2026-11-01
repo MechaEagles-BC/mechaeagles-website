@@ -286,7 +286,7 @@ html[data-page="team"] main { padding-top: 0; }
 .project { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--s4); align-items: start; }
 .project + .project { margin-top: var(--s5); }
 .project figure { margin: 0; }
-.project img { width: 100%; max-height: 480px; object-fit: cover; }
+.project img { width: 100%; height: auto; max-height: 480px; object-fit: cover; }
 .project--tall figure { display: grid; place-items: center; padding: var(--s3); background: #06090e; }
 .project--tall img { width: auto; height: 440px; max-height: none; object-fit: contain; }
 .project h3 { margin-block: 4px var(--s1); font-size: var(--t-xl); }

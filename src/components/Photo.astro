@@ -1,0 +1,29 @@
+---
+/**
+ * One photo. It shows a tiny blurred preview straight away, and the browser downloads only the size this visitor needs, from the copies made by scripts/images.mjs.
+ * `sizes` is how wide it shows on screen. A lazy picture lets the browser measure that itself where it can. A photo missing from the list simply shows as a plain image.
+ * Size attributes act as a fixed height unless CSS says otherwise, so `reserve` is only for pictures whose CSS has `height: auto`, to hold their space before they arrive.
+ */
+import images from "../data/images.json";
+
+type Entry = { w: number; h: number; preview: string; set: [number, string][] };
+const { src, alt = "", sizes = "100vw", class: cls, loading = "lazy", fetchpriority, preview = true, focus = true, reserve = false, width, height } = Astro.props as {
+  src: string; alt?: string; sizes?: string; class?: string; loading?: "lazy" | "eager"; fetchpriority?: "high" | "low" | "auto"; preview?: boolean; focus?: boolean; reserve?: boolean; width?: number; height?: number;
+};
+const photo = (images as unknown as Record<string, Entry>)[src];
+const lazy = loading === "lazy";
+---
+<img
+  class={cls}
+  src={src}
+  srcset={photo ? photo.set.map(([w, url]) => `${url} ${w}w`).join(", ") : undefined}
+  sizes={photo ? (lazy ? `auto, ${sizes}` : sizes) : undefined}
+  alt={alt}
+  width={width ?? (reserve ? photo?.w : undefined)}
+  height={height ?? (reserve ? photo?.h : undefined)}
+  loading={loading}
+  fetchpriority={fetchpriority}
+  decoding="async"
+  data-ph={photo && preview && focus ? "in" : undefined}
+  style={photo && preview ? `background:url(${photo.preview}) var(--ph-at,50% 50%)/cover no-repeat` : undefined}
+/>

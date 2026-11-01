@@ -51,6 +51,9 @@ function fill(body: HTMLElement, p: Profile, close: () => void) {
   const figure = el("div", "profile__figure");
   if (p.photo) {
     const img = el("img", "profile__photo");
+    // The card's picture is already downloaded, so it holds the place until the larger one arrives.
+    const small = document.querySelector<HTMLImageElement>(`[data-person="${p.id}"] img`)?.currentSrc;
+    if (small) img.style.background = `url("${small}") 50% 18%/cover no-repeat`;
     img.src = p.photo;
     img.alt = `Portrait of ${p.name}`;
     figure.append(img);

@@ -8,6 +8,7 @@ import { Environment, PerformanceMonitor, useEnvironment, useGLTF, useTexture } 
 import { Bloom, EffectComposer, ToneMapping } from "@react-three/postprocessing";
 import { ToneMappingMode } from "postprocessing";
 import * as THREE from "three";
+import { Warm, warmReflections, Warmup } from "./warm";
 import { ADDITIVE } from "./additive";
 import Grass from "./Grass";
 import { Fleet, Regolith } from "./Space";
@@ -361,6 +362,7 @@ function useAssets() {
 }
 PARTS.forEach((p) => useGLTF.preload(`${BASE}${p}.glb`, false, true));
 useGLTF.preload(`${BASE}${SCREW}.glb`, false, true);
+PARTS.forEach((p) => useTexture.preload(`${BASE}${p}.ao.webp`));
 
 // ---------- placement ----------
 const polarMatrix = (angle: number, radius = 0, y = 0, scale = 1) =>
@@ -732,7 +734,8 @@ function Studio({ world }: { world: World }) {
     <>
       {/* Matches the sun in unreal/land_build.py and space_build.py, so shadows on the live parts fall the same way as in the picture. */}
       <directionalLight position={[-9.6, 23, 16.7]} intensity={inSpace ? 3.2 : 2.6} color={inSpace ? "#eef6ff" : "#fff4e6"} castShadow shadow-mapSize={[2048, 2048]} shadow-bias={-0.0004} shadow-normalBias={0.02} shadow-camera-left={-16} shadow-camera-right={16} shadow-camera-top={16} shadow-camera-bottom={-16} shadow-camera-far={70} />
-      {inSpace && <directionalLight position={[10, 5, -22]} intensity={0.7} color="#dfe4ea" />}
+      {/* Dark in the valley, but always there: a different number of lights would make every shader recompile on a change of world. */}
+      <directionalLight position={[10, 5, -22]} intensity={inSpace ? 0.7 : 0} color="#dfe4ea" />
       <Environment map={map} environmentIntensity={inSpace ? 1.7 : 1.5} />
     </>
   );
@@ -770,44 +773,67 @@ function Scene({ world, fx, labelRefs, signRefs, signHover, signPress, founderRe
   const capture = useMemo(() => import.meta.env.DEV && new URLSearchParams(location.search).has("capture"), []);
   // Cap the buffer near 4 MP: past that, extra pixels cost far more than they show.
   const [dpr, setDpr] = useState(() => Math.max(1, Math.min(1.75, Math.sqrt(4e6 / (innerWidth * innerHeight)))));
+  // In order: the reflection shaders and the platform's assets together, then the scenery behind it, then the other shaders, and only then the first frame.
+  const [reflected, setReflected] = useState(false);
+  const [platformIn, setPlatformIn] = useState(false);
+  const [warm, setWarm] = useState(false);
+  const [drawn, setDrawn] = useState(false);
+  const [sceneryIn, setSceneryIn] = useState(false);
+  // The scenery usually arrives moments later, so the world appears whole. On a slow connection the platform doesn't wait long for it.
+  useEffect(() => {
+    if (!drawn) return;
+    if (sceneryIn) return onReady();
+    const wait = setTimeout(onReady, 1500);
+    return () => clearTimeout(wait);
+  }, [drawn, sceneryIn, onReady]);
+  const scenery = () => setSceneryIn(true);
   return (
     <Canvas
       flat
-      shadows
+      shadows="percentage"
       dpr={dpr}
-      frameloop={active ? "always" : "never"}
+      frameloop={warm && active ? "always" : "never"}
       camera={{ position: [...FILM.position], fov: FILM.fov, near: 0.1, far: 320, manual: true }}
       gl={{ antialias: false, alpha: true, premultipliedAlpha: true, powerPreference: "high-performance" }}
-      onCreated={({ gl }) => {
+      onCreated={({ gl, camera, scene }) => {
         gl.setClearColor(0x000000, 0);
+        useEnvironment.preload({ files: envFaces(world === "space" ? "/env/space/" : "/env/") });
+        void warmReflections(gl, camera, scene, world === "space" ? 256 : 512).then(() => setReflected(true));
         gl.domElement.addEventListener("webglcontextlost", onGiveUp);
       }}
     >
       {/* Sharpness drops first, under 30 fps. 3D is only given up after sustained failure at low sharpness. */}
       {!capture && <PerformanceMonitor bounds={() => [30, 55]} iterations={8} onDecline={() => setDpr(1)} />}
       {!capture && dpr === 1 && <FrameWatch onGiveUp={onGiveUp} />}
-      <Suspense fallback={null}>
-        <Studio world={world} />
-        <Platform fx={fx} labelRefs={labelRefs} onHover={onHover} onSelect={onSelect} onReady={onReady} />
-      </Suspense>
-      {world === "valley" && <Grass />}
-      {world === "valley" && (
+      {reflected && (
         <Suspense fallback={null}>
-          <Trees />
-          {!capture && (
-            <>
-              <Birds />
-              <FallingLeaves />
-              <Founder linkRef={founderRef} state={founderState} />
-            </>
-          )}
+          <Studio world={world} />
+          <Platform fx={fx} labelRefs={labelRefs} onHover={onHover} onSelect={onSelect} onReady={() => setDrawn(true)} />
+          <Warmup through onStart={() => setPlatformIn(true)} onDone={() => setWarm(true)} />
+        </Suspense>
+      )}
+      {world === "valley" && <Grass />}
+      {platformIn && world === "valley" && (
+        <Suspense fallback={null}>
+          <Warm through onDone={scenery}>
+            <Trees />
+            {!capture && (
+              <>
+                <Birds />
+                <FallingLeaves />
+                <Founder linkRef={founderRef} state={founderState} />
+              </>
+            )}
+          </Warm>
         </Suspense>
       )}
       {!capture && innerWidth / innerHeight > 0.9 && !matchMedia("(pointer: coarse) and (max-height: 500px)").matches && <Signpost key={world} look={world === "space" ? "circuit" : "wood"} linkRefs={signRefs} hovered={signHover} pressed={signPress} />}
-      {world === "space" && (
+      {platformIn && world === "space" && (
         <Suspense fallback={null}>
-          <Regolith />
-          <Fleet />
+          <Warm through onDone={scenery}>
+            <Regolith />
+            <Fleet />
+          </Warm>
         </Suspense>
       )}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.002, 0]} receiveShadow>

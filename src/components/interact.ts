@@ -57,6 +57,16 @@ function search() {
 }
 
 function viewer() {
+  // The full picture starts downloading the moment someone reaches for it, so it's usually there when the viewer opens.
+  const ready = new Set<string>();
+  const prepare = (e: Event) => {
+    const url = (e.target as Element).closest?.<HTMLElement>("[data-view]")?.dataset.view;
+    if (!url || ready.has(url)) return;
+    ready.add(url);
+    new Image().src = url;
+  };
+  document.addEventListener("pointerover", prepare, { passive: true });
+  document.addEventListener("focusin", prepare, { passive: true });
   document.addEventListener("click", (e) => {
     const t = e.target as Element;
     const opener = t.closest?.<HTMLElement>("[data-view]");
@@ -64,6 +74,10 @@ function viewer() {
     if (!dialog) return;
     if (opener) {
       const img = dialog.querySelector("img")!;
+      // The small picture already on screen holds the place until the full one has arrived.
+      const small = opener.querySelector("img")?.currentSrc;
+      img.removeAttribute("src");
+      img.style.background = small ? `url("${small}") center/contain no-repeat` : "";
       img.src = opener.dataset.view!;
       img.alt = opener.dataset.alt ?? "";
       dialog.querySelector("figcaption")!.textContent = opener.dataset.caption ?? "";

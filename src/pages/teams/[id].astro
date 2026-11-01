@@ -5,6 +5,7 @@ import PersonRef from "../../components/cards/PersonRef.astro";
 import Sigil from "../../components/cards/Sigil.astro";
 import ElementArt from "../../components/cards/ElementArt.astro";
 import Empty from "../../components/Empty.astro";
+import Photo from "../../components/Photo.astro";
 import { ENGINEERING, TEAM, branchOf, cardOf, now, roleName, type Member } from "../../data/org";
 import projectsJson from "../../data/projects.json";
 import galleryJson from "../../data/gallery.json";
@@ -30,7 +31,7 @@ const STATE: Record<string, string> = { done: "Done", now: "In progress", next: 
 <Site title={team.name} page="team" description={team.mission}>
   <div class="team" data-el={team.element} style={`--c:${team.color}`}>
     <section class={`thero${team.hero ? " thero--photo" : ""}`}>
-      {team.hero && <img class="thero__image" src={team.hero} alt={team.heroAlt ?? ""} fetchpriority="high" decoding="async" />}
+      {team.hero && <Photo class="thero__image" src={team.hero} alt={team.heroAlt ?? ""} loading="eager" fetchpriority="high" sizes="100vw" />}
       {!team.hero && <span class="thero__art" aria-hidden="true"><ElementArt el={team.element} /></span>}
       <canvas class="team-fx" data-el={team.element} data-color={team.color} aria-hidden="true"></canvas>
       <div class="thero__text wrap">
@@ -74,7 +75,7 @@ const STATE: Record<string, string> = { done: "Done", now: "In progress", next: 
       <div class="tsec__head"><p class="eyebrow">Current projects</p><h2>On the bench now</h2></div>
       {projects.length ? projects.map((p) => (
         <article class={`project reveal${p.tall ? " project--tall" : ""}`}>
-          <figure><img src={p.image} alt={p.imageAlt} loading="lazy" decoding="async" /></figure>
+          <figure><Photo src={p.image} alt={p.imageAlt} preview={!p.tall} reserve sizes={p.tall ? "300px" : "(max-width: 900px) 100vw, 50vw"} /></figure>
           <div>
             <p class="project__stage">{p.stage}{p.updated && ` · ${p.updated}`}</p>
             <h3>{p.name}</h3>
@@ -93,7 +94,7 @@ const STATE: Record<string, string> = { done: "Done", now: "In progress", next: 
           {gallery.map((g, i) => (
             <li class="reveal" style={`--i:${i % 4}`}>
               <button type="button" data-view={g.src} data-alt={g.alt} data-caption={[g.caption, g.date].filter(Boolean).join(" · ")} aria-label={`View larger: ${g.caption}`}>
-                <img src={g.src} alt={g.alt} loading="lazy" decoding="async" />
+                <Photo src={g.src} alt={g.alt} sizes="(max-width: 560px) 100vw, 300px" />
               </button>
               <p>{g.caption}{g.date && <small>{g.date}</small>}</p>
             </li>

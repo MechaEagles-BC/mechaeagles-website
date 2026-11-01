@@ -2,7 +2,7 @@
  * What moves in the valley: real trees bending in the breeze, leaves coming down, a flock crossing the sky, and the wooden signpost.
  * Nothing here warps the picture. Everything that moves is a model in the world, and the grass is in Grass.tsx.
  */
-import { useEffect, useMemo, useRef, useState, type RefObject } from "react";
+import { use, useMemo, useRef, type RefObject } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import { useGLTF } from "@react-three/drei";
 import * as THREE from "three";
@@ -120,16 +120,13 @@ function swayMaterial(source: THREE.MeshStandardMaterial) {
   return m;
 }
 
+// Asked for once. The trees wait for their places along with their model, so their shaders can be prepared before they appear.
+let spotsAsked: Promise<Record<string, number[][]> | null> | null = null;
+const treeSpots = () => (spotsAsked ??= fetch("/valley/trees.json").then((r) => r.json()).catch(() => null));
+
 export function Trees() {
   const { scene } = useGLTF("/valley/trees.glb", false, true);
-  const [spots, setSpots] = useState<Record<string, number[][]> | null>(null);
-  useEffect(() => {
-    let stale = false;
-    fetch("/valley/trees.json").then((r) => r.json()).then((d) => stale || setSpots(d)).catch(() => undefined);
-    return () => {
-      stale = true;
-    };
-  }, []);
+  const spots = use(treeSpots());
   const batches = useMemo(() => {
     if (!spots) return [];
     const shared = new Map<THREE.Material, THREE.Material>();

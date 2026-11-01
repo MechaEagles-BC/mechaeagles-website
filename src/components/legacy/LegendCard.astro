@@ -4,6 +4,7 @@
  * It opens the same profile as everywhere else, which carries the whole career journey.
  */
 import Sigil from "../cards/Sigil.astro";
+import Photo from "../Photo.astro";
 import { TEAM, type Member } from "../../data/org";
 
 const { member } = Astro.props as { member: Member };
@@ -23,7 +24,7 @@ const find = [member.name, a.company, a.title, a.field, a.graduated, ...roles.ma
   <a class="mcard legend" data-person={member.id} data-el="fire" href={`/people/#${member.id}`} aria-label={`${member.name}, class of ${a.graduated}${place ? `, ${place}` : ""}. Open profile`}>
     <span class="mcard__tilt legend__tilt">
       <span class="legend__ember" aria-hidden="true"></span>
-      {member.photo ? <img class="legend__photo" src={member.photo} alt="" loading="lazy" decoding="async" /> : <span class="legend__mono" aria-hidden="true">{initials}</span>}
+      {member.photo ? <Photo class="legend__photo" src={member.photo} sizes="300px" /> : <span class="legend__mono" aria-hidden="true">{initials}</span>}
       <span class="legend__class"><small>Class of</small>{a.graduated}</span>
       <span class="legend__plate">
         <span class="legend__name">{member.name}</span>

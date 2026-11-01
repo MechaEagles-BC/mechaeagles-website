@@ -196,6 +196,12 @@ html[data-theme="space"] .sign-list a { color: #e9f6ff; font: 800 var(--t-s)/1 v
 .js .reveal { opacity: 0; transform: translateY(var(--s4)); transition: opacity 0.8s var(--ease) calc(var(--i, 0) * 0.07s), transform 1s var(--ease) calc(var(--i, 0) * 0.07s); }
 .js .reveal.in { opacity: 1; transform: none; }
 @media (prefers-reduced-motion: reduce) { .js .reveal { opacity: 1; transform: none; } }
+/* A photo that had to download sharpens out of its blurred preview. It's only a moment, and nothing about the picture changes once it has arrived. */
+@keyframes ph-in { from { filter: blur(10px); } to { filter: blur(0); } }
+@media (prefers-reduced-motion: no-preference) { img.ph-in { animation: ph-in 0.45s var(--ease); } }
+.mcard__photo, .legend__photo, .pref img { --ph-at: 50% 24%; }
+.thero__image { --ph-at: 50% 30%; }
+.tpanel__art img { --ph-at: 50% 40%; }
 .wrap { position: relative; z-index: 1; }
 
 .eyebrow { font-size: var(--t-xs); color: var(--text-2); margin-bottom: var(--s2); }

@@ -1,0 +1,7 @@
+{
+  "headers": [
+    { "source": "/_astro/(.+)", "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }] },
+    { "source": "/img/(.+)", "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }] },
+    { "source": "/(media|people|plate|stills|env|models|valley|legacy|audio|brand|partners)/(.+)", "headers": [{ "key": "Cache-Control", "value": "public, max-age=3600, stale-while-revalidate=604800" }] }
+  ]
+}

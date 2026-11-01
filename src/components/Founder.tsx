@@ -122,4 +122,3 @@ export function Founder({ linkRef, state }: { linkRef: RefObject<HTMLButtonEleme
   );
 }
 
-useGLTF.preload(URL, false, true);

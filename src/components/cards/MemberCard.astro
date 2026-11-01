@@ -1,6 +1,7 @@
 ---
 import ElementArt from "./ElementArt.astro";
 import Sigil from "./Sigil.astro";
+import Photo from "../Photo.astro";
 import { TEAM, type Card } from "../../data/org";
 
 /**
@@ -11,6 +12,8 @@ const { card, style, hideTeam = false } = Astro.props as { card: Card; style?: s
 const { member, org, role, rank, size, also } = card;
 const team = TEAM[org];
 const initials = member.name.split(/\s+/).map((w) => w[0]).slice(0, 2).join("");
+// The photo fills about four fifths of the card's width.
+const SHOWS = { xl: "246px", l: "197px", m: "177px", s: "140px" };
 const label = [member.name, role, team.name, ...also.map((a) => a.title)].join(", ");
 ---
 <a class={`mcard mcard--${size} reveal`} data-el={team.element} data-person={member.id} data-roles={[org, ...also.map((a) => a.orgId)].join("|")} href={`/people/#${member.id}`} style={`--c:${team.color};${style ?? ""}`} aria-label={`${label}. Open profile`}>
@@ -18,7 +21,7 @@ const label = [member.name, role, team.name, ...also.map((a) => a.title)].join("
     <ElementArt el={team.element} />
     <span class="mcard__glow"></span>
     {member.photo ? (
-      <img class="mcard__photo" src={member.photo} alt="" loading="lazy" decoding="async" width="640" height="800" />
+      <Photo class="mcard__photo" src={member.photo} sizes={SHOWS[size]} />
     ) : (
       <span class="mcard__monogram" aria-hidden="true">{initials}</span>
     )}

@@ -1,6 +1,7 @@
 ---
 import Site from "../layouts/Site.astro";
 import Sigil from "../components/cards/Sigil.astro";
+import Photo from "../components/Photo.astro";
 import { CURRENT, ENGINEERING, PEOPLE_COUNT, SITE, branchOf } from "../data/org";
 import sponsors from "../data/sponsors.json";
 
@@ -34,7 +35,7 @@ const inquiry = `mailto:${SITE.email}?subject=Partnership%20inquiry`;
         return (
           <li class="reveal" style={`--c:${t.color};--i:${i}`}>
             <a href={`/teams/${t.id}/`}>
-              {pic ? <img src={pic.src} alt={pic.alt} loading="lazy" decoding="async" /> : <span class="scards__art"><Sigil el={t.element} /></span>}
+              {pic ? <Photo src={pic.src} alt={pic.alt} sizes="(max-width: 700px) 100vw, 25vw" /> : <span class="scards__art"><Sigil el={t.element} /></span>}
               <strong>{t.name}</strong>
               <span>{t.mission}</span>
               <small>{branchOf(t).everyone.length} people</small>
