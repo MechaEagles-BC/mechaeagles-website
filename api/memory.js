@@ -8,8 +8,9 @@ import teams from "../src/data/teams.json" with { type: "json" };
 import members from "../src/data/members.json" with { type: "json" };
 import milestones from "../src/data/milestones.json" with { type: "json" };
 
-// Free models, best first. OpenRouter tries the next one if one is busy. Free use has a low daily limit across the whole account, and past it the chat uses its written answers.
-const MODELS = ["thinkingmachines/inkling:free", "google/gemma-4-31b-it:free", "nvidia/nemotron-3.5-super-vl:free"];
+// The one free model tested against tricky questions, since it speaks as a real person. Test before changing it.
+// Free use has a low daily limit across the whole account, and past it the chat uses its written answers.
+const MODEL = "nvidia/nemotron-3.5-super-vl:free";
 const MAX_TURNS = 8;
 const MAX_CHARS = 300;
 const PER_MINUTE = 8;
@@ -85,7 +86,7 @@ export async function POST(request) {
       method: "POST",
       signal: AbortSignal.timeout(22000),
       headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json", "HTTP-Referer": "https://mechaeagles.com", "X-Title": "MechaEagles founder memory" },
-      body: JSON.stringify({ models: MODELS, max_tokens: 1200, temperature: 0.5, reasoning: { exclude: true }, messages: [{ role: "system", content: SYSTEM }, ...messages] }),
+      body: JSON.stringify({ model: MODEL, max_tokens: 1200, temperature: 0.5, reasoning: { exclude: true }, messages: [{ role: "system", content: SYSTEM }, ...messages] }),
     });
     if (!reply.ok) {
       console.error("openrouter", reply.status, (await reply.text()).slice(0, 400));
