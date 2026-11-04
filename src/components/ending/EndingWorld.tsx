@@ -5,7 +5,7 @@
  */
 import { memo, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { useGLTF } from "@react-three/drei";
+import { useGLTF, useTexture } from "@react-three/drei";
 import * as THREE from "three";
 import { soundLevels } from "../soundtrack";
 import { TEAMS, type World } from "../teams";
@@ -17,6 +17,20 @@ const STEP = 3; // metres between contour lines up the tower
 const LAND_STEP = 1.4; // and across the land, where the slopes are gentler
 const RINGS = 5;
 const HILL_RADIUS = 125;
+// The land itself comes from TouchDesigner: one massif per team, sized by its headcount and shaped by its element, joined by a ridge for each person on two teams.
+// See public/models/gasson-land/height.json for how it was made.
+const LAND_URL = "/models/gasson-land/height-512.png";
+const LAND_SIZE = 620;
+const LAND_TEXELS = 512;
+const LAND_RANGE = { min: -2.714, max: 41.964 };
+const LAND_CREST = 30; // the height from which a massif's top lines take its team's colour
+const LAND_GLSL = /* glsl */ `
+      uniform sampler2D uLand; uniform vec2 uLandRange;
+      // The terrain made in TouchDesigner, stored as 16 bits split over two colours. Each texel is decoded before blending, or the low byte would smear.
+      float texel(vec2 i){ vec3 c = texture2D(uLand, (i + 0.5) / ${LAND_TEXELS}.0).rgb; return uLandRange.x + (c.r * 255.0 * 256.0 + c.g * 255.0) / 65535.0 * (uLandRange.y - uLandRange.x); }
+      float land(vec2 p){ vec2 t = (p / ${LAND_SIZE}.0 + 0.5) * ${LAND_TEXELS}.0 - 0.5; vec2 i = floor(t), f = t - i;
+        return mix(mix(texel(i), texel(i + vec2(1, 0)), f.x), mix(texel(i + vec2(0, 1)), texel(i + vec2(1, 1)), f.x), f.y); }
+`;
 const IDLE_PULSE = 5.5; // seconds between ripples when there's no music
 const QUIET_PULSE = 2.8; // and at the longest while music plays, for gentle passages with no clear beat
 
@@ -40,39 +54,41 @@ const LINE = /* glsl */ `
   float sparkle(vec3 p, float t){ return fract(sin(dot(floor(p * 1.6) + floor(t * 9.0), vec3(12.9898, 78.233, 37.719))) * 43758.5453); }
 `;
 
-function landMaterial() {
+function landMaterial(height: THREE.Texture) {
   const hills = TEAMS.map((t) => new THREE.Vector2(Math.cos(t.angle + 0.5) * HILL_RADIUS, -Math.sin(t.angle + 0.5) * HILL_RADIUS));
   return new THREE.ShaderMaterial({
-    uniforms: { ...shared, uHill: { value: hills }, uHillColor: { value: TEAMS.map((t) => new THREE.Color(t.color)) } },
+    uniforms: { ...shared, uHill: { value: hills }, uHillColor: { value: TEAMS.map((t) => new THREE.Color(t.color)) }, uLand: { value: height }, uLandRange: { value: new THREE.Vector2(LAND_RANGE.min, LAND_RANGE.max) } },
     vertexShader: /* glsl */ `
       uniform float uTime, uLow; uniform float uRing[${RINGS}]; uniform float uRingA[${RINGS}]; uniform vec2 uHill[4];
-      varying float vH, vDist, vPulse; varying vec2 vXZ;
-      float bump(vec2 p){ return sin(p.x * 0.031 + 1.3) * sin(p.y * 0.027 - 0.7) + 0.5 * sin(p.x * 0.067 - p.y * 0.053 + uTime * 0.05) + 0.25 * sin(p.y * 0.13 + p.x * 0.11 - uTime * 0.08); }
+      varying float vExtra, vDist, vPulse; varying vec2 vXZ;
+      ${LAND_GLSL}
       void main(){
         vec2 p = position.xz;
         float r = length(p);
-        float away = smoothstep(30.0, 72.0, r);
-        float h = bump(p) * 11.0 * away + (sin(p.x * 0.19 + p.y * 0.07) + sin(p.y * 0.23 - p.x * 0.05)) * 0.9 * away;
-        for (int i = 0; i < 4; i++) { vec2 d = p - uHill[i]; h += 26.0 * exp(-dot(d, d) / 2300.0); }
+        float h = land(p);
+        float base = h;
         // The ground around the tower is never quite still: rings travel out from its base.
         h += sin(r * 0.21 - uTime * 0.55) * (1.1 + uLow * 2.2) * smoothstep(8.0, 22.0, r) * (1.0 - smoothstep(90.0, 210.0, r));
         float pulse = 0.0;
         for (int i = 0; i < ${RINGS}; i++) { float k = (r - uRing[i]) / 9.0; pulse += exp(-k * k) * uRingA[i]; }
         h += pulse * 2.6;
-        vH = h; vDist = r; vPulse = pulse; vXZ = p;
+        vExtra = h - base; vDist = r; vPulse = pulse; vXZ = p;
         gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(p.x, h, p.y, 1.0);
       }`,
     fragmentShader: /* glsl */ `
       uniform float uTime, uHigh; uniform vec3 uLine, uGlow; uniform vec2 uHill[4]; uniform vec3 uHillColor[4];
-      varying float vH, vDist, vPulse; varying vec2 vXZ;
+      varying float vExtra, vDist, vPulse; varying vec2 vXZ;
       ${LINE}
+      ${LAND_GLSL}
       void main(){
+        // Read per pixel rather than per vertex, so every gully and terrace gets its own line.
+        float vH = land(vXZ) + vExtra;
         float major = contour(vH / ${(LAND_STEP * 5).toFixed(1)}, 1.5);
         float minor = contour(vH / ${LAND_STEP.toFixed(1)}, 1.0);
         float fade = 1.0 - smoothstep(170.0, 310.0, vDist);
         float sizzle = step(1.0 - uHigh * 0.42, sparkle(vec3(vXZ, vH), uTime)) * minor;
         vec3 color = mix(uLine, uGlow, clamp(vPulse * 0.9 + sizzle, 0.0, 1.0));
-        for (int i = 0; i < 4; i++) { vec2 d = vXZ - uHill[i]; float crest = exp(-dot(d, d) / 500.0) * smoothstep(17.0, 23.0, vH); color = mix(color, uHillColor[i], clamp(crest * 1.4, 0.0, 0.95)); }
+        for (int i = 0; i < 4; i++) { vec2 d = vXZ - uHill[i]; float crest = exp(-dot(d, d) / 500.0) * smoothstep(${(LAND_CREST - 6).toFixed(1)}, ${LAND_CREST.toFixed(1)}, vH); color = mix(color, uHillColor[i], clamp(crest * 1.4, 0.0, 0.95)); }
         float a = (minor * 0.42 + major * 0.62 + vPulse * minor * 0.8 + sizzle * 0.8) * fade;
         if (a < 0.004) discard;
         gl_FragColor = vec4(color, min(a, 1.0));
@@ -148,8 +164,16 @@ function Tower() {
 }
 
 function Land() {
-  const geometry = useMemo(() => new THREE.PlaneGeometry(620, 620, 280, 280).rotateX(-Math.PI / 2), []);
-  const material = useMemo(landMaterial, []);
+  const height = useTexture(LAND_URL);
+  const geometry = useMemo(() => new THREE.PlaneGeometry(LAND_SIZE, LAND_SIZE, 300, 300).rotateX(-Math.PI / 2), []);
+  const material = useMemo(() => {
+    height.flipY = false;
+    height.magFilter = height.minFilter = THREE.NearestFilter;
+    height.generateMipmaps = false;
+    height.colorSpace = THREE.NoColorSpace;
+    height.needsUpdate = true;
+    return landMaterial(height);
+  }, [height]);
   return <mesh geometry={geometry} material={material} frustumCulled={false} renderOrder={0} />;
 }
 
@@ -232,9 +256,9 @@ function Conductor({ world, onDrawn }: { world: World; onDrawn: () => void }) {
     }
     // A slow drift, and a little under the pointer, as if looking round the last shot.
     const t = three.clock.elapsedTime;
-    camera.position.x = THREE.MathUtils.damp(camera.position.x, -92 + Math.sin(t * 0.05) * 7 + three.pointer.x * 5, 1.6, dt);
-    camera.position.y = THREE.MathUtils.damp(camera.position.y, 48 + Math.sin(t * 0.07) * 1.5 - three.pointer.y * 2, 1.6, dt);
-    camera.lookAt(-36, 25, 0);
+    camera.position.x = THREE.MathUtils.damp(camera.position.x, -128 + Math.sin(t * 0.05) * 8 + three.pointer.x * 6, 1.6, dt);
+    camera.position.y = THREE.MathUtils.damp(camera.position.y, 148 + Math.sin(t * 0.07) * 3 - three.pointer.y * 4, 1.6, dt);
+    camera.lookAt(-42, 14, 0);
   });
   return null;
 }
@@ -254,7 +278,7 @@ function EndingWorld({ onReady, onLost, active }: { onReady: () => void; onLost:
       flat
       dpr={dpr}
       frameloop={warm && active ? "always" : "never"}
-      camera={{ position: [-92, 48, 150], fov: 34, near: 1, far: 800 }}
+      camera={{ position: [-128, 148, 205], fov: 34, near: 1, far: 900 }}
       gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
       onCreated={({ gl }) => {
         gl.setClearColor(0x000000, 0);
