@@ -4,7 +4,7 @@
  * If that's unavailable, it falls back to the closest written answer, and says plainly when it has none.
  */
 type Memory = { keys: string[]; phrases?: string[]; answer: string; next?: string[]; links?: { label: string; href: string }[] };
-type Script = { name: string; subtitle: string; disclosure: string; portrait: string; profile: string; greeting: string[]; unknown: string[]; starters: string[]; memories: Memory[] };
+type Script = { name: string; subtitle: string; disclosure: string; portrait: string; profile: string; greeting: string[][]; unknown: string[]; starters: string[]; memories: Memory[] };
 
 const STOP = new Set(["a", "an", "the", "is", "are", "was", "were", "do", "does", "did", "i", "me", "my", "to", "of", "and", "or", "in", "on", "at", "it", "this", "that", "for", "with", "can", "could", "tell", "please", "your", "have", "has", "how", "who", "what", "where", "when", "why", "you", "s", "about", "am", "be"]);
 const words = (s: string) => s.toLowerCase().replace(/[^a-z0-9\s-]/g, " ").split(/\s+/).filter((w) => w && !STOP.has(w));
@@ -154,7 +154,9 @@ async function open() {
   dialog.showModal();
   document.documentElement.classList.add("profile-open");
   const mine = ++token;
-  for (const line of script.greeting) {
+  // A different first moment for each visit, so finding him again never feels like a recording.
+  const opening = script.greeting[Math.floor(Math.random() * script.greeting.length)];
+  for (const line of opening) {
     await say(line, mine);
     if (mine !== token) return;
     await new Promise((r) => setTimeout(r, still() ? 0 : 500));
