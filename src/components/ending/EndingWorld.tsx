@@ -1,36 +1,23 @@
 /**
  * The last shot on Home: Gasson Tower, drawn by the same contour lines as the living map spreading from its base. The map breathes on its own and answers the music when it's on:
  * bass sends ripples out through the contours, and high notes make the lines sizzle. The four crests are the four teams. It only draws while it's on screen.
- * The tower is the first-pass model from photographs in gasson/, not a survey.
+ * The land is drawn from the roster by terrain.ts. The tower is the first-pass model from photographs in gasson/, not a survey.
  */
-import { memo, Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { memo, Suspense, use, useEffect, useMemo, useRef, useState } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { useGLTF, useTexture } from "@react-three/drei";
+import { useGLTF } from "@react-three/drei";
 import * as THREE from "three";
 import { soundLevels } from "../soundtrack";
 import { TEAMS, type World } from "../teams";
 import { Warmup } from "../warm";
+import { terrainFor, LAND_SIZE, massifAt, massifHeight, type Terrain } from "./terrain";
 
 const PARTS = ["tower", "facade", "bay"];
 const URLS = PARTS.map((p) => `/models/gasson/${p}.glb`);
 const STEP = 3; // metres between contour lines up the tower
 const LAND_STEP = 1.4; // and across the land, where the slopes are gentler
 const RINGS = 5;
-const HILL_RADIUS = 125;
-// The land itself comes from TouchDesigner: one massif per team, sized by its headcount and shaped by its element, joined by a ridge for each person on two teams.
-// See public/models/gasson-land/height.json for how it was made.
-const LAND_URL = "/models/gasson-land/height-512.png";
-const LAND_SIZE = 620;
-const LAND_TEXELS = 512;
-const LAND_RANGE = { min: -2.714, max: 41.964 };
-const LAND_CREST = 30; // the height from which a massif's top lines take its team's colour
-const LAND_GLSL = /* glsl */ `
-      uniform sampler2D uLand; uniform vec2 uLandRange;
-      // The terrain made in TouchDesigner, stored as 16 bits split over two colours. Each texel is decoded before blending, or the low byte would smear.
-      float texel(vec2 i){ vec3 c = texture2D(uLand, (i + 0.5) / ${LAND_TEXELS}.0).rgb; return uLandRange.x + (c.r * 255.0 * 256.0 + c.g * 255.0) / 65535.0 * (uLandRange.y - uLandRange.x); }
-      float land(vec2 p){ vec2 t = (p / ${LAND_SIZE}.0 + 0.5) * ${LAND_TEXELS}.0 - 0.5; vec2 i = floor(t), f = t - i;
-        return mix(mix(texel(i), texel(i + vec2(1, 0)), f.x), mix(texel(i + vec2(0, 1)), texel(i + vec2(1, 1)), f.x), f.y); }
-`;
+const LAND_CREST = 0.72; // how far up its own peak a massif's lines take its team's colour
 const IDLE_PULSE = 5.5; // seconds between ripples when there's no music
 const QUIET_PULSE = 2.8; // and at the longest while music plays, for gentle passages with no clear beat
 
@@ -56,10 +43,16 @@ const LINE = /* glsl */ `
   float sparkle(vec3 p, float t){ return fract(sin(dot(floor(p * 1.6) + floor(t * 9.0), vec3(12.9898, 78.233, 37.719))) * 43758.5453); }
 `;
 
-function landMaterial(height: THREE.Texture) {
-  const hills = TEAMS.map((t) => new THREE.Vector2(Math.cos(t.angle + 0.5) * HILL_RADIUS, -Math.sin(t.angle + 0.5) * HILL_RADIUS));
+const LAND_GLSL = /* glsl */ `
+      uniform sampler2D uLand;
+      float land(vec2 p){ return texture2D(uLand, p / ${LAND_SIZE}.0 + 0.5).r; }
+`;
+
+function landMaterial(height: THREE.Texture, terrain: Terrain) {
+  const hills = TEAMS.map((t) => massifAt(t.angle));
+  const tops = TEAMS.map((t) => massifHeight(terrain.teams[t.href.split("/").filter(Boolean).pop()!] ?? 0));
   return new THREE.ShaderMaterial({
-    uniforms: { ...shared, uHill: { value: hills }, uHillColor: { value: TEAMS.map((t) => new THREE.Color(t.color)) }, uLand: { value: height }, uLandRange: { value: new THREE.Vector2(LAND_RANGE.min, LAND_RANGE.max) } },
+    uniforms: { ...shared, uHill: { value: hills }, uHillColor: { value: TEAMS.map((t) => new THREE.Color(t.color)) }, uLand: { value: height }, uHillTop: { value: tops } },
     vertexShader: /* glsl */ `
       uniform float uTime, uLow; uniform float uRing[${RINGS}]; uniform float uRingA[${RINGS}]; uniform vec2 uHill[4];
       varying float vExtra, vDist, vPulse; varying vec2 vXZ;
@@ -78,7 +71,7 @@ function landMaterial(height: THREE.Texture) {
         gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(p.x, h, p.y, 1.0);
       }`,
     fragmentShader: /* glsl */ `
-      uniform float uTime, uHigh; uniform vec3 uLine, uGlow, uHighLine; uniform vec2 uHill[4]; uniform vec3 uHillColor[4];
+      uniform float uTime, uHigh; uniform vec3 uLine, uGlow, uHighLine; uniform vec2 uHill[4]; uniform vec3 uHillColor[4]; uniform float uHillTop[4];
       varying float vExtra, vDist, vPulse; varying vec2 vXZ;
       ${LINE}
       ${LAND_GLSL}
@@ -90,7 +83,7 @@ function landMaterial(height: THREE.Texture) {
         float fade = 1.0 - smoothstep(170.0, 310.0, vDist);
         float sizzle = step(1.0 - uHigh * 0.42, sparkle(vec3(vXZ, vH), uTime)) * minor;
         vec3 color = mix(mix(uLine, uHighLine, smoothstep(2.0, 34.0, vH)), uGlow, clamp(vPulse * 0.9 + sizzle, 0.0, 1.0));
-        for (int i = 0; i < 4; i++) { vec2 d = vXZ - uHill[i]; float crest = exp(-dot(d, d) / 500.0) * smoothstep(${(LAND_CREST - 6).toFixed(1)}, ${LAND_CREST.toFixed(1)}, vH); color = mix(color, uHillColor[i], clamp(crest * 1.4, 0.0, 0.95)); }
+        for (int i = 0; i < 4; i++) { vec2 d = vXZ - uHill[i]; float crest = exp(-dot(d, d) / 500.0) * smoothstep(uHillTop[i] * ${(LAND_CREST - 0.2).toFixed(2)}, uHillTop[i] * ${LAND_CREST.toFixed(2)}, vH); color = mix(color, uHillColor[i], clamp(crest * 1.4, 0.0, 0.95)); }
         float a = (minor * 0.42 + major * 0.62 + vPulse * minor * 0.8 + sizzle * 0.8) * fade;
         if (a < 0.004) discard;
         gl_FragColor = vec4(color, min(a, 1.0));
@@ -165,17 +158,12 @@ function Tower() {
   );
 }
 
-function Land() {
-  const height = useTexture(LAND_URL);
+function Land({ terrain }: { terrain: Terrain }) {
+  const { gl } = useThree();
+  const height = use(terrainFor(gl, terrain));
+  useEffect(() => () => height.dispose(), [height]);
   const geometry = useMemo(() => new THREE.PlaneGeometry(LAND_SIZE, LAND_SIZE, 300, 300).rotateX(-Math.PI / 2), []);
-  const material = useMemo(() => {
-    height.flipY = false;
-    height.magFilter = height.minFilter = THREE.NearestFilter;
-    height.generateMipmaps = false;
-    height.colorSpace = THREE.NoColorSpace;
-    height.needsUpdate = true;
-    return landMaterial(height);
-  }, [height]);
+  const material = useMemo(() => landMaterial(height.texture, terrain), [height, terrain]);
   return <mesh geometry={geometry} material={material} frustumCulled={false} renderOrder={0} />;
 }
 
@@ -266,7 +254,7 @@ function Conductor({ world, onDrawn }: { world: World; onDrawn: () => void }) {
   return null;
 }
 
-function EndingWorld({ onReady, onLost, active }: { onReady: () => void; onLost: () => void; active: boolean }) {
+function EndingWorld({ terrain, onReady, onLost, active }: { terrain: Terrain; onReady: () => void; onLost: () => void; active: boolean }) {
   const [world, setWorld] = useState<World>(() => (document.documentElement.dataset.theme === "space" ? "space" : "valley"));
   const [warm, setWarm] = useState(false);
   useEffect(() => {
@@ -289,7 +277,7 @@ function EndingWorld({ onReady, onLost, active }: { onReady: () => void; onLost:
       }}
     >
       <Suspense fallback={null}>
-        <Land />
+        <Land terrain={terrain} />
         <Tower />
         <Embers />
         <Conductor world={world} onDrawn={onReady} />

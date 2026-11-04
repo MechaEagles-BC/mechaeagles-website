@@ -26,7 +26,7 @@ function enter() {
     near?.disconnect();
     void import("./mountEnding").then((m) => {
       if (!host.isConnected) return;
-      world = m.mountEnding(host, () => section.classList.add("live"), () => {
+      world = m.mountEnding(host, JSON.parse(host.dataset.terrain ?? "{\"teams\":{},\"ridges\":[]}"), () => section.classList.add("live"), () => {
         section.classList.remove("live");
         stop();
       });

@@ -144,4 +144,18 @@ export const COHORTS = cohortsJson.map((c) => {
   return { ...c, teams: c.teamIds.map((id) => TEAM[id].name), current: c.term === TERM, roster, leadership: lead, graduates };
 });
 
+/**
+ * What shapes the land of the living map at the bottom of Home: each engineering team's headcount, and a ridge between two places once for each person who works in both.
+ * Leadership and Programmatics stand at the centre with the tower. Numbers only: no names reach the page.
+ */
+export function terrainOf() {
+  const teams = Object.fromEntries(ENGINEERING.map((t) => [t.id, branchOf(t).everyone.length]));
+  const ridges = new Map<string, number>();
+  for (const m of CURRENT) {
+    const places = [...new Set(now(m).map((r) => (TEAM[r.org].kind === "engineering" ? r.org : "centre")))].sort();
+    places.forEach((a, i) => places.slice(i + 1).forEach((b) => ridges.set(`${a}|${b}`, (ridges.get(`${a}|${b}`) ?? 0) + 1)));
+  }
+  return { teams, ridges: [...ridges].map(([k, n]) => [...k.split("|"), n] as [string, string, number]) };
+}
+
 export const ALUMNI = MEMBERS.filter((m) => m.status === "alumni" && m.alumni?.published);

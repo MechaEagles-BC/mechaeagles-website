@@ -79,6 +79,10 @@ Put new photos in `public/media/` or `public/people/` as usual and refer to them
 
 A copy's name includes a hash of its photo, so replacing a photo gives it a new address and nobody sees the old one. Pictures shown when a link is shared and the browser icons come from `scripts/share-images.mjs`, which is run by hand if the logo or those photos change.
 
+## The living map
+
+The land at the bottom of Home is drawn from this data on each visit, with no files to regenerate. Each engineering team is a massif sized by its current headcount and shaped by its element, and a ridge joins two places once for each person who works in both. Leadership and Programmatics stand at the centre with the tower. `terrainOf()` in `org.ts` works out those numbers, and `components/ending/terrain.ts` draws them. Only the numbers reach the page, never names.
+
 ## Music
 
 Each world's track is listed in `music.json` and lives in `public/audio/`. To change a track, replace the file or its `src`, and adjust `gain` if it's louder or softer than the other. Set `cleared` to `true` only once the rights are confirmed.
