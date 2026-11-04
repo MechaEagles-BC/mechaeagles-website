@@ -1,6 +1,0 @@
-{
- "min": -2.714,
- "max": 41.964,
- "size": 620,
- "note": "Made in TouchDesigner by scratchpad/td/terrain_gen.py from members.json. Red is the high byte and green the low byte of the height."
-}
