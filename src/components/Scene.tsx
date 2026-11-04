@@ -57,10 +57,11 @@ const shared = {
   uWaveAmp: { value: 0 },
   uAccent: { value: new THREE.Color("#ffffff") },
   uFill: { value: 0 },
+  uRuin: { value: 0 },
 };
 
 // ---------- machined metal ----------
-type Finish = { color: string; roughness: number; metalness?: number; turned?: number; blast?: number; scale?: boolean; wear?: number; stencil?: 1 | 2 };
+type Finish = { color: string; roughness: number; metalness?: number; turned?: number; blast?: number; scale?: boolean; wear?: number; stencil?: 1 | 2; ruin?: "stone" | "bronze" };
 
 // ---------- markings, drawn once from the typeface the page already uses ----------
 function makeMarkings() {
@@ -104,7 +105,52 @@ function makeMarkings() {
   };
   draw();
   document.fonts?.load(font(44)).then(draw);
-  return { scaleTex, stencilTex };
+  // The valley's version: carved runes in the same places as the numerals and stencils. Drawn as strokes, so no font is needed.
+  const runeScale = document.createElement("canvas");
+  runeScale.width = 8192;
+  runeScale.height = 96;
+  const runeStencil = document.createElement("canvas");
+  runeStencil.width = runeStencil.height = 1024;
+  let seed = 7;
+  const rand = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  const rune = (g: CanvasRenderingContext2D, x: number, y: number, h: number) => {
+    const w = h * 0.42;
+    g.beginPath();
+    g.moveTo(x, y - h / 2);
+    g.lineTo(x, y + h / 2);
+    const marks = 1 + Math.floor(rand() * 3);
+    for (let k = 0; k < marks; k++) {
+      const at = y - h / 2 + rand() * h * 0.7;
+      const side = rand() < 0.5 ? -1 : 1;
+      const down = rand() < 0.5 ? 1 : -1;
+      g.moveTo(x, at);
+      g.lineTo(x + side * w, at + down * h * 0.32);
+      if (rand() < 0.3) g.lineTo(x, at + down * h * 0.64);
+    }
+    g.stroke();
+  };
+  const rs = runeScale.getContext("2d")!;
+  rs.strokeStyle = "#fff";
+  rs.lineWidth = 7;
+  rs.lineCap = "round";
+  for (let deg = 0; deg < 360; deg += 15) {
+    rs.save();
+    rs.translate((deg / 360) * 8192, 50);
+    rs.scale(0.32, 1);
+    rune(rs, -26, 0, 58);
+    rune(rs, 26, 0, 58);
+    rs.restore();
+  }
+  const rt = runeStencil.getContext("2d")!;
+  rt.strokeStyle = "#fff";
+  rt.lineWidth = 5;
+  rt.lineCap = "round";
+  for (let i = 0; i < 56; i++) for (let k = -1; k <= 1; k++) rune(rt, ((i % 4) + 0.5) * 256 + k * 46, (Math.floor(i / 4) + 0.5) * 64, 42);
+  const runeScaleTex = new THREE.CanvasTexture(runeScale);
+  const runeStencilTex = new THREE.CanvasTexture(runeStencil);
+  runeScaleTex.wrapS = THREE.RepeatWrapping;
+  runeScaleTex.anisotropy = runeStencilTex.anisotropy = 8;
+  return { scaleTex, stencilTex, runeScaleTex, runeStencilTex };
 }
 const markings = { current: null as null | ReturnType<typeof makeMarkings> };
 
@@ -116,9 +162,9 @@ const NOISE = /* glsl */ `
 `;
 
 /** Standard PBR plus finish detail computed in part space, so it needs no UVs, never tiles and fades out before it can shimmer. */
-export function machined({ color, roughness, metalness = 1, turned = 0, blast = 0, scale = false, wear = 0, stencil }: Finish, ao?: THREE.Texture) {
+export function machined({ color, roughness, metalness = 1, turned = 0, blast = 0, scale = false, wear = 0, stencil, ruin = "stone" }: Finish, ao?: THREE.Texture) {
   markings.current ??= makeMarkings();
-  const { scaleTex, stencilTex } = markings.current;
+  const { scaleTex, stencilTex, runeScaleTex, runeStencilTex } = markings.current;
   const m = new THREE.MeshStandardMaterial({ color, roughness, metalness, aoMap: ao ?? null, aoMapIntensity: 0.9 });
   m.onBeforeCompile = (s) => {
     Object.assign(s.uniforms, shared);
@@ -129,6 +175,9 @@ export function machined({ color, roughness, metalness = 1, turned = 0, blast = 
     s.uniforms.uStencilKind = { value: stencil ?? 0 };
     s.uniforms.uScaleTex = { value: scaleTex };
     s.uniforms.uStencilTex = { value: stencilTex };
+    s.uniforms.uRuneScaleTex = { value: runeScaleTex };
+    s.uniforms.uRuneStencilTex = { value: runeStencilTex };
+    s.uniforms.uRuinKind = { value: ruin === "bronze" ? 2 : 1 };
     s.vertexShader = s.vertexShader
       .replace("#include <common>", "#include <common>\nvarying vec3 vPart; varying vec3 vWorld; varying float vInst;")
       .replace(
@@ -148,8 +197,8 @@ export function machined({ color, roughness, metalness = 1, turned = 0, blast = 
         "#include <common>",
         `#include <common>
          varying vec3 vPart; varying vec3 vWorld; varying float vInst;
-         uniform float uTurned, uBlast, uScale, uWear, uStencilKind, uTime, uWave, uWaveAmp; uniform vec3 uAccent;
-         uniform sampler2D uScaleTex, uStencilTex;
+         uniform float uTurned, uBlast, uScale, uWear, uStencilKind, uTime, uWave, uWaveAmp, uRuin, uRuinKind; uniform vec3 uAccent;
+         uniform sampler2D uScaleTex, uStencilTex, uRuneScaleTex, uRuneStencilTex;
          ${NOISE}`,
       )
       .replace(
@@ -175,7 +224,7 @@ export function machined({ color, roughness, metalness = 1, turned = 0, blast = 
            vec2 numUv = vec2(1.0 - fract(partA / 6.2831853 + 1.0), rNum);
            vec2 dx = vec2(fwidth(partR) / 4.8 / 6.2831853, dFdx(rNum));
            vec2 dy = vec2(fwidth(partR) / 4.8 / 6.2831853, dFdy(rNum));
-           float numerals = textureGrad(uScaleTex, numUv, dx, dy).r * step(0.0, rNum) * step(rNum, 1.0);
+           float numerals = mix(textureGrad(uScaleTex, numUv, dx, dy).r, textureGrad(uRuneScaleTex, numUv, dx, dy).r, uRuin) * step(0.0, rNum) * step(rNum, 1.0);
            etch = max(max(fine * band, major * longBand), numerals) * step(0.28, vPart.y);
            roughnessFactor = mix(roughnessFactor, 0.9, etch);
          }
@@ -191,7 +240,8 @@ export function machined({ color, roughness, metalness = 1, turned = 0, blast = 
            vec2 cellBase = vec2(mod(index, 4.0), 15.0 - floor(index / 4.0));
            vec2 scaleUv = vec2(4.0, 16.0);
            float inside = step(0.0, uv.x) * step(uv.x, 1.0) * step(0.0, uv.y) * step(uv.y, 1.0) * (onFace ? 1.0 : 0.0);
-           float letters = textureGrad(uStencilTex, (cellBase + clamp(uv, 0.0, 1.0)) / scaleUv, dFdx(uv) / scaleUv, dFdy(uv) / scaleUv).r;
+           vec2 cellUv = (cellBase + clamp(uv, 0.0, 1.0)) / scaleUv;
+           float letters = mix(textureGrad(uStencilTex, cellUv, dFdx(uv) / scaleUv, dFdy(uv) / scaleUv).r, textureGrad(uRuneStencilTex, cellUv, dFdx(uv) / scaleUv, dFdy(uv) / scaleUv).r, uRuin);
            paint = inside * letters * (0.55 + 0.45 * smoothstep(0.3, 0.6, vnoise(vPart * 90.0)));
            roughnessFactor = mix(roughnessFactor, 0.85, paint);
          }
@@ -202,7 +252,7 @@ export function machined({ color, roughness, metalness = 1, turned = 0, blast = 
            float edgeMask = 0.0;
          #endif
          float wearBreak = vnoise(vPart * 11.0) * 0.55 + vnoise(vPart * 47.0) * 0.45;
-         float worn = smoothstep(0.3, 0.7, edgeMask) * smoothstep(0.42, 0.68, wearBreak) * uWear * fadeB;
+         float worn = smoothstep(0.3, 0.7, edgeMask) * smoothstep(0.42, 0.68, wearBreak) * uWear * fadeB * (1.0 - uRuin);
          roughnessFactor = mix(roughnessFactor, 0.4, worn);`,
       )
       .replace("#include <color_fragment>", "#include <color_fragment>\n")
@@ -214,14 +264,46 @@ export function machined({ color, roughness, metalness = 1, turned = 0, blast = 
          diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.6, 0.61, 0.63), worn);
          metalnessFactor = mix(metalnessFactor, 1.0, worn);
          diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.62, 0.64, 0.66), paint);
-         metalnessFactor = mix(metalnessFactor, 0.05, paint);`,
+         metalnessFactor = mix(metalnessFactor, 0.05, paint);
+         // The valley's ruin: the same parts, worn into stone and old bronze. Moss and patina collect where the light doesn't reach.
+         if (uRuin > 0.001) {
+           #ifdef USE_AOMAP
+             float shade = texture2D(aoMap, vAoMapUv).r;
+           #else
+             float shade = 1.0;
+           #endif
+           float n1 = vnoise(vWorld * 1.3), n2 = vnoise(vWorld * 6.1), n3 = vnoise(vWorld * 21.0);
+           float hollow = clamp((1.0 - shade) * 1.6, 0.0, 1.0);
+           vec3 ruinColor; float ruinMetal; float ruinRough;
+           if (uRuinKind < 1.5) {
+             float tone = clamp(dot(diffuseColor.rgb, vec3(0.333)) * 1.2 + 0.3, 0.6, 1.0);
+             float big = vnoise(vWorld * 0.35);
+             ruinColor = mix(vec3(0.27, 0.25, 0.21), vec3(0.42, 0.38, 0.31), n1 * 0.6 + big * 0.4) * (0.78 + 0.34 * n2) * tone;
+             float crack = (1.0 - smoothstep(0.0, 0.012, abs(vnoise(vWorld * 1.9) - 0.5))) * smoothstep(0.55, 0.8, n2);
+             ruinColor *= 1.0 - crack * 0.6;
+             float moss = smoothstep(0.45, 0.8, hollow * 1.1 + n3 * 0.4 + big * 0.3 - 0.15);
+             ruinColor = mix(ruinColor, mix(vec3(0.16, 0.21, 0.08), vec3(0.26, 0.31, 0.11), n3), moss * 0.9);
+             ruinMetal = 0.0;
+             ruinRough = 0.92 - crack * 0.05;
+           } else {
+             float patina = smoothstep(0.35, 0.8, hollow + n2 * 0.55 - 0.18);
+             ruinColor = mix(vec3(0.4, 0.27, 0.13) * (0.85 + 0.3 * n1), vec3(0.24, 0.42, 0.35) * (0.75 + 0.3 * n3), patina * 0.8);
+             ruinMetal = mix(0.85, 0.15, patina);
+             ruinRough = mix(0.42, 0.82, patina);
+           }
+           diffuseColor.rgb = mix(diffuseColor.rgb, mix(ruinColor, ruinColor * 0.35, etch + paint), uRuin);
+           metalnessFactor = mix(metalnessFactor, ruinMetal, uRuin);
+           roughnessFactor = mix(roughnessFactor, ruinRough, uRuin);
+         }`,
       )
       .replace(
         "#include <emissivemap_fragment>",
         `#include <emissivemap_fragment>
          float worldR = length(vWorld.xz);
          float rip = exp(-pow((worldR - uWave) / 0.7, 2.0)) * uWaveAmp;
-         totalEmissiveRadiance += uAccent * rip * 0.16;`,
+         totalEmissiveRadiance += uAccent * rip * 0.16;
+         // carved runes keep a little warm light in them
+         totalEmissiveRadiance += vec3(1.0, 0.68, 0.34) * (etch + paint) * uRuin * (0.55 + 0.25 * sin(uTime * 0.7 + vWorld.x * 0.8));`,
       );
   };
   m.customProgramCacheKey = () => "machined";
@@ -236,13 +318,14 @@ function grooveMaterial(level: number, speed: number) {
     uniforms: { ...shared, uColor: { value: new THREE.Color("#a9cdf5") }, uLevel: { value: level }, uSpeed: { value: speed } },
     vertexShader: VERT,
     fragmentShader: `
-      uniform float uTime, uWave, uWaveAmp, uLevel, uSpeed; uniform vec3 uColor, uAccent; varying vec3 vP;
+      uniform float uTime, uWave, uWaveAmp, uLevel, uSpeed, uRuin; uniform vec3 uColor, uAccent; varying vec3 vP;
       void main(){
+        vec3 tint = mix(uColor, vec3(1.0, 0.64, 0.3), uRuin);
         float a = atan(vP.z, vP.x), r = length(vP.xz);
         float slow = 0.75 + 0.25 * sin(a * 3.0 - uTime * 0.3);
         float run = pow(0.5 + 0.5 * sin(a * 2.0 - uTime * uSpeed), 60.0) * 1.6;
         float ripple = exp(-pow((r - uWave) / 0.42, 2.0)) * uWaveAmp * 4.0;
-        gl_FragColor = vec4(uColor * (uLevel * slow + run * uLevel * 2.5) + uAccent * ripple, 1.0);
+        gl_FragColor = vec4(tint * (uLevel * slow + run * uLevel * 2.5) + uAccent * ripple, 1.0);
       }`,
   });
 }
@@ -252,8 +335,9 @@ function projectionMaterial() {
     uniforms: { ...shared, uColor: { value: new THREE.Color("#8fbdf0") } },
     vertexShader: VERT,
     fragmentShader: `
-      uniform float uTime, uWave, uWaveAmp, uFill; uniform vec3 uColor, uAccent; varying vec3 vP;
+      uniform float uTime, uWave, uWaveAmp, uFill, uRuin; uniform vec3 uColor, uAccent; varying vec3 vP;
       void main(){
+        vec3 tint = mix(uColor, vec3(1.0, 0.7, 0.36), uRuin);
         float r = length(vP.xz), a = atan(vP.z, vP.x);
         float w = fwidth(r * 7.0);
         float lines = (1.0 - smoothstep(0.03, 0.03 + w, abs(fract(r * 7.0) - 0.5))) * 0.16;
@@ -266,7 +350,7 @@ function projectionMaterial() {
         float edge = 2.25 * (1.0 - uFill);
         float iris = smoothstep(edge - 0.16, edge + 0.16, r) * step(0.001, uFill);
         float rim = exp(-pow((r - edge) / 0.14, 2.0)) * step(0.001, uFill) * step(uFill, 0.995) * 3.0;
-        vec3 c = uColor * (0.03 + (lines + spokes) * falloff * 1.7 + scan * 0.6 + arcs * 0.5);
+        vec3 c = tint * (0.03 + (lines + spokes) * falloff * 1.7 + scan * 0.6 + arcs * 0.5);
         c = mix(c, uAccent * (0.42 + lines * 1.6 + arcs), iris) + uAccent * (ripple + rim);
         gl_FragColor = vec4(c, 1.0);
       }`,
@@ -345,15 +429,15 @@ function useAssets() {
       plinth: machined({ color: "#44484f", roughness: 0.66, metalness: 0.95, blast: 1 }, ao.plinth),
       deck_plate: machined({ color: "#5c6168", roughness: 0.62, metalness: 0.98, blast: 1, wear: 0.45, stencil: 2 }, ao.deck_plate),
       bearing_panel: machined({ color: "#858a92", roughness: 0.5, blast: 0.8, wear: 0.4, stencil: 1 }, ao.bearing_panel),
-      ring_gear: machined({ color: "#858a92", roughness: 0.5, turned: 1, scale: true }, ao.ring_gear),
-      pinion: machined({ color: "#b3b7bd", roughness: 0.42, turned: 1 }, ao.pinion),
-      shaft: machined({ color: "#2b2d31", roughness: 0.4 }, ao.shaft),
-      fin_ring: machined({ color: "#8a8e95", roughness: 0.44, turned: 0.8 }, ao.fin_ring),
+      ring_gear: machined({ color: "#858a92", roughness: 0.5, turned: 1, scale: true, ruin: "bronze" }, ao.ring_gear),
+      pinion: machined({ color: "#b3b7bd", roughness: 0.42, turned: 1, ruin: "bronze" }, ao.pinion),
+      shaft: machined({ color: "#2b2d31", roughness: 0.4, ruin: "bronze" }, ao.shaft),
+      fin_ring: machined({ color: "#8a8e95", roughness: 0.44, turned: 0.8, ruin: "bronze" }, ao.fin_ring),
       collar: machined({ color: "#8e9299", roughness: 0.42, turned: 1 }, ao.collar),
       spar: machined({ color: "#6a6f77", roughness: 0.56, blast: 1, wear: 0.45 }, ao.spar),
       post: machined({ color: "#b1b5bb", roughness: 0.36, turned: 0.6 }, ao.post),
       coupler: machined({ color: "#585c64", roughness: 0.58, metalness: 0.98, blast: 1, wear: 0.5 }, ao.coupler),
-      screw: new THREE.MeshStandardMaterial({ color: "#4a4c51", metalness: 0.95, roughness: 0.4 }),
+      screw: machined({ color: "#4a4c51", roughness: 0.4, metalness: 0.95, ruin: "bronze" }),
     }),
     // useTexture returns a new record each render; the cached textures inside it never change
     [],
@@ -726,6 +810,12 @@ function CameraRig({ closeup }: { closeup: number[] | null }) {
 const FACE_SIZE: Record<World, number> = { valley: 512, space: 256 }; // the size of the pictures in /env/ and /env/space/
 const envFaces = (dir: string) => ["px", "nx", "py", "ny", "pz", "nz"].map((f) => `${dir}${f}.webp`);
 
+/** Space keeps the machined platform. The valley's is the same mechanism, ancient. Only a uniform changes, so no shader recompiles on a change of world. */
+function RuinSwitch({ inSpace }: { inSpace: boolean }) {
+  useEffect(() => void (shared.uRuin.value = inSpace ? 0 : 1), [inSpace]);
+  return null;
+}
+
 function Studio({ world }: { world: World }) {
   // Only this world's light is prepared up front. The other one downloads quietly afterwards, so a change of world still never leaves the metal unlit.
   const inSpace = world === "space";
@@ -738,6 +828,7 @@ function Studio({ world }: { world: World }) {
       {/* Dark in the valley, but always there: a different number of lights would make every shader recompile on a change of world. */}
       <directionalLight position={[10, 5, -22]} intensity={inSpace ? 0.7 : 0} color="#dfe4ea" />
       <Environment map={map} environmentIntensity={inSpace ? 1.7 : 1.5} />
+      <RuinSwitch inSpace={inSpace} />
     </>
   );
 }

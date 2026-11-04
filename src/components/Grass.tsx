@@ -6,7 +6,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 
-const COUNT = 3400;
+const COUNT = 1300; // fewer than before: the user found the meadow too grassy
+const MEADOW_EVERY = 3; // keep one meadow tuft in three
 const INNER = 9.3; // starts under the plinth's edge, so no gap can show
 const OUTER = 14.5;
 
@@ -116,20 +117,21 @@ export default function Grass() {
       />
       {meadow && (
         <instancedMesh
-          args={[tuft, material, meadow.length / 4]}
+          args={[tuft, material, Math.floor(meadow.length / 4 / MEADOW_EVERY)]}
           frustumCulled={false}
           ref={(mesh) => {
             if (!mesh) return;
             const dummy = new THREE.Object3D();
             let seed = 19;
-            for (let i = 0; i < meadow.length / 4; i++) {
+            for (let n = 0; n < Math.floor(meadow.length / 4 / MEADOW_EVERY); n++) {
+              const i = n * MEADOW_EVERY;
               seed = (seed * 16807) % 2147483647;
               dummy.position.set(meadow[i * 4], meadow[i * 4 + 1] - 0.03, meadow[i * 4 + 2]);
               dummy.rotation.set(0, (seed / 2147483647) * 6.28, 0);
               const s = meadow[i * 4 + 3];
               dummy.scale.set(s * 0.95, s * 0.62, s * 0.95);
               dummy.updateMatrix();
-              mesh.setMatrixAt(i, dummy.matrix);
+              mesh.setMatrixAt(n, dummy.matrix);
             }
             mesh.instanceMatrix.needsUpdate = true;
           }}
