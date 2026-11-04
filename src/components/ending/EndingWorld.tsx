@@ -34,9 +34,10 @@ const LAND_GLSL = /* glsl */ `
 const IDLE_PULSE = 5.5; // seconds between ripples when there's no music
 const QUIET_PULSE = 2.8; // and at the longest while music plays, for gentle passages with no clear beat
 
-const LOOK: Record<World, { line: string; glow: string }> = {
-  valley: { line: "#d9c98f", glow: "#fff1c2" },
-  space: { line: "#7fbfe6", glow: "#e8f7ff" },
+// Lines change colour with height: the valley at dusk runs neon, cyan in the low ground to pink on the crests. Space stays cold starlight.
+const LOOK: Record<World, { line: string; high: string; glow: string }> = {
+  valley: { line: "#3ff2d8", high: "#ff4fa3", glow: "#fff0f8" },
+  space: { line: "#7fbfe6", high: "#a9d8ff", glow: "#e8f7ff" },
 };
 
 const shared = {
@@ -47,6 +48,7 @@ const shared = {
   uRingA: { value: new Float32Array(RINGS) },
   uLine: { value: new THREE.Color(LOOK.valley.line) },
   uGlow: { value: new THREE.Color(LOOK.valley.glow) },
+  uHighLine: { value: new THREE.Color(LOOK.valley.high) },
 };
 
 const LINE = /* glsl */ `
@@ -76,7 +78,7 @@ function landMaterial(height: THREE.Texture) {
         gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(p.x, h, p.y, 1.0);
       }`,
     fragmentShader: /* glsl */ `
-      uniform float uTime, uHigh; uniform vec3 uLine, uGlow; uniform vec2 uHill[4]; uniform vec3 uHillColor[4];
+      uniform float uTime, uHigh; uniform vec3 uLine, uGlow, uHighLine; uniform vec2 uHill[4]; uniform vec3 uHillColor[4];
       varying float vExtra, vDist, vPulse; varying vec2 vXZ;
       ${LINE}
       ${LAND_GLSL}
@@ -87,7 +89,7 @@ function landMaterial(height: THREE.Texture) {
         float minor = contour(vH / ${LAND_STEP.toFixed(1)}, 1.0);
         float fade = 1.0 - smoothstep(170.0, 310.0, vDist);
         float sizzle = step(1.0 - uHigh * 0.42, sparkle(vec3(vXZ, vH), uTime)) * minor;
-        vec3 color = mix(uLine, uGlow, clamp(vPulse * 0.9 + sizzle, 0.0, 1.0));
+        vec3 color = mix(mix(uLine, uHighLine, smoothstep(2.0, 34.0, vH)), uGlow, clamp(vPulse * 0.9 + sizzle, 0.0, 1.0));
         for (int i = 0; i < 4; i++) { vec2 d = vXZ - uHill[i]; float crest = exp(-dot(d, d) / 500.0) * smoothstep(${(LAND_CREST - 6).toFixed(1)}, ${LAND_CREST.toFixed(1)}, vH); color = mix(color, uHillColor[i], clamp(crest * 1.4, 0.0, 0.95)); }
         float a = (minor * 0.42 + major * 0.62 + vPulse * minor * 0.8 + sizzle * 0.8) * fade;
         if (a < 0.004) discard;
@@ -108,7 +110,7 @@ function towerMaterial() {
       varying vec3 vP, vN, vV;
       void main(){ vec4 w = modelMatrix * vec4(position, 1.0); vP = w.xyz; vN = normalize(mat3(modelMatrix) * normal); vV = cameraPosition - w.xyz; gl_Position = projectionMatrix * viewMatrix * w; }`,
     fragmentShader: /* glsl */ `
-      uniform float uTime, uLow, uHigh; uniform vec3 uLine, uGlow; uniform float uRingA[${RINGS}];
+      uniform float uTime, uLow, uHigh; uniform vec3 uLine, uGlow, uHighLine; uniform float uRingA[${RINGS}];
       varying vec3 vP, vN, vV;
       ${LINE}
       void main(){
@@ -121,7 +123,7 @@ function towerMaterial() {
         for (int i = 0; i < ${RINGS}; i++) beat = max(beat, uRingA[i]);
         float sizzle = step(1.0 - uHigh * 0.5, sparkle(vP, uTime)) * band;
         float a = band * (0.85 + uLow * 0.4) + rim * 0.55 + sizzle + beat * band * 0.35;
-        gl_FragColor = vec4(mix(uLine, uGlow, clamp(0.25 + beat * 0.5 + sizzle + uLow * 0.3, 0.0, 1.0)), clamp(a, 0.0, 1.0));
+        gl_FragColor = vec4(mix(mix(uLine, uHighLine, smoothstep(0.0, 61.0, vP.y)), uGlow, clamp(0.12 + beat * 0.5 + sizzle + uLow * 0.3, 0.0, 1.0)), clamp(a, 0.0, 1.0));
       }`,
     transparent: true,
     depthWrite: false,
@@ -219,6 +221,7 @@ function Conductor({ world, onDrawn }: { world: World; onDrawn: () => void }) {
   useEffect(() => {
     shared.uLine.value.set(LOOK[world].line);
     shared.uGlow.value.set(LOOK[world].glow);
+    shared.uHighLine.value.set(LOOK[world].high);
   }, [world]);
   useFrame((three, rawDt) => {
     const s = state.current;
