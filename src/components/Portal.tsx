@@ -49,7 +49,21 @@ function drawingMaterials(color: string, shared: SharedLight, level: { value: nu
       }`,
     ...common,
   });
-  return { face, edge };
+  // In the valley the same drawing is cut into the stone: a dark groove with a pale lip above it, and old pigment of the team's colour left in the cut.
+  const carveUniforms = { uColor: uniforms.uColor, uLevel: level, uLip: { value: 0 } };
+  const carve = (lip: number) =>
+    new THREE.ShaderMaterial({
+      uniforms: { ...carveUniforms, uLip: { value: lip } },
+      vertexShader: `void main(){ gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+      fragmentShader: `uniform vec3 uColor; uniform float uLevel, uLip;
+        void main(){
+          vec3 groove = mix(vec3(0.05, 0.045, 0.04), uColor * 0.3, 0.35 + max(uLevel, 0.0) * 0.4);
+          gl_FragColor = vec4(mix(groove, vec3(0.62, 0.6, 0.53), uLip), mix(0.95, 0.35, uLip));
+        }`,
+      transparent: true,
+      depthWrite: false,
+    });
+  return { face, edge, groove: carve(0), lip: carve(1) };
 }
 
 const depthOnly = new THREE.MeshBasicMaterial({ colorWrite: false, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 2 });
@@ -109,6 +123,8 @@ export default function Portal({ index, fx, shared, labelRef, screw, screwMateri
   const root = useRef<THREE.Group>(null);
   const turn = useRef<THREE.Group>(null);
   const light = useRef<THREE.PointLight>(null);
+  const lit = useRef<THREE.Group>(null);
+  const carved = useRef<THREE.Group>(null);
   const anchor = useMemo(() => new THREE.Vector3(), []);
 
   useFrame((state, rawDt) => {
@@ -126,8 +142,13 @@ export default function Portal({ index, fx, shared, labelRef, screw, screwMateri
     }
     parts.level.value = THREE.MathUtils.damp(parts.level.value, on ? 1 : dimmed ? -0.35 : 0, 9, dt);
     const k = parts.level.value;
-    parts.lamp.color.set(team.color).multiplyScalar(0.72 + k * 0.5);
-    if (light.current) light.current.intensity = THREE.MathUtils.damp(light.current.intensity, on ? 9 : dimmed ? 1.2 : 2.6, 7, dt);
+    // The valley's platform is stone, so its cards are carved rather than lit.
+    const stone = shared.uRuin.value > 0.5;
+    if (lit.current) lit.current.visible = !stone;
+    if (carved.current) carved.current.visible = stone;
+    if (stone) parts.lamp.color.set(team.color).multiplyScalar(0.16 + Math.max(k, 0) * 0.3);
+    else parts.lamp.color.set(team.color).multiplyScalar(0.72 + k * 0.5);
+    if (light.current) light.current.intensity = THREE.MathUtils.damp(light.current.intensity, (on ? 9 : dimmed ? 1.2 : 2.6) * (stone ? 0.12 : 1), 7, dt);
     if (turn.current) turn.current.rotation.y = team.drawingYaw + Math.sin(state.clock.elapsedTime * 0.22 + index * 1.7) * 0.2;
 
     const el = labelRef.current;
@@ -147,11 +168,18 @@ export default function Portal({ index, fx, shared, labelRef, screw, screwMateri
       ))}
       <pointLight ref={light} position={[0, 2.7, 2.4]} color={team.color} intensity={2.6} distance={7} decay={1.7} />
 
-      <group position={[0, DRAWING_Y, 0.5]} scale={team.drawingScale} rotation={[0, 0, team.drawingLean]}>
+      <group ref={lit} position={[0, DRAWING_Y, 0.5]} scale={team.drawingScale} rotation={[0, 0, team.drawingLean]}>
         <group ref={turn}>
           <mesh geometry={corner} material={depthOnly} renderOrder={1} />
           <mesh geometry={corner} material={parts.drawn.face} renderOrder={2} />
           <lineSegments geometry={parts.edges} material={parts.drawn.edge} renderOrder={3} />
+        </group>
+      </group>
+      {/* The same drawing pressed flat onto the stele's face, as an engraving. It stays still: carvings don't sway. */}
+      <group ref={carved} visible={false} position={[0, DRAWING_Y, 0.19]} scale={[team.drawingScale, team.drawingScale, team.drawingScale * 0.02]} rotation={[0, 0, team.drawingLean]}>
+        <group rotation={[0, team.drawingYaw, 0]}>
+          <lineSegments geometry={parts.edges} material={parts.drawn.lip} position={[0, 0.012 / team.drawingScale, 0]} renderOrder={2} />
+          <lineSegments geometry={parts.edges} material={parts.drawn.groove} renderOrder={3} />
         </group>
       </group>
 
