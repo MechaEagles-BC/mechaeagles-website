@@ -3,11 +3,12 @@
  * The team text is a real link in the page, placed over the nameplate each frame, so it stays sharp and accessible.
  * Only Baldwin-1 is a team model. The other drawings are illustrative, and each caption says what it shows.
  */
-import { useMemo, useRef, type RefObject } from "react";
+import { useEffect, useMemo, useRef, type RefObject } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import { useTexture } from "@react-three/drei";
 import * as THREE from "three";
 import { ADDITIVE } from "./additive";
+import { carveMaps } from "./carve";
 import { Instanced, machined, usePartGeometry, type SharedLight } from "./Scene";
 import { captionTransform, PORTAL, TEAMS, type Fx } from "./teams";
 
@@ -49,22 +50,11 @@ function drawingMaterials(color: string, shared: SharedLight, level: { value: nu
       }`,
     ...common,
   });
-  // In the valley the same drawing is cut into the stone: a dark groove with a pale lip above it, and old pigment of the team's colour left in the cut.
-  const carveUniforms = { uColor: uniforms.uColor, uLevel: level, uLip: { value: 0 } };
-  const carve = (lip: number) =>
-    new THREE.ShaderMaterial({
-      uniforms: { ...carveUniforms, uLip: { value: lip } },
-      vertexShader: `void main(){ gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
-      fragmentShader: `uniform vec3 uColor; uniform float uLevel, uLip;
-        void main(){
-          vec3 groove = mix(vec3(0.05, 0.045, 0.04), uColor * 0.3, 0.35 + max(uLevel, 0.0) * 0.4);
-          gl_FragColor = vec4(mix(groove, vec3(0.62, 0.6, 0.53), uLip), mix(0.95, 0.35, uLip));
-        }`,
-      transparent: true,
-      depthWrite: false,
-    });
-  return { face, edge, groove: carve(0), lip: carve(1) };
+  return { face, edge };
 }
+
+// The panel the carving is cut into, in the stele's own units: inside the frame, between its side bars.
+const PANEL = { centre: new THREE.Vector2(0, 2.62), width: 2.7, height: 3.0, z: 0.188 };
 
 const depthOnly = new THREE.MeshBasicMaterial({ colorWrite: false, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 2 });
 
@@ -82,7 +72,7 @@ export default function Portal({ index, fx, shared, labelRef, screw, screwMateri
   const frame = usePartGeometry("../portal/frame");
   const corner = usePartGeometry(`../portal/${team.drawing}`);
   const ao = useTexture("/models/portal/frame.ao.webp");
-  const { camera, size } = useThree();
+  const { camera, size, gl } = useThree();
 
   const placement = useMemo(() => {
     const x = Math.cos(team.portalAngle) * PORTAL.radius;
@@ -119,6 +109,24 @@ export default function Portal({ index, fx, shared, labelRef, screw, screwMateri
     };
     // useTexture and the geometries are cached, so these stay stable for the portal's life
   }, []);
+
+  // The valley's version of the card: the same drawing, chiselled into the middle of the stone.
+  const carving = useMemo(() => {
+    const drawing = new THREE.Group();
+    drawing.position.set(0, DRAWING_Y, 0);
+    drawing.scale.setScalar(team.drawingScale);
+    drawing.rotation.z = team.drawingLean;
+    const turned = new THREE.Group();
+    turned.rotation.y = team.drawingYaw;
+    turned.add(new THREE.LineSegments(parts.edges, new THREE.LineBasicMaterial({ color: "#ffffff" })));
+    drawing.add(turned);
+    const maps = carveMaps(gl, drawing, PANEL.centre, PANEL.width, PANEL.height);
+    const material = machined({ color: "#777b83", roughness: 0.52, metalness: 0.72, blast: 1 }, maps.ao);
+    material.normalMap = maps.normal;
+    material.normalScale.set(1.6, 1.6);
+    return { maps, material, geometry: new THREE.PlaneGeometry(PANEL.width, PANEL.height) };
+  }, [gl, parts.edges]);
+  useEffect(() => () => carving.maps.dispose(), [carving]);
 
   const root = useRef<THREE.Group>(null);
   const turn = useRef<THREE.Group>(null);
@@ -175,12 +183,9 @@ export default function Portal({ index, fx, shared, labelRef, screw, screwMateri
           <lineSegments geometry={parts.edges} material={parts.drawn.edge} renderOrder={3} />
         </group>
       </group>
-      {/* The same drawing pressed flat onto the stele's face, as an engraving. It stays still: carvings don't sway. */}
-      <group ref={carved} visible={false} position={[0, DRAWING_Y, 0.19]} scale={[team.drawingScale, team.drawingScale, team.drawingScale * 0.02]} rotation={[0, 0, team.drawingLean]}>
-        <group rotation={[0, team.drawingYaw, 0]}>
-          <lineSegments geometry={parts.edges} material={parts.drawn.lip} position={[0, 0.012 / team.drawingScale, 0]} renderOrder={2} />
-          <lineSegments geometry={parts.edges} material={parts.drawn.groove} renderOrder={3} />
-        </group>
+      {/* The carving: a slab of the stele's own stone over its face, with the drawing cut into it. */}
+      <group ref={carved} visible={false}>
+        <mesh geometry={carving.geometry} material={carving.material} position={[PANEL.centre.x, PANEL.centre.y, PANEL.z]} receiveShadow />
       </group>
 
       <mesh

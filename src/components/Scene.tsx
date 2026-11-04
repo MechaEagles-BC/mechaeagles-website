@@ -634,8 +634,8 @@ function Platform({ fx, labelRefs, onHover, onSelect, onReady }: { fx: RefObject
       if (pin) pin.rotation.y = theta + (rot.current.gear - theta) * GEAR_RATIO;
     });
 
-    leanRef.current!.rotation.x = THREE.MathUtils.damp(leanRef.current!.rotation.x, state.pointer.y * -0.008, 2.2, dt);
-    leanRef.current!.rotation.z = THREE.MathUtils.damp(leanRef.current!.rotation.z, state.pointer.x * -0.008, 2.2, dt);
+    leanRef.current!.rotation.x = THREE.MathUtils.damp(leanRef.current!.rotation.x, 0, 2.2, dt);
+    leanRef.current!.rotation.z = THREE.MathUtils.damp(leanRef.current!.rotation.z, 0, 2.2, dt);
 
     if (f.pulse >= 0) {
       f.pulseT += dt / PULSE_SECONDS;
@@ -798,9 +798,9 @@ function CameraRig({ closeup }: { closeup: number[] | null }) {
       cam.lookAt(closeup[3], closeup[4], closeup[5]);
       return;
     }
-    // The valley behind is a flat image, so the camera may only drift a little before the two visibly slip.
-    cam.position.x = THREE.MathUtils.damp(cam.position.x, home.x + state.pointer.x * 0.22, 2.4, dt);
-    cam.position.y = THREE.MathUtils.damp(cam.position.y, home.y - state.pointer.y * 0.1, 2.4, dt);
+    // The camera holds still. Pointing at the scene shouldn't move the world: only dragging turns the platform, and only the wind moves the grass and trees.
+    cam.position.x = THREE.MathUtils.damp(cam.position.x, home.x, 2.4, dt);
+    cam.position.y = THREE.MathUtils.damp(cam.position.y, home.y, 2.4, dt);
     cam.lookAt(look);
   });
   return null;
