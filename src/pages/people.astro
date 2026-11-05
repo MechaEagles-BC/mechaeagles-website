@@ -9,14 +9,15 @@ const TOP = new Set(["pm", "dpm"]);
 // Leads who sit higher in the chart appear here as a reference to their card, never as a second copy of it.
 const hasCardAbove = (m: Member) => TOP.has(primaryRole(m)?.kind ?? "");
 const leadRole = (m: Member, org: string) => now(m).filter((r) => r.org === org && (r.kind === "team-lead" || r.kind === "group-lead")).map(roleName)[0] ?? "Lead";
-const roleHere = (m: Member, org: string) => {
-  const r = now(m).filter((x) => x.org === org);
-  return r.map((x) => (x.kind === "member" ? x.subsystem ?? "Member" : roleName(x))).join(" · ");
-};
-const showsFull = (m: Member, b: Branch) => isHome(m, b.team.id) && !b.leads.includes(m);
 const everyone = [...CURRENT].sort((a, b) => a.name.localeCompare(b.name));
 const describe = (m: Member) => now(m).map((r) => (r.kind === "member" ? `${r.subsystem ?? "Member"}, ${TEAM[r.org].short}` : roleName(r)));
 const branches = [...BRANCHES, PROGRAM_BRANCH];
+// A team's people in order: its leads, then its subsystem leads, then everyone else, alphabetically within each.
+const RANK_HERE = { "team-lead": 0, "group-lead": 0, "subsystem-lead": 1, member: 2, pm: 0, dpm: 0 } as const;
+const byRank = (b: Branch) => {
+  const rank = (m: Member) => Math.min(...now(m).filter((r) => r.org === b.team.id).map((r) => RANK_HERE[r.kind]), 3);
+  return [...b.everyone].sort((x, y) => rank(x) - rank(y) || x.name.localeCompare(y.name));
+};
 ---
 <Site title="People" page="people" description="How MechaEagles is organised, and everyone in it.">
   <div class="page-head wrap">
@@ -93,29 +94,11 @@ const branches = [...BRANCHES, PROGRAM_BRANCH];
           </div>
           {b.team.kind === "engineering" && <a class="button" href={`/teams/${b.team.id}/`}>See what they're building</a>}
         </header>
-        <h3 class="tier__label panel__level"><b>{b.team.kind === "engineering" ? 4 : 3}</b>{b.team.kind === "engineering" ? (b.team.subsystems.length ? "Subsystems, leads and members" : "Team members") : "Members"}</h3>
-        {b.groups.map((g) => (
-          <details class="sub" open>
-            <summary>
-              <span class="sub__name">{g.name}</span>
-              {g.detail && <span class="sub__detail">{g.detail}</span>}
-              <span class="sub__count">{g.leads.length + g.members.length}</span>
-            </summary>
-            <div class="sub__tree">
-              {[...g.leads, ...g.members].filter((m) => showsFull(m, b)).length > 0 && (
-                <div class="sub__cards">
-                  {g.leads.filter((m) => showsFull(m, b)).map((m) => <MemberCard card={cardOf(m, b.team.id, "m")} hideTeam />)}
-                  {g.members.filter((m) => showsFull(m, b)).map((m, i) => <MemberCard card={cardOf(m, b.team.id, "s")} hideTeam style={`--i:${i % 6}`} />)}
-                </div>
-              )}
-              {[...g.leads, ...g.members].filter((m) => !showsFull(m, b)).length > 0 && (
-                <div class="sub__refs">
-                  {[...g.leads, ...g.members].filter((m) => !showsFull(m, b)).map((m) => <PersonRef member={m} role={roleHere(m, b.team.id)} color={b.team.color} />)}
-                </div>
-              )}
-            </div>
-          </details>
-        ))}
+        <h3 class="tier__label panel__level"><b>{b.team.kind === "engineering" ? 4 : 3}</b>Everyone on the team<span class="panel__count">{b.everyone.length}</span></h3>
+        {/* Everyone in one grid, leads first. Each card already says what that person does. */}
+        <div class="sub__cards">
+          {byRank(b).map((m, i) => <MemberCard card={cardOf(m, b.team.id, "s")} hideTeam style={`--i:${i % 6}`} />)}
+        </div>
       </div>
     </section>
   ))}
@@ -132,7 +115,7 @@ const branches = [...BRANCHES, PROGRAM_BRANCH];
         {everyone.map((m) => {
           const c = primaryCard(m, "s");
           const lines = describe(m);
-          return <li data-find={[m.name, ...lines, ...m.specialties].join(" ").toLowerCase()}><PersonRef member={m} role={lines.join(" · ") || m.specialties[0] || "Member"} color={TEAM[c.org].color} /></li>;
+          return <li data-find={[m.name, ...lines, ...m.specialties].join(" ").toLowerCase()}><PersonRef member={m} color={TEAM[c.org].color} /></li>;
         })}
       </ul>
       {UNPLACED.length > 0 && <p class="directory__note">{UNPLACED.map((m) => m.name).join(", ")} {UNPLACED.length === 1 ? "isn't" : "aren't"} on a team in the current records yet, so {UNPLACED.length === 1 ? "appears" : "appear"} here rather than in the chart.</p>}

@@ -435,3 +435,5 @@ figcaption { margin-top: 4px; font-size: var(--t-xs); color: var(--text-2); }
 .memory__wait { color: #8f8263; letter-spacing: 0.2em; animation: memory-wait 1.1s ease-in-out infinite alternate; }
 @keyframes memory-wait { from { opacity: 0.35; } to { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .memory__wait { animation: none; } }
+
+.panel__count { margin-left: var(--s1); font: 400 var(--t-xs)/1 var(--mono); color: var(--text-2); }
