@@ -4,6 +4,7 @@ import MemberCard from "../components/cards/MemberCard.astro";
 import Sigil from "../components/cards/Sigil.astro";
 import { ENGINEERING, LEADERS, PEOPLE_COUNT, RESPONSIBILITIES, LED_BY_LEADERSHIP, TEAM_LEADS, introOf, primaryCard, branchOf } from "../data/org";
 import sponsors from "../data/sponsors.json";
+import { versioned } from "../components/versioned";
 ---
 <Site title="Home" page="home" description="MechaEagles: four student engineering teams at Boston College.">
   <h1 class="sr-only">MechaEagles: four student engineering teams at Boston College</h1>
@@ -109,12 +110,12 @@ import sponsors from "../data/sponsors.json";
 
   <section class="ending" id="join">
     <picture class="only-valley">
-      <source media="(max-aspect-ratio: 9/10)" srcset="/plate/dusk-tall.webp" />
-      <img class="ending__image" src="/plate/dusk.webp" alt="The MechaEagles platform at dusk with its circuits lit" loading="lazy" width="1920" height="1080" />
+      <source media="(max-aspect-ratio: 9/10)" srcset={versioned("/plate/dusk-tall.webp")} />
+      <img class="ending__image" src={versioned("/plate/dusk.webp")} alt="The MechaEagles platform at dusk with its circuits lit" loading="lazy" width="1920" height="1080" />
     </picture>
     <picture class="only-space">
-      <source media="(max-aspect-ratio: 9/10)" srcset="/plate/space-end-tall.webp" />
-      <img class="ending__image" src="/plate/space-end.webp" alt="The MechaEagles platform on a small moon with its circuits lit" loading="lazy" width="1920" height="1080" />
+      <source media="(max-aspect-ratio: 9/10)" srcset={versioned("/plate/space-end-tall.webp")} />
+      <img class="ending__image" src={versioned("/plate/space-end.webp")} alt="The MechaEagles platform on a small moon with its circuits lit" loading="lazy" width="1920" height="1080" />
     </picture>
     <div class="ending__text wrap">
       <h2 class="ending__title reveal">Come build with us.</h2>

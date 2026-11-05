@@ -1,6 +1,10 @@
 ---
 /** Runs before the first paint on every page, so nothing flashes the wrong world. Moving between pages replaces the page's attributes, so the world is put back each time. */
+import { versioned } from "./versioned";
+
+const FIRST = Object.fromEntries(["", "space/"].flatMap((dir) => ["wide", "tall"].map((s) => [`${dir}${s}`, versioned(`/stills/${dir}idle-${s}.webp`)])));
 ---
+<script is:inline set:html={`window.__mcFirst = ${JSON.stringify(FIRST)};`} />
 <script is:inline>
   (function () {
     var root = document.documentElement;
@@ -40,7 +44,7 @@
       var dir = root.dataset.theme === "space" ? "/stills/space/" : "/stills/";
       [["wide", "(min-aspect-ratio: 9/10)"], ["tall", "(max-aspect-ratio: 9/10)"]].forEach(function (s) {
         var l = document.createElement("link");
-        l.rel = "preload"; l.as = "image"; l.href = dir + "idle-" + s[0] + ".webp"; l.media = s[1]; l.fetchPriority = "high";
+        l.rel = "preload"; l.as = "image"; l.href = window.__mcFirst[(root.dataset.theme === "space" ? "space/" : "") + s[0]]; l.media = s[1]; l.fetchPriority = "high";
         document.head.appendChild(l);
       });
     }

@@ -4,8 +4,9 @@
  * The poster and links need no 3D. On other pages it's hidden and its drawing is stopped.
  */
 import { SIGNS, TEAMS } from "./teams";
+import { versioned } from "./versioned";
 
-const still = (name: string, dir = "") => ({ wide: `/stills/${dir}${name}-wide.webp`, tall: `/stills/${dir}${name}-tall.webp` });
+const still = (name: string, dir = "") => ({ wide: versioned(`/stills/${dir}${name}-wide.webp`), tall: versioned(`/stills/${dir}${name}-tall.webp`) });
 const WORLDS = [{ dir: "", key: "valley" }, { dir: "space/", key: "space" }];
 const STILLS = ["baja", "aero", "combat", "ai"];
 ---
