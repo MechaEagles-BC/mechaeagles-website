@@ -54,7 +54,7 @@ function drawingMaterials(color: string, shared: SharedLight, level: { value: nu
 }
 
 // The panel the carving is cut into, in the stele's own units: inside the frame, between its side bars.
-const PANEL = { centre: new THREE.Vector2(0, 2.62), width: 2.7, height: 3.0, z: 0.188 };
+const PANEL = { centre: new THREE.Vector2(0, 2.675), width: 2.7, height: 3.0, z: 0.188 };
 
 const depthOnly = new THREE.MeshBasicMaterial({ colorWrite: false, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 2 });
 
@@ -115,15 +115,20 @@ export default function Portal({ index, fx, shared, labelRef, screw, screwMateri
     const drawing = new THREE.Group();
     drawing.position.set(0, DRAWING_Y, 0);
     drawing.scale.setScalar(team.drawingScale);
-    drawing.rotation.z = team.drawingLean;
+    // A carving stands upright in its slab, whatever angle the lit drawing leans at.
+    drawing.rotation.z = 0;
     const turned = new THREE.Group();
     turned.rotation.y = team.drawingYaw;
-    turned.add(new THREE.LineSegments(parts.edges, new THREE.LineBasicMaterial({ color: "#ffffff" })));
+    turned.add(new THREE.LineSegments(parts.edges, new THREE.LineBasicMaterial({ color: "#ffffff" })), new THREE.Mesh(corner, new THREE.MeshBasicMaterial({ color: "#ffffff", side: THREE.DoubleSide })));
     drawing.add(turned);
-    const maps = carveMaps(gl, drawing, PANEL.centre, PANEL.width, PANEL.height);
+    const maps = carveMaps(gl, drawing, PANEL.width, PANEL.height);
     const material = machined({ color: "#777b83", roughness: 0.52, metalness: 0.72, blast: 1 }, maps.ao);
     material.normalMap = maps.normal;
     material.normalScale.set(1.6, 1.6);
+    // A runestone's glow: the team's colour lives at the bottom of the cut, like the runes around the ring.
+    material.emissive = new THREE.Color(team.color);
+    material.emissiveMap = maps.glow;
+    material.emissiveIntensity = 0.5;
     return { maps, material, geometry: new THREE.PlaneGeometry(PANEL.width, PANEL.height) };
   }, [gl, parts.edges]);
   useEffect(() => () => carving.maps.dispose(), [carving]);
@@ -155,6 +160,7 @@ export default function Portal({ index, fx, shared, labelRef, screw, screwMateri
     if (lit.current) lit.current.visible = !stone;
     if (carved.current) carved.current.visible = stone;
     if (stone) parts.lamp.color.set(team.color).multiplyScalar(0.16 + Math.max(k, 0) * 0.3);
+    if (stone) carving.material.emissiveIntensity = 0.5 + Math.max(k, 0) * 1.3 + Math.min(k, 0) * 0.6;
     else parts.lamp.color.set(team.color).multiplyScalar(0.72 + k * 0.5);
     if (light.current) light.current.intensity = THREE.MathUtils.damp(light.current.intensity, (on ? 9 : dimmed ? 1.2 : 2.6) * (stone ? 0.12 : 1), 7, dt);
     if (turn.current) turn.current.rotation.y = team.drawingYaw + Math.sin(state.clock.elapsedTime * 0.22 + index * 1.7) * 0.2;
